@@ -55,4 +55,31 @@ The Phase 1 gate requires:
 - Solidity and Python produce identical golden outputs; and
 - all lint, unit, fuzz, property, and experiment checks pass.
 
-Later phases will append their reproducibility commands and expected outputs.
+## Phase 2 gate
+
+Run the focused origin-controller and local Uniswap v4 checks with:
+
+```sh
+forge test --match-contract ThetaShieldControllerTest -vv
+forge test --match-contract ThetaShieldHookIntegrationTest -vv
+```
+
+The Phase 2 gate requires:
+
+- the configured public account is the initial two-step owner;
+- only the callback proxy with the expected RVM ID can update a pool;
+- replayed, out-of-order, stale, future, malformed, overlong, low-confidence
+  premium, fee-bound, and risk-bound recommendations revert;
+- pause, missing, low-confidence baseline, and expiry paths select the baseline;
+- a real local v4 `PoolManager` initializes a dynamic-fee pool;
+- swaps execute in both directions with different fees;
+- the `PoolManager.Swap` fee equals the hook's selected override;
+- observations include both raw deltas, post-swap price, applied fee, fallback
+  status, timestamp, direction, and a monotonic ID; and
+- direct non-manager hook calls and static-fee pools revert.
+
+The authoritative whole-repository gate remains:
+
+```sh
+FOUNDRY_PROFILE=ci make verify
+```

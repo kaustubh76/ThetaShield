@@ -5,9 +5,10 @@ research project. It uses delayed signed markout, trailing-noise filtering,
 `n-of-k` persistence, and mechanical confidence scoring to raise fees only when
 order flow shows sustained evidence of adverse selection.
 
-> **Research status:** Phase 1 mathematics and reference-model gate verified.
-> Hook, origin controller, and Reactive contracts have not been implemented and
-> no contract in this repository is ready for production deployment.
+> **Research status:** Phase 2 hook and origin-controller gate verified. The
+> Reactive scheduler and end-to-end callback lifecycle have not been implemented,
+> the contracts are unaudited, and nothing in this repository is ready for
+> production deployment.
 
 ## Research question
 
@@ -68,6 +69,10 @@ The Phase 1 definitions and rounding rules are documented in the
 [mathematical specification](docs/MATHEMATICAL_SPECIFICATION.md). The independent
 Python model and Solidity libraries are checked against the same committed
 golden vectors.
+
+The Phase 2 trust boundaries, fee fallback rules, event schema, and local
+Uniswap v4 verification evidence are recorded in the
+[Phase 2 handoff](docs/PHASE2_HANDOFF.md).
 
 ## Safety
 
