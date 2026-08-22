@@ -1,0 +1,30 @@
+[profile.default]
+src = "src"
+test = "test"
+script = "script"
+out = "out"
+libs = ["lib"]
+solc_version = "0.8.26"
+auto_detect_solc = false
+evm_version = "cancun"
+optimizer = true
+optimizer_runs = 10_000
+bytecode_hash = "none"
+cbor_metadata = false
+ffi = false
+
+[profile.default.fuzz]
+runs = 256
+
+[profile.default.invariant]
+runs = 256
+depth = 64
+fail_on_revert = true
+
+[profile.ci.fuzz]
+runs = 2_000
+
+[profile.ci.invariant]
+runs = 512
+depth = 128
+fail_on_revert = true
