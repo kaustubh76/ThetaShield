@@ -12,6 +12,7 @@ optimizer_runs = 10_000
 bytecode_hash = "none"
 cbor_metadata = false
 ffi = false
+fs_permissions = [{ access = "read", path = "./research/datasets" }]
 
 [profile.default.fuzz]
 runs = 256

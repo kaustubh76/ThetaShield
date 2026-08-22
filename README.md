@@ -5,8 +5,9 @@ research project. It uses delayed signed markout, trailing-noise filtering,
 `n-of-k` persistence, and mechanical confidence scoring to raise fees only when
 order flow shows sustained evidence of adverse selection.
 
-> **Research status:** Phase 0 foundation. No contract in this repository is
-> ready for production deployment.
+> **Research status:** Phase 1 mathematics and reference-model gate verified.
+> Hook, origin controller, and Reactive contracts have not been implemented and
+> no contract in this repository is ready for production deployment.
 
 ## Research question
 
@@ -62,6 +63,11 @@ git submodule update --init --recursive
 
 See [the roadmap](docs/ROADMAP.md), [architecture](docs/ARCHITECTURE.md), and
 [verification guide](docs/VERIFICATION.md) before contributing.
+
+The Phase 1 definitions and rounding rules are documented in the
+[mathematical specification](docs/MATHEMATICAL_SPECIFICATION.md). The independent
+Python model and Solidity libraries are checked against the same committed
+golden vectors.
 
 ## Safety
 

@@ -2,6 +2,19 @@
 
 Every phase is verified before it is committed and pushed to `main`.
 
+| Phase | Status |
+|---|---|
+| Phase 0 — Repository foundation | Complete |
+| Phase 1 — Mathematics and research specification | Complete |
+| Phase 2 — Hook and origin controller | Pending |
+| Phase 3 — Reactive scheduler | Pending |
+| Phase 4 — Local end-to-end lifecycle | Pending |
+| Phase 5 — Research harness and baselines | Pending |
+| Phase 6 — Sensitivity analysis and hypotheses | Pending |
+| Phase 7 — Security and release hardening | Pending |
+| Phase 8 — Live deployment | Pending approval and cost gate |
+| Phase 9 — Dashboard and submission | Pending |
+
 ## Phase 0 — Repository foundation
 
 Create the private repository, Foundry scaffold, CI, safe configuration template,

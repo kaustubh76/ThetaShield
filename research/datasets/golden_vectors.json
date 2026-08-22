@@ -1,0 +1,161 @@
+{
+  "confidence": {
+    "agreeing_notional_wad": 80000000000000000000,
+    "confidence_cap_wad": 600000000000000000,
+    "expected_agreement_score_wad": 600000000000000000,
+    "expected_confidence_wad": 360000000000000000,
+    "expected_count_score_wad": 800000000000000000,
+    "expected_dispersion_score_wad": 750000000000000000,
+    "expected_uncapped_confidence_wad": 360000000000000000,
+    "maximum_dispersion_wad": 20000000000000000,
+    "observation_count": 8,
+    "reference_dispersion_wad": 5000000000000000,
+    "target_observation_count": 10,
+    "total_notional_wad": 100000000000000000000
+  },
+  "dead_band": [
+    {
+      "expected_filtered_wad": 2000000000000000,
+      "k_wad": 1500000000000000000,
+      "markout_wad": 5000000000000000,
+      "sigma_wad": 2000000000000000
+    },
+    {
+      "expected_filtered_wad": -2000000000000000,
+      "k_wad": 1500000000000000000,
+      "markout_wad": -5000000000000000,
+      "sigma_wad": 2000000000000000
+    },
+    {
+      "expected_filtered_wad": 0,
+      "k_wad": 1500000000000000000,
+      "markout_wad": 2000000000000000,
+      "sigma_wad": 2000000000000000
+    }
+  ],
+  "epoch": {
+    "expected_aggregate_markout_wad": 0,
+    "expected_eligible_notional_wad": 150000000000000000000,
+    "expected_eligible_observation_count": 2,
+    "expected_meets_minimum_epoch_notional": true,
+    "filtered_markouts_wad": [
+      4000000000000000,
+      -2000000000000000,
+      9000000000000000
+    ],
+    "maximum_observation_count": 8,
+    "maximum_trade_notional_wad": 100000000000000000000,
+    "minimum_epoch_notional_wad": 150000000000000000000,
+    "minimum_observation_notional_wad": 10000000000000000000,
+    "notionals_wad": [
+      50000000000000000000,
+      200000000000000000000,
+      1000000000000000000
+    ]
+  },
+  "fee": {
+    "base_fee_pips": 500,
+    "confidence_floor_wad": 500000000000000000,
+    "confidence_wad": 750000000000000000,
+    "expected_next_fee_pips": 1500,
+    "expected_premium_pips": 2000,
+    "expected_target_fee_pips": 2500,
+    "gain_fee_pips": 500000,
+    "maximum_decrease_pips": 500,
+    "maximum_fee_pips": 10000,
+    "maximum_increase_pips": 1000,
+    "minimum_fee_pips": 500,
+    "persistence_active": true,
+    "previous_fee_pips": 500,
+    "signed_risk_wad": 4000000000000000
+  },
+  "markout": [
+    {
+      "direction": 1,
+      "execution_price_wad": 100000000000000000000,
+      "expected_markout_wad": 10000000000000000,
+      "reference_price_wad": 101000000000000000000
+    },
+    {
+      "direction": 1,
+      "execution_price_wad": 100000000000000000000,
+      "expected_markout_wad": -10000000000000000,
+      "reference_price_wad": 99000000000000000000
+    },
+    {
+      "direction": -1,
+      "execution_price_wad": 100000000000000000000,
+      "expected_markout_wad": -10000000000000000,
+      "reference_price_wad": 101000000000000000000
+    },
+    {
+      "direction": 1,
+      "execution_price_wad": 2500000000000000000000,
+      "expected_markout_wad": 5000000000000000,
+      "reference_price_wad": 2512500000000000000000
+    }
+  ],
+  "persistence": {
+    "required_toxic_epochs": 3,
+    "steps": [
+      {
+        "expected_active": false,
+        "expected_bitmap": 1,
+        "toxic": true
+      },
+      {
+        "expected_active": false,
+        "expected_bitmap": 3,
+        "toxic": true
+      },
+      {
+        "expected_active": false,
+        "expected_bitmap": 6,
+        "toxic": false
+      },
+      {
+        "expected_active": true,
+        "expected_bitmap": 13,
+        "toxic": true
+      }
+    ],
+    "window_length": 5
+  },
+  "reference_dispersion": {
+    "expected_normalized_dispersion_wad": 5833333333333333,
+    "expected_weighted_mean_absolute_deviation_wad": 583333333333333333,
+    "expected_weighted_median_price_wad": 100000000000000000000,
+    "prices_wad": [
+      100000000000000000000,
+      101000000000000000000,
+      99000000000000000000
+    ],
+    "weights_wad": [
+      1000000000000000000,
+      800000000000000000,
+      600000000000000000
+    ]
+  },
+  "rounding": "unsigned-down;signed-toward-zero;sqrt-down",
+  "schema_version": 1,
+  "smoothing": {
+    "aggregate_markout_wad": -4000000000000000,
+    "alpha_wad": 250000000000000000,
+    "confidence_wad": 750000000000000000,
+    "expected_magnitude_wad": 2500000000000000,
+    "expected_signed_risk_wad": -1875000000000000,
+    "previous_magnitude_wad": 2000000000000000
+  },
+  "trailing_volatility": {
+    "current_index": 3,
+    "expected_sample_count": 3,
+    "expected_sigma_wad": 1632993161855452,
+    "series_wad": [
+      -2000000000000000,
+      0,
+      2000000000000000,
+      50000000000000000
+    ],
+    "window": 3
+  }
+}
