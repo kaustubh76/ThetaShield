@@ -52,3 +52,16 @@ edited artifacts.
 The generated report retains failed hypotheses. Current controlled synthetic
 results pass H1, H2, H3, and H6, while H4 and H5 fail their declared criteria.
 These labels are not live-market or production-readiness claims.
+
+## Phase 6.1 commands
+
+```sh
+make phase61-report
+make phase61-check
+```
+
+Phase 6.1 preserves the original H4/H5 failures and evaluates a versioned
+remediation. Ninety candidates are selected using training streams only. A
+40-case detection frontier and the locked candidate are then evaluated on five
+disjoint holdout seeds. The generated holdout result passes H4 and H5 under the
+unchanged final criteria; it remains controlled synthetic evidence.

@@ -25,6 +25,7 @@ contract ThetaShieldReactive is AbstractReactive {
     uint16 public constant ABSOLUTE_MAX_EPOCH_OBSERVATIONS = 128;
     uint8 public constant ABSOLUTE_MAX_REFERENCE_SOURCES = 16;
     uint8 public constant ABSOLUTE_MAX_REFERENCE_HISTORY = 8;
+    uint16 public constant ABSOLUTE_MAX_FAST_PATH_HOLD_EPOCHS = 16;
     uint256 public constant MAX_ABSOLUTE_MARKOUT_WAD = 10e18;
 
     uint256 public constant SWAP_OBSERVED_TOPIC =
@@ -67,8 +68,10 @@ contract ThetaShieldReactive is AbstractReactive {
         uint16 targetObservationCount;
         uint16 requiredToxicEpochs;
         uint16 persistenceWindow;
+        uint16 fastPathHoldEpochs;
         uint8 maximumReferenceSamplesPerSource;
         uint8 minimumReferenceSources;
+        bool fastPathEnabled;
         uint256 minimumObservationNotionalWad;
         uint256 maximumTradeNotionalWad;
         uint256 minimumEpochNotionalWad;
@@ -78,6 +81,8 @@ contract ThetaShieldReactive is AbstractReactive {
         uint256 confidenceCapWad;
         uint256 toxicThresholdWad;
         uint256 alphaWad;
+        uint256 fastPathConfidenceFloorWad;
+        uint256 fastPathToxicThresholdWad;
     }
 
     struct PendingObservation {
@@ -132,12 +137,14 @@ contract ThetaShieldReactive is AbstractReactive {
         uint16 epochObservationCount;
         uint16 historyCount;
         uint16 historyCursor;
+        uint16 fastPathHoldRemaining;
         uint256 persistenceBitmap;
         uint256 smoothedMagnitudeWad;
         int128 latestRiskWad;
         uint256 latestConfidenceWad;
         uint24 latestCalculatedFeePips;
         bool latestPersistenceActive;
+        bool latestFastPathActive;
         bool epochOpen;
         bool hasFinalizedEpoch;
     }
@@ -224,6 +231,7 @@ contract ThetaShieldReactive is AbstractReactive {
         uint256 confidenceWad,
         uint256 persistenceBitmap,
         bool persistenceActive,
+        bool fastPathActive,
         uint24 calculatedFeePips,
         uint16 eligibleObservationCount,
         uint256 eligibleNotionalWad,
@@ -702,11 +710,13 @@ contract ThetaShieldReactive is AbstractReactive {
             state.persistenceBitmap, schedulerConfig.requiredToxicEpochs, schedulerConfig.persistenceWindow
         );
         state.latestPersistenceActive = persistenceActive;
+        bool fastPathActive = _updateFastPath(state, computation);
+        state.latestFastPathActive = fastPathActive;
 
         FeeCurve.Result memory fee = FeeCurve.calculate(
             smoothed.signedRiskWad,
             computation.confidenceWad,
-            persistenceActive,
+            persistenceActive || fastPathActive,
             state.latestCalculatedFeePips,
             _feeCurveConfig
         );
@@ -721,8 +731,30 @@ contract ThetaShieldReactive is AbstractReactive {
             delete _epochObservations[side][index];
         }
 
-        _emitEpochFinalized(side, finalizedEpochId, computation, persistenceActive, fee.nextFeePips);
+        _emitEpochFinalized(side, finalizedEpochId, computation, persistenceActive, fastPathActive, fee.nextFeePips);
         return true;
+    }
+
+    function _updateFastPath(SideState storage state, EpochComputation memory computation)
+        private
+        returns (bool active)
+    {
+        if (!schedulerConfig.fastPathEnabled) return false;
+        int256 instantRiskWad = FixedPointMath.mulDivSigned(
+            computation.aggregateMarkoutWad, FixedPointMath.toInt256(computation.confidenceWad), ThetaShieldUnits.WAD
+        );
+        bool triggered = computation.meetsMinimumEpochNotional && !computation.includedColdStart
+            && computation.confidenceWad >= schedulerConfig.fastPathConfidenceFloorWad
+            && instantRiskWad > int256(schedulerConfig.fastPathToxicThresholdWad);
+        if (triggered) {
+            state.fastPathHoldRemaining = schedulerConfig.fastPathHoldEpochs;
+            return true;
+        }
+        if (state.fastPathHoldRemaining != 0) {
+            --state.fastPathHoldRemaining;
+            return true;
+        }
+        return false;
     }
 
     function _emitEpochFinalized(
@@ -730,6 +762,7 @@ contract ThetaShieldReactive is AbstractReactive {
         uint64 finalizedEpochId,
         EpochComputation memory computation,
         bool persistenceActive,
+        bool fastPathActive,
         uint24 feePips
     ) private {
         SideState storage state = _sideStates[side];
@@ -741,6 +774,7 @@ contract ThetaShieldReactive is AbstractReactive {
             computation.confidenceWad,
             state.persistenceBitmap,
             persistenceActive,
+            fastPathActive,
             feePips,
             computation.eligibleObservationCount,
             computation.eligibleNotionalWad,
@@ -816,6 +850,8 @@ contract ThetaShieldReactive is AbstractReactive {
             state.latestConfidenceWad = 0;
             state.latestCalculatedFeePips = _feeCurveConfig.baseFeePips;
             state.latestPersistenceActive = false;
+            state.latestFastPathActive = false;
+            state.fastPathHoldRemaining = 0;
             return;
         }
 
@@ -828,9 +864,17 @@ contract ThetaShieldReactive is AbstractReactive {
             FeeCurve.Result memory fee = FeeCurve.calculate(0, 0, false, state.latestCalculatedFeePips, _feeCurveConfig);
             state.latestCalculatedFeePips = fee.nextFeePips;
         }
+        if (missing >= state.fastPathHoldRemaining) {
+            state.fastPathHoldRemaining = 0;
+        } else {
+            // The branch proves missing is smaller than the uint16 hold counter.
+            // forge-lint: disable-next-line(unsafe-typecast)
+            state.fastPathHoldRemaining -= uint16(missing);
+        }
         state.latestRiskWad = 0;
         state.latestConfidenceWad = 0;
         state.latestPersistenceActive = false;
+        state.latestFastPathActive = false;
     }
 
     function _scheduleRecommendation() private {
@@ -888,7 +932,7 @@ contract ThetaShieldReactive is AbstractReactive {
 
     function _effectiveFee(SideState storage state) private view returns (uint24) {
         if (
-            !state.latestPersistenceActive || state.latestRiskWad <= 0
+            (!state.latestPersistenceActive && !state.latestFastPathActive) || state.latestRiskWad <= 0
                 || state.latestConfidenceWad < _feeCurveConfig.confidenceFloorWad
         ) return _feeCurveConfig.baseFeePips;
         return state.latestCalculatedFeePips;
@@ -989,6 +1033,7 @@ contract ThetaShieldReactive is AbstractReactive {
                 || scheduler.targetObservationCount == 0 || scheduler.requiredToxicEpochs == 0
                 || scheduler.persistenceWindow == 0 || scheduler.persistenceWindow > 256
                 || scheduler.requiredToxicEpochs > scheduler.persistenceWindow
+                || scheduler.fastPathHoldEpochs > ABSOLUTE_MAX_FAST_PATH_HOLD_EPOCHS
                 || scheduler.maximumReferenceSamplesPerSource == 0
                 || scheduler.maximumReferenceSamplesPerSource > ABSOLUTE_MAX_REFERENCE_HISTORY
                 || scheduler.minimumReferenceSources == 0 || scheduler.minimumReferenceSources > sources.length
@@ -996,6 +1041,12 @@ contract ThetaShieldReactive is AbstractReactive {
                 || scheduler.maximumDispersionWad == 0 || scheduler.confidenceCapWad > ThetaShieldUnits.WAD
                 || scheduler.toxicThresholdWad > MAX_ABSOLUTE_MARKOUT_WAD || scheduler.alphaWad == 0
                 || scheduler.alphaWad > ThetaShieldUnits.WAD
+        ) revert InvalidSchedulerConfiguration();
+        if (
+            scheduler.fastPathEnabled
+                && (scheduler.fastPathConfidenceFloorWad > ThetaShieldUnits.WAD
+                    || scheduler.fastPathToxicThresholdWad == 0
+                    || scheduler.fastPathToxicThresholdWad > MAX_ABSOLUTE_MARKOUT_WAD)
         ) revert InvalidSchedulerConfiguration();
         if (
             feeConfig.minimumFeePips > feeConfig.baseFeePips || feeConfig.baseFeePips > feeConfig.maximumFeePips

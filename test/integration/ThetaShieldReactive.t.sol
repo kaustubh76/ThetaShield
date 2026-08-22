@@ -226,6 +226,34 @@ contract ThetaShieldReactiveTest is ReactiveTest {
         assertEq(recommendation.confidenceBps, 10_000);
     }
 
+    function test_confidentFastPathProtectsBeforePersistenceThreshold() external {
+        MockSwapObservationEmitter fastEmitter = new MockSwapObservationEmitter(POOL_ID);
+        MockNormalizedReferencePriceFeed fastFeed = new MockNormalizedReferencePriceFeed(address(this));
+        bytes32[] memory sources = new bytes32[](1);
+        sources[0] = SOURCE_A;
+        ThetaShieldReactive fastScheduler =
+            _deploySchedulerWithProtection(address(fastEmitter), address(fastFeed), 8, 8, 1, sources, true, 2, 3);
+
+        _emitSwap(fastEmitter, _time());
+        vm.warp(block.timestamp + 60);
+        _publishReference(fastFeed, 99e18);
+        assertNoCallbacks(_triggerCron());
+        vm.warp(block.timestamp + 31);
+        assertCallbackSuccess(_triggerCron(), 0);
+
+        _emitSwap(fastEmitter, _time());
+        vm.warp(block.timestamp + 60);
+        _publishReference(fastFeed, 99e18);
+        assertNoCallbacks(_triggerCron());
+        vm.warp(block.timestamp + 31);
+        assertCallbackSuccess(_triggerCron(), 0);
+
+        ThetaShieldReactive.SideState memory state = fastScheduler.sideState(true);
+        assertFalse(state.latestPersistenceActive);
+        assertTrue(state.latestFastPathActive);
+        assertGt(fastScheduler.effectiveFee(true), 500);
+    }
+
     function test_longCronGapResetsAncientEpochBeforeSchedulingRecommendation() external {
         _settleCurrentObservation(99e18);
         vm.warp(block.timestamp + 31);
@@ -316,6 +344,22 @@ contract ThetaShieldReactiveTest is ReactiveTest {
         uint16 minimumTrailing,
         bytes32[] memory sources
     ) private returns (ThetaShieldReactive deployed) {
+        return _deploySchedulerWithProtection(
+            hook, feed, maximumPending, maximumProcess, minimumTrailing, sources, false, 1, 1
+        );
+    }
+
+    function _deploySchedulerWithProtection(
+        address hook,
+        address feed,
+        uint16 maximumPending,
+        uint16 maximumProcess,
+        uint16 minimumTrailing,
+        bytes32[] memory sources,
+        bool fastPathEnabled,
+        uint16 requiredToxicEpochs,
+        uint16 persistenceWindow
+    ) private returns (ThetaShieldReactive deployed) {
         deployed = new ThetaShieldReactive(
             ThetaShieldReactive.NetworkConfig({
                 originChainId: ORIGIN_CHAIN_ID,
@@ -344,10 +388,12 @@ contract ThetaShieldReactiveTest is ReactiveTest {
                 trailingWindow: 8,
                 minimumTrailingObservations: minimumTrailing,
                 targetObservationCount: 1,
-                requiredToxicEpochs: 1,
-                persistenceWindow: 1,
+                requiredToxicEpochs: requiredToxicEpochs,
+                persistenceWindow: persistenceWindow,
+                fastPathHoldEpochs: 0,
                 maximumReferenceSamplesPerSource: 4,
                 minimumReferenceSources: 1,
+                fastPathEnabled: fastPathEnabled,
                 minimumObservationNotionalWad: 1e18,
                 maximumTradeNotionalWad: 1_000e18,
                 minimumEpochNotionalWad: 1e18,
@@ -356,7 +402,9 @@ contract ThetaShieldReactiveTest is ReactiveTest {
                 maximumDispersionWad: 0.05e18,
                 confidenceCapWad: 1e18,
                 toxicThresholdWad: 0.001e18,
-                alphaWad: 1e18
+                alphaWad: 1e18,
+                fastPathConfidenceFloorWad: fastPathEnabled ? 0.5e18 : 0,
+                fastPathToxicThresholdWad: fastPathEnabled ? 0.001e18 : 0
             }),
             FeeCurve.Config({
                 baseFeePips: 500,

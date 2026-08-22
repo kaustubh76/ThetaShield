@@ -201,3 +201,31 @@ The authoritative whole-repository gate remains:
 ```sh
 FOUNDRY_PROFILE=ci make verify
 ```
+
+## Phase 6.1 remediation gate
+
+Regenerate and verify the versioned H4/H5 remediation with:
+
+```sh
+make phase61-report
+make phase61-check
+```
+
+The Phase 6.1 gate requires:
+
+- the original Phase 6 v1 H4/H5 failures remain visible and unchanged;
+- 90 training-only multi-factor candidates and fixed selection guardrails;
+- five holdout seeds disjoint from the five training seeds;
+- three explicitly benign challenge families and a 40-case H4 frontier;
+- a configurable fast path gated by cold-start completion, epoch notional,
+  confidence, and instantaneous confidence-weighted risk;
+- a Solidity integration test proving fast protection can activate before the
+  slower persistence threshold;
+- H4 and H5 pass their original final criteria on the reserved holdout; and
+- exact regeneration of the manifest, CSVs, JSON, Markdown, and SVG evidence.
+
+The authoritative whole-repository gate remains:
+
+```sh
+FOUNDRY_PROFILE=ci make verify
+```

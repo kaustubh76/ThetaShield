@@ -52,6 +52,10 @@ class ResearchConfig:
     confidence_floor_wad: int = 5 * 10**17
     toxic_threshold_wad: int = 75 * 10**13
     alpha_wad: int = 25 * 10**16
+    fast_path_enabled: bool = False
+    fast_path_confidence_floor_wad: int = 55 * 10**16
+    fast_path_toxic_threshold_wad: int = 2 * 10**15
+    fast_path_hold_epochs: int = 0
     markout_horizon_steps: int = 1
     markout_delay_steps: int = 2
     callback_delay_steps: int = 1
@@ -251,6 +255,7 @@ class ThetaShieldPolicy(DeadBandPolicyBase):
         super().__init__(config, gain_fee_pips)
         self._persistence = {-1: 0, 1: 0}
         self._magnitude = {-1: 0, 1: 0}
+        self._fast_path_hold = {-1: 0, 1: 0}
 
     def observe(self, event: TradeEvent) -> bool:
         completed = self._append(event.direction, self._score(event))
@@ -272,9 +277,29 @@ class ThetaShieldPolicy(DeadBandPolicyBase):
             self.config.persistence_window,
         )
         self._persistence[event.direction] = bitmap
+        instant_risk_wad = aggregate_wad * confidence_wad // WAD
+        fast_path_triggered = (
+            self.config.fast_path_enabled
+            and not included_cold_start
+            and confidence_wad >= self.config.fast_path_confidence_floor_wad
+            and instant_risk_wad > self.config.fast_path_toxic_threshold_wad
+        )
+        if fast_path_triggered:
+            fast_path_active = True
+            self._fast_path_hold[event.direction] = self.config.fast_path_hold_epochs
+        elif self._fast_path_hold[event.direction] > 0:
+            fast_path_active = True
+            self._fast_path_hold[event.direction] -= 1
+        else:
+            fast_path_active = False
         if included_cold_start:
             confidence_wad = 0
-        self._set_directional_fee(event.direction, risk.signed_risk_wad, confidence_wad, active)
+        self._set_directional_fee(
+            event.direction,
+            risk.signed_risk_wad,
+            confidence_wad,
+            active or fast_path_active,
+        )
         return True
 
 

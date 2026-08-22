@@ -136,7 +136,13 @@ magnitude.
 For each side independently:
 
 ```text
-eligible = persistenceActive and confidence >= confidenceFloor
+fastPathActive = fastPathEnabled
+                 and not coldStart
+                 and epochMeetsMinimumNotional
+                 and confidence >= fastPathConfidenceFloor
+                 and aggregateMarkout * confidence > fastPathToxicThreshold
+protectionActive = persistenceActive or fastPathActive
+eligible = protectionActive and confidence >= confidenceFloor
 premium = eligible * gain * max(signedRisk, 0)
 targetFee = clamp(baseFee + premium, minimumFee, maximumFee)
 nextFee = rateLimit(previousFee, targetFee, maximumIncrease, maximumDecrease)
@@ -145,6 +151,11 @@ nextFee = rateLimit(previousFee, targetFee, maximumIncrease, maximumDecrease)
 Negative or zero signed risk cannot raise the fee. Expiry, cooldown, callback
 authentication, sequence enforcement, pause, and baseline fallback are origin
 controller responsibilities introduced in Phase 2.
+
+Phase 6.1 adds the separately configurable fast path above. It bypasses only
+the time-domain persistence wait; it does not bypass cold start, epoch-notional,
+confidence, positive-risk, fee-bound, or rate-limit checks. An optional bounded
+hold counter may keep this path active for a fixed number of later epochs.
 
 ## 11. Phase 1 research defaults
 

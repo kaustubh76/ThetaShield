@@ -73,14 +73,18 @@ Settled observations are scored against strictly trailing volatility, then
 added to bounded directional epochs. Cold-start observations can contribute to
 state but cannot activate toxic persistence. Epoch finalization applies the
 Phase 1 aggregation, confidence, persistence, smoothing, and fee-curve
-libraries independently for both directions. Missing epochs decay to neutral;
-very large gaps reset risk state conservatively.
+libraries independently for both directions. Phase 6.1 also permits a
+confidence-gated fast path after cold start when the current confidence-weighted
+epoch risk exceeds its separate threshold. It bypasses the persistence wait
+only; all fee bounds and rate limits remain active. Missing epochs decay to
+neutral; very large gaps reset risk state conservatively.
 
 At most one recommendation callback is emitted by a Cron reaction. The first
 callback argument is an empty address in the encoded payload because Reactive's
 callback proxy replaces it with the RVM ID before calling the Phase 2
 controller. A premium is suppressed to the baseline unless risk is positive,
-persistence is active, and confidence meets the fee floor.
+either persistence or the bounded fast path is active, and confidence meets
+the fee floor.
 
 The normalized feed included in Phase 3 is an owner-published development mock.
 The interface and decimal normalizer define the adapter boundary, but selecting

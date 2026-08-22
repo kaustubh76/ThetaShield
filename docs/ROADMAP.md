@@ -11,6 +11,7 @@ Every phase is verified before it is committed and pushed to `main`.
 | Phase 4 — Local end-to-end lifecycle | Complete |
 | Phase 5 — Research harness and baselines | Complete |
 | Phase 6 — Sensitivity analysis and hypotheses | Complete |
+| Phase 6.1 — H4/H5 remediation and holdout audit | Complete |
 | Phase 7 — Security and release hardening | Pending |
 | Phase 8 — Live deployment | Pending approval and cost gate |
 | Phase 9 — Dashboard and submission | Pending |
@@ -49,6 +50,12 @@ seeds, and one-command chart reproduction.
 
 Sweep controller parameters and assign H1-H6 explicit pass, fail, or
 inconclusive outcomes, including directional discrimination.
+
+## Phase 6.1 — H4/H5 remediation and holdout audit
+
+Preserve the original failed H4/H5 evidence, add harder benign challenges and
+a bounded confidence-gated fast path, select only on training streams, and
+confirm the revised criteria on disjoint reserved seeds.
 
 ## Phase 7 — Security and release hardening
 

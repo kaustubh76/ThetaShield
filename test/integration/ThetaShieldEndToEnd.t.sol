@@ -240,8 +240,10 @@ contract ThetaShieldEndToEndTest is Deployers, ReactiveTest {
                 targetObservationCount: 1,
                 requiredToxicEpochs: 1,
                 persistenceWindow: 1,
+                fastPathHoldEpochs: 0,
                 maximumReferenceSamplesPerSource: 4,
                 minimumReferenceSources: 1,
+                fastPathEnabled: false,
                 minimumObservationNotionalWad: 1,
                 maximumTradeNotionalWad: 100e18,
                 minimumEpochNotionalWad: 1,
@@ -250,7 +252,9 @@ contract ThetaShieldEndToEndTest is Deployers, ReactiveTest {
                 maximumDispersionWad: 0.05e18,
                 confidenceCapWad: 1e18,
                 toxicThresholdWad: 0.001e18,
-                alphaWad: 1e18
+                alphaWad: 1e18,
+                fastPathConfidenceFloorWad: 0,
+                fastPathToxicThresholdWad: 0
             }),
             FeeCurve.Config({
                 baseFeePips: 500,
