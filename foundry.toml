@@ -9,6 +9,7 @@ auto_detect_solc = false
 evm_version = "cancun"
 optimizer = true
 optimizer_runs = 10_000
+via_ir = true
 bytecode_hash = "none"
 cbor_metadata = false
 ffi = false

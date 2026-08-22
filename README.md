@@ -5,10 +5,9 @@ research project. It uses delayed signed markout, trailing-noise filtering,
 `n-of-k` persistence, and mechanical confidence scoring to raise fees only when
 order flow shows sustained evidence of adverse selection.
 
-> **Research status:** Phase 2 hook and origin-controller gate verified. The
-> Reactive scheduler and end-to-end callback lifecycle have not been implemented,
-> the contracts are unaudited, and nothing in this repository is ready for
-> production deployment.
+> **Research status:** Phase 3 Reactive scheduler gate verified. The contracts
+> are unaudited, the complete local pool-to-callback lifecycle remains a Phase 4
+> gate, and nothing in this repository is ready for production deployment.
 
 ## Research question
 
@@ -73,6 +72,10 @@ golden vectors.
 The Phase 2 trust boundaries, fee fallback rules, event schema, and local
 Uniswap v4 verification evidence are recorded in the
 [Phase 2 handoff](docs/PHASE2_HANDOFF.md).
+
+The Phase 3 subscriptions, bounded queues, reference-price assumptions,
+maturity rules, epoch processing, and callback evidence are recorded in the
+[Phase 3 handoff](docs/PHASE3_HANDOFF.md).
 
 ## Safety
 

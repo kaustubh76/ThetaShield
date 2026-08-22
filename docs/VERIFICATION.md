@@ -83,3 +83,32 @@ The authoritative whole-repository gate remains:
 ```sh
 FOUNDRY_PROFILE=ci make verify
 ```
+
+## Phase 3 gate
+
+Run the focused scheduler and normalization checks with:
+
+```sh
+forge test --match-contract ThetaShieldReactiveTest -vv
+forge test --match-contract ReferencePriceNormalizerTest -vv
+```
+
+The Phase 3 gate requires:
+
+- exact pool, market, and official Lasna `Cron1` subscriptions;
+- Reactive-system-only event delivery plus chain, emitter, source, sequence,
+  and future-time validation;
+- no settlement before the configured markout horizon;
+- deterministic settlement with the earliest eligible reference per source;
+- explicit expiry when no eligible reference arrives;
+- fixed pending capacity and fixed maximum processing per Cron call;
+- strictly trailing volatility and cold-start premium suppression;
+- independent directional epoch, persistence, risk, confidence, and fee state;
+- at most one callback per Cron reaction; and
+- successful RVM-ID injection and authenticated update of the Phase 2 controller.
+
+The authoritative whole-repository gate remains:
+
+```sh
+FOUNDRY_PROFILE=ci make verify
+```
