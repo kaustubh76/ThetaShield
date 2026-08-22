@@ -11,7 +11,7 @@ make verify
 This checks Solidity formatting and lint diagnostics, compiles all contracts
 with the pinned compiler configuration, runs the Foundry test suite, compiles
 the Python model, runs its unit and randomized property tests, checks shared
-golden vectors, and reproduces the committed benign-noise result.
+golden vectors, and reproduces every committed research artifact.
 
 ## Dependency integrity
 
@@ -134,6 +134,36 @@ The Phase 4 gate requires:
 - a later real swap whose PoolManager fee equals the new controller fee;
 - baseline fallback on recommendation expiry; and
 - failed replay and older-after-newer callback deliveries without state change.
+
+The authoritative whole-repository gate remains:
+
+```sh
+FOUNDRY_PROFILE=ci make verify
+```
+
+## Phase 5 gate
+
+Regenerate every research artifact and then verify exact reproducibility with:
+
+```sh
+make research-report
+make phase5-check
+```
+
+The Phase 5 gate requires:
+
+- all five required policies on identical scenario-seed event streams;
+- all 15 required market and delivery scenarios with five repeated seeds;
+- deterministic gain calibration for approximately equal dynamic fee budgets;
+- LP fee revenue, buy-and-hold-relative inventory PnL, LP net PnL, realized
+  adverse markout, benign and toxic fees, classification, detection, toxic-
+  notional coverage, fee duration and oscillation, directionality,
+  volatility-correlation, gas, and callback-latency metrics;
+- raw CSV rows, aggregate JSON with descriptive intervals, a scenario manifest,
+  a generated Markdown report, and three generated SVG charts;
+- actual isolated local gas measurement for `beforeSwap` and warm `afterSwap`;
+- a check that fails on any stale or manually modified generated artifact; and
+- explicit deferral of all H1-H6 labels until Phase 6 sensitivity analysis.
 
 The authoritative whole-repository gate remains:
 

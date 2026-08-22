@@ -1,0 +1,166 @@
+{
+  "calibration_mean_fee_pips": {
+    "dead_band_no_persistence": 707,
+    "fixed_fee": 500,
+    "raw_positive_markout": 730,
+    "thetashield": 727,
+    "volatility_only": 756
+  },
+  "event_count_per_run": 240,
+  "fairness_method": "deterministic gain grid matched to ThetaShield calibration mean fee",
+  "hook_gas_measurement": {
+    "after_swap_warm_gas": 47097,
+    "before_swap_gas": 33000,
+    "hook_gas_per_swap": 80097
+  },
+  "initial_price_wad": 2000000000000000000000,
+  "policy_names": [
+    "fixed_fee",
+    "volatility_only",
+    "raw_positive_markout",
+    "dead_band_no_persistence",
+    "thetashield"
+  ],
+  "repeated_seeds": [
+    101,
+    211,
+    307,
+    401,
+    503
+  ],
+  "required_metrics": [
+    "mean_applied_fee_pips",
+    "lp_fee_revenue_quote_wad",
+    "inventory_pnl_quote_wad",
+    "lp_net_pnl_quote_wad",
+    "realized_adverse_markout_quote_wad",
+    "benign_trader_fees_quote_wad",
+    "toxic_trader_fees_quote_wad",
+    "false_positive_rate_wad",
+    "false_negative_rate_wad",
+    "detection_latency_steps",
+    "toxic_notional_premium_rate_wad",
+    "time_above_baseline_rate_wad",
+    "fee_oscillation_pips",
+    "directionally_correct_toxic_rate_wad",
+    "toxic_buy_mean_fee_pips",
+    "toxic_sell_mean_fee_pips",
+    "correlation_with_volatility_only_wad",
+    "hook_gas_per_swap",
+    "reactive_callback_latency_steps",
+    "applied_callbacks",
+    "missing_callbacks",
+    "rejected_callbacks",
+    "expired_reference_count"
+  ],
+  "research_config": {
+    "alpha_wad": 250000000000000000,
+    "base_fee_pips": 500,
+    "callback_delay_steps": 1,
+    "confidence_cap_wad": 600000000000000000,
+    "confidence_floor_wad": 500000000000000000,
+    "dead_band_k_wad": 1500000000000000000,
+    "epoch_observation_count": 8,
+    "markout_delay_steps": 2,
+    "maximum_decrease_pips": 500,
+    "maximum_fee_pips": 10000,
+    "maximum_increase_pips": 1000,
+    "maximum_reference_dispersion_wad": 20000000000000000,
+    "maximum_trade_notional_wad": 100000000000000000000,
+    "minimum_epoch_notional_wad": 8000000000000000000,
+    "minimum_fee_pips": 500,
+    "minimum_observation_notional_wad": 1000000000000000000,
+    "minimum_trailing_observations": 32,
+    "persistence_window": 5,
+    "recommendation_ttl_steps": 12,
+    "required_toxic_epochs": 3,
+    "target_observation_count": 8,
+    "toxic_threshold_wad": 750000000000000,
+    "trailing_window": 32
+  },
+  "scenarios": [
+    {
+      "description": "Zero-mean benign flow with low independent price noise.",
+      "name": "benign_noise",
+      "operational_mode": "normal"
+    },
+    {
+      "description": "Persistent toxic base buying with favorable future moves.",
+      "name": "persistent_informed_buying",
+      "operational_mode": "normal"
+    },
+    {
+      "description": "Persistent toxic base selling with favorable future moves.",
+      "name": "persistent_informed_selling",
+      "operational_mode": "normal"
+    },
+    {
+      "description": "Toxic direction alternates between buying and selling blocks.",
+      "name": "alternating_toxicity",
+      "operational_mode": "normal"
+    },
+    {
+      "description": "Large price moves remain independent of benign trade direction.",
+      "name": "high_volatility_uninformed",
+      "operational_mode": "normal"
+    },
+    {
+      "description": "A toxic burst attempts to widen its own trailing volatility band.",
+      "name": "toxic_volatility_burst",
+      "operational_mode": "normal"
+    },
+    {
+      "description": "A neutral epoch interrupts but does not erase a sustained attack.",
+      "name": "neutral_inside_attack",
+      "operational_mode": "normal"
+    },
+    {
+      "description": "Tiny benign trades surround ordinary-size toxic flow.",
+      "name": "microtrade_spam",
+      "operational_mode": "normal"
+    },
+    {
+      "description": "One oversized toxic trade tests the per-trade notional cap.",
+      "name": "oversized_observation",
+      "operational_mode": "normal"
+    },
+    {
+      "description": "Toxic flow arrives with high reference-price dispersion.",
+      "name": "conflicting_references",
+      "operational_mode": "normal"
+    },
+    {
+      "description": "Selected observations have unavailable or stale references.",
+      "name": "stale_references",
+      "operational_mode": "normal"
+    },
+    {
+      "description": "Every other generated dynamic recommendation is not delivered.",
+      "name": "missing_callbacks",
+      "operational_mode": "missing"
+    },
+    {
+      "description": "Delivered recommendations are replayed after acceptance.",
+      "name": "replayed_callbacks",
+      "operational_mode": "replay"
+    },
+    {
+      "description": "Older recommendations arrive after newer sequences.",
+      "name": "out_of_order_callbacks",
+      "operational_mode": "out_of_order"
+    },
+    {
+      "description": "Toxic and benign regimes alternate quickly to stress fee rate limits.",
+      "name": "fee_oscillation",
+      "operational_mode": "normal"
+    }
+  ],
+  "schema_version": 1,
+  "selected_gain_fee_pips": {
+    "dead_band_no_persistence": 350000,
+    "fixed_fee": 0,
+    "raw_positive_markout": 100000,
+    "thetashield": 500000,
+    "volatility_only": 200000
+  }
+}

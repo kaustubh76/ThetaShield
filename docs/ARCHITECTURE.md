@@ -117,3 +117,39 @@ The same connected harness verifies recommendation expiry, replay of the latest
 callback, and delivery of an older callback after a newer one. Expiry selects
 the baseline at the hook, while both invalid callback deliveries fail at the
 controller and leave the newest recommendation unchanged.
+
+## Phase 5 research pipeline
+
+The research harness keeps scenario generation, policy logic, delivery
+simulation, economic accounting, and artifact rendering separate:
+
+```text
+committed seeds + scenario definitions
+                  |
+                  v
+       one shared event stream
+                  |
+      +-----------+-----------+-----------+-----------+
+      v           v           v           v           v
+    fixed    volatility     raw       dead-band   ThetaShield
+      |           |        markout    no persist      full
+      +-----------+-----------+-----------+-----------+
+                  |
+                  v
+     cash + inventory + classification + delivery metrics
+                  |
+                  v
+       CSV + JSON + Markdown + generated SVG charts
+```
+
+All five policies see identical directions, notionals, execution prices,
+future references, toxicity labels, and operational failures for a given
+scenario and seed. Fees do not alter the exogenous stream, which isolates policy
+responses but does not model fee-sensitive order flow. Inventory and cash are
+tracked separately and compared with a buy-and-hold inventory benchmark; fee
+revenue is then added to form the reported LP net result.
+
+Dynamic baseline gains are chosen by a deterministic committed grid to minimize
+their calibration mean-fee distance from ThetaShield. This controls the fee
+budget without manually editing results. Phase 5 reports descriptive repeated-
+seed intervals only and intentionally leaves H1-H6 decisions to Phase 6.

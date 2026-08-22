@@ -1,0 +1,2964 @@
+{
+  "by_policy": {
+    "dead_band_no_persistence": {
+      "applied_callbacks": {
+        "ci95_high": 26,
+        "ci95_low": 26,
+        "count": 75,
+        "mean": 26
+      },
+      "benign_trader_fees_quote_wad": {
+        "ci95_high": 1024727818944370782,
+        "ci95_low": 800268241855629218,
+        "count": 75,
+        "mean": 912498030400000000
+      },
+      "correlation_with_volatility_only_wad": {
+        "ci95_high": 288531151622826878,
+        "ci95_low": 214711804494197326,
+        "count": 75,
+        "mean": 251621478058512102
+      },
+      "detection_latency_steps": {
+        "ci95_high": 44,
+        "ci95_low": 34,
+        "count": 59,
+        "mean": 39
+      },
+      "directionally_correct_toxic_rate_wad": {
+        "ci95_high": 579496569704595007,
+        "ci95_low": 440195644414324143,
+        "count": 65,
+        "mean": 509846107059459575
+      },
+      "expired_reference_count": {
+        "ci95_high": 8,
+        "ci95_low": 2,
+        "count": 75,
+        "mean": 5
+      },
+      "false_negative_rate_wad": {
+        "ci95_high": 549571829931753639,
+        "ci95_low": 412133488182979843,
+        "count": 65,
+        "mean": 480852659057366741
+      },
+      "false_positive_rate_wad": {
+        "ci95_high": 154034712954081643,
+        "ci95_low": 109727059453846847,
+        "count": 75,
+        "mean": 131880886203964245
+      },
+      "fee_oscillation_pips": {
+        "ci95_high": 4672,
+        "ci95_low": 3184,
+        "count": 75,
+        "mean": 3928
+      },
+      "hook_gas_per_swap": {
+        "ci95_high": 80097,
+        "ci95_low": 80097,
+        "count": 75,
+        "mean": 80097
+      },
+      "inventory_pnl_quote_wad": {
+        "ci95_high": -587397287601959514245,
+        "ci95_low": -874626016969216822365,
+        "count": 75,
+        "mean": -731011652285588168305
+      },
+      "lp_fee_revenue_quote_wad": {
+        "ci95_high": 2445745858500597892,
+        "ci95_low": 2141524602299402108,
+        "count": 75,
+        "mean": 2293635230400000000
+      },
+      "lp_net_pnl_quote_wad": {
+        "ci95_high": -585181691369798600765,
+        "ci95_low": -872254342740577735845,
+        "count": 75,
+        "mean": -728718017055188168305
+      },
+      "mean_applied_fee_pips": {
+        "ci95_high": 671,
+        "ci95_low": 617,
+        "count": 75,
+        "mean": 644
+      },
+      "missing_callbacks": {
+        "ci95_high": 1,
+        "ci95_low": 1,
+        "count": 75,
+        "mean": 1
+      },
+      "reactive_callback_latency_steps": {
+        "ci95_high": 3,
+        "ci95_low": 3,
+        "count": 75,
+        "mean": 3
+      },
+      "realized_adverse_markout_quote_wad": {
+        "ci95_high": 12131999587574866785,
+        "ci95_low": 9443453916361305205,
+        "count": 75,
+        "mean": 10787726751968085995
+      },
+      "rejected_callbacks": {
+        "ci95_high": 2,
+        "ci95_low": 2,
+        "count": 75,
+        "mean": 2
+      },
+      "time_above_baseline_rate_wad": {
+        "ci95_high": 377288975043775681,
+        "ci95_low": 266822136067335429,
+        "count": 75,
+        "mean": 322055555555555555
+      },
+      "toxic_buy_mean_fee_pips": {
+        "ci95_high": 779,
+        "ci95_low": 697,
+        "count": 50,
+        "mean": 738
+      },
+      "toxic_notional_premium_rate_wad": {
+        "ci95_high": 590400649791955466,
+        "ci95_low": 449533059821919128,
+        "count": 65,
+        "mean": 519966854806937297
+      },
+      "toxic_sell_mean_fee_pips": {
+        "ci95_high": 744,
+        "ci95_low": 644,
+        "count": 25,
+        "mean": 694
+      },
+      "toxic_trader_fees_quote_wad": {
+        "ci95_high": 1563682822051716678,
+        "ci95_low": 1198591577948283322,
+        "count": 75,
+        "mean": 1381137200000000000
+      }
+    },
+    "fixed_fee": {
+      "applied_callbacks": {
+        "ci95_high": 0,
+        "ci95_low": 0,
+        "count": 75,
+        "mean": 0
+      },
+      "benign_trader_fees_quote_wad": {
+        "ci95_high": 952482836721645182,
+        "ci95_low": 724735696611688150,
+        "count": 75,
+        "mean": 838609266666666666
+      },
+      "correlation_with_volatility_only_wad": {
+        "ci95_high": 0,
+        "ci95_low": 0,
+        "count": 75,
+        "mean": 0
+      },
+      "detection_latency_steps": {
+        "ci95_high": null,
+        "ci95_low": null,
+        "count": 0,
+        "mean": null
+      },
+      "directionally_correct_toxic_rate_wad": {
+        "ci95_high": 0,
+        "ci95_low": 0,
+        "count": 65,
+        "mean": 0
+      },
+      "expired_reference_count": {
+        "ci95_high": 0,
+        "ci95_low": 0,
+        "count": 75,
+        "mean": 0
+      },
+      "false_negative_rate_wad": {
+        "ci95_high": 1000000000000000000,
+        "ci95_low": 1000000000000000000,
+        "count": 65,
+        "mean": 1000000000000000000
+      },
+      "false_positive_rate_wad": {
+        "ci95_high": 0,
+        "ci95_low": 0,
+        "count": 75,
+        "mean": 0
+      },
+      "fee_oscillation_pips": {
+        "ci95_high": 0,
+        "ci95_low": 0,
+        "count": 75,
+        "mean": 0
+      },
+      "hook_gas_per_swap": {
+        "ci95_high": 80097,
+        "ci95_low": 80097,
+        "count": 75,
+        "mean": 80097
+      },
+      "inventory_pnl_quote_wad": {
+        "ci95_high": -587397287601959514245,
+        "ci95_low": -874626016969216822365,
+        "count": 75,
+        "mean": -731011652285588168305
+      },
+      "lp_fee_revenue_quote_wad": {
+        "ci95_high": 1871480192661634854,
+        "ci95_low": 1666778340671698478,
+        "count": 75,
+        "mean": 1769129266666666666
+      },
+      "lp_net_pnl_quote_wad": {
+        "ci95_high": -585647478996349663871,
+        "ci95_low": -872837567041493339405,
+        "count": 75,
+        "mean": -729242523018921501638
+      },
+      "mean_applied_fee_pips": {
+        "ci95_high": 500,
+        "ci95_low": 500,
+        "count": 75,
+        "mean": 500
+      },
+      "missing_callbacks": {
+        "ci95_high": 0,
+        "ci95_low": 0,
+        "count": 75,
+        "mean": 0
+      },
+      "reactive_callback_latency_steps": {
+        "ci95_high": null,
+        "ci95_low": null,
+        "count": 0,
+        "mean": null
+      },
+      "realized_adverse_markout_quote_wad": {
+        "ci95_high": 12131999587574866785,
+        "ci95_low": 9443453916361305205,
+        "count": 75,
+        "mean": 10787726751968085995
+      },
+      "rejected_callbacks": {
+        "ci95_high": 0,
+        "ci95_low": 0,
+        "count": 75,
+        "mean": 0
+      },
+      "time_above_baseline_rate_wad": {
+        "ci95_high": 0,
+        "ci95_low": 0,
+        "count": 75,
+        "mean": 0
+      },
+      "toxic_buy_mean_fee_pips": {
+        "ci95_high": 500,
+        "ci95_low": 500,
+        "count": 50,
+        "mean": 500
+      },
+      "toxic_notional_premium_rate_wad": {
+        "ci95_high": 0,
+        "ci95_low": 0,
+        "count": 65,
+        "mean": 0
+      },
+      "toxic_sell_mean_fee_pips": {
+        "ci95_high": 500,
+        "ci95_low": 500,
+        "count": 25,
+        "mean": 500
+      },
+      "toxic_trader_fees_quote_wad": {
+        "ci95_high": 1044437954950163089,
+        "ci95_low": 816602045049836911,
+        "count": 75,
+        "mean": 930520000000000000
+      }
+    },
+    "raw_positive_markout": {
+      "applied_callbacks": {
+        "ci95_high": 26,
+        "ci95_low": 26,
+        "count": 75,
+        "mean": 26
+      },
+      "benign_trader_fees_quote_wad": {
+        "ci95_high": 1084085042392972760,
+        "ci95_low": 852436319207027240,
+        "count": 75,
+        "mean": 968260680800000000
+      },
+      "correlation_with_volatility_only_wad": {
+        "ci95_high": 517969801986370153,
+        "ci95_low": 405992779294137519,
+        "count": 75,
+        "mean": 461981290640253836
+      },
+      "detection_latency_steps": {
+        "ci95_high": 5,
+        "ci95_low": 5,
+        "count": 65,
+        "mean": 5
+      },
+      "directionally_correct_toxic_rate_wad": {
+        "ci95_high": 881258620843044759,
+        "ci95_low": 802717898035892969,
+        "count": 65,
+        "mean": 841988259439468864
+      },
+      "expired_reference_count": {
+        "ci95_high": 8,
+        "ci95_low": 2,
+        "count": 75,
+        "mean": 5
+      },
+      "false_negative_rate_wad": {
+        "ci95_high": 143991174107810023,
+        "ci95_low": 89714243007330705,
+        "count": 65,
+        "mean": 116852708557570364
+      },
+      "false_positive_rate_wad": {
+        "ci95_high": 366627694600371434,
+        "ci95_low": 310275653495134790,
+        "count": 75,
+        "mean": 338451674047753112
+      },
+      "fee_oscillation_pips": {
+        "ci95_high": 5943,
+        "ci95_low": 4207,
+        "count": 75,
+        "mean": 5075
+      },
+      "hook_gas_per_swap": {
+        "ci95_high": 80097,
+        "ci95_low": 80097,
+        "count": 75,
+        "mean": 80097
+      },
+      "inventory_pnl_quote_wad": {
+        "ci95_high": -587397287601959514245,
+        "ci95_low": -874626016969216822365,
+        "count": 75,
+        "mean": -731011652285588168305
+      },
+      "lp_fee_revenue_quote_wad": {
+        "ci95_high": 2775392386155611598,
+        "ci95_low": 2443487775444388402,
+        "count": 75,
+        "mean": 2609440080800000000
+      },
+      "lp_net_pnl_quote_wad": {
+        "ci95_high": -584866526885842136764,
+        "ci95_low": -871937897523734199846,
+        "count": 75,
+        "mean": -728402212204788168305
+      },
+      "mean_applied_fee_pips": {
+        "ci95_high": 756,
+        "ci95_low": 710,
+        "count": 75,
+        "mean": 733
+      },
+      "missing_callbacks": {
+        "ci95_high": 1,
+        "ci95_low": 1,
+        "count": 75,
+        "mean": 1
+      },
+      "reactive_callback_latency_steps": {
+        "ci95_high": 3,
+        "ci95_low": 3,
+        "count": 75,
+        "mean": 3
+      },
+      "realized_adverse_markout_quote_wad": {
+        "ci95_high": 12131999587574866785,
+        "ci95_low": 9443453916361305205,
+        "count": 75,
+        "mean": 10787726751968085995
+      },
+      "rejected_callbacks": {
+        "ci95_high": 2,
+        "ci95_low": 2,
+        "count": 75,
+        "mean": 2
+      },
+      "time_above_baseline_rate_wad": {
+        "ci95_high": 639081362699973090,
+        "ci95_low": 554918637300026908,
+        "count": 75,
+        "mean": 596999999999999999
+      },
+      "toxic_buy_mean_fee_pips": {
+        "ci95_high": 919,
+        "ci95_low": 877,
+        "count": 50,
+        "mean": 898
+      },
+      "toxic_notional_premium_rate_wad": {
+        "ci95_high": 913756821059720493,
+        "ci95_low": 858041081148783571,
+        "count": 65,
+        "mean": 885898951104252032
+      },
+      "toxic_sell_mean_fee_pips": {
+        "ci95_high": 875,
+        "ci95_low": 837,
+        "count": 25,
+        "mean": 856
+      },
+      "toxic_trader_fees_quote_wad": {
+        "ci95_high": 1838867264838379807,
+        "ci95_low": 1443491535161620193,
+        "count": 75,
+        "mean": 1641179400000000000
+      }
+    },
+    "thetashield": {
+      "applied_callbacks": {
+        "ci95_high": 26,
+        "ci95_low": 26,
+        "count": 75,
+        "mean": 26
+      },
+      "benign_trader_fees_quote_wad": {
+        "ci95_high": 1007030427416823289,
+        "ci95_low": 786223145916510043,
+        "count": 75,
+        "mean": 896626786666666666
+      },
+      "correlation_with_volatility_only_wad": {
+        "ci95_high": 175108322288745675,
+        "ci95_low": 104761479836388921,
+        "count": 75,
+        "mean": 139934901062567298
+      },
+      "detection_latency_steps": {
+        "ci95_high": 84,
+        "ci95_low": 70,
+        "count": 41,
+        "mean": 77
+      },
+      "directionally_correct_toxic_rate_wad": {
+        "ci95_high": 370610190712342774,
+        "ci95_low": 236253696313308302,
+        "count": 65,
+        "mean": 303431943512825538
+      },
+      "expired_reference_count": {
+        "ci95_high": 8,
+        "ci95_low": 2,
+        "count": 75,
+        "mean": 5
+      },
+      "false_negative_rate_wad": {
+        "ci95_high": 763746303686691697,
+        "ci95_low": 629389809287657225,
+        "count": 65,
+        "mean": 696568056487174461
+      },
+      "false_positive_rate_wad": {
+        "ci95_high": 95319337410874579,
+        "ci95_low": 58739385585705147,
+        "count": 75,
+        "mean": 77029361498289863
+      },
+      "fee_oscillation_pips": {
+        "ci95_high": 3676,
+        "ci95_low": 2022,
+        "count": 75,
+        "mean": 2849
+      },
+      "hook_gas_per_swap": {
+        "ci95_high": 80097,
+        "ci95_low": 80097,
+        "count": 75,
+        "mean": 80097
+      },
+      "inventory_pnl_quote_wad": {
+        "ci95_high": -587397287601959514245,
+        "ci95_low": -874626016969216822365,
+        "count": 75,
+        "mean": -731011652285588168305
+      },
+      "lp_fee_revenue_quote_wad": {
+        "ci95_high": 2389527150166581234,
+        "ci95_low": 2072031276500085432,
+        "count": 75,
+        "mean": 2230779213333333333
+      },
+      "lp_net_pnl_quote_wad": {
+        "ci95_high": -585266026922764535501,
+        "ci95_low": -872295719221745134443,
+        "count": 75,
+        "mean": -728780873072254834972
+      },
+      "mean_applied_fee_pips": {
+        "ci95_high": 659,
+        "ci95_low": 597,
+        "count": 75,
+        "mean": 628
+      },
+      "missing_callbacks": {
+        "ci95_high": 1,
+        "ci95_low": 1,
+        "count": 75,
+        "mean": 1
+      },
+      "reactive_callback_latency_steps": {
+        "ci95_high": 3,
+        "ci95_low": 3,
+        "count": 75,
+        "mean": 3
+      },
+      "realized_adverse_markout_quote_wad": {
+        "ci95_high": 12131999587574866785,
+        "ci95_low": 9443453916361305205,
+        "count": 75,
+        "mean": 10787726751968085995
+      },
+      "rejected_callbacks": {
+        "ci95_high": 2,
+        "ci95_low": 2,
+        "count": 75,
+        "mean": 2
+      },
+      "time_above_baseline_rate_wad": {
+        "ci95_high": 251054572044931733,
+        "ci95_low": 153945427955068265,
+        "count": 75,
+        "mean": 202499999999999999
+      },
+      "toxic_buy_mean_fee_pips": {
+        "ci95_high": 731,
+        "ci95_low": 631,
+        "count": 50,
+        "mean": 681
+      },
+      "toxic_notional_premium_rate_wad": {
+        "ci95_high": 372113020687930013,
+        "ci95_low": 237400450949678159,
+        "count": 65,
+        "mean": 304756735818804086
+      },
+      "toxic_sell_mean_fee_pips": {
+        "ci95_high": 710,
+        "ci95_low": 566,
+        "count": 25,
+        "mean": 638
+      },
+      "toxic_trader_fees_quote_wad": {
+        "ci95_high": 1526136635969196408,
+        "ci95_low": 1142168217364136924,
+        "count": 75,
+        "mean": 1334152426666666666
+      }
+    },
+    "volatility_only": {
+      "applied_callbacks": {
+        "ci95_high": 27,
+        "ci95_low": 27,
+        "count": 75,
+        "mean": 27
+      },
+      "benign_trader_fees_quote_wad": {
+        "ci95_high": 1416811347435146780,
+        "ci95_low": 1050973384831519886,
+        "count": 75,
+        "mean": 1233892366133333333
+      },
+      "correlation_with_volatility_only_wad": {
+        "ci95_high": 1000000000000000000,
+        "ci95_low": 1000000000000000000,
+        "count": 75,
+        "mean": 1000000000000000000
+      },
+      "detection_latency_steps": {
+        "ci95_high": 9,
+        "ci95_low": 7,
+        "count": 65,
+        "mean": 8
+      },
+      "directionally_correct_toxic_rate_wad": {
+        "ci95_high": 0,
+        "ci95_low": 0,
+        "count": 65,
+        "mean": 0
+      },
+      "expired_reference_count": {
+        "ci95_high": 8,
+        "ci95_low": 2,
+        "count": 75,
+        "mean": 5
+      },
+      "false_negative_rate_wad": {
+        "ci95_high": 125353533011024284,
+        "ci95_low": 62716582706880622,
+        "count": 65,
+        "mean": 94035057858952453
+      },
+      "false_positive_rate_wad": {
+        "ci95_high": 641621389195428388,
+        "ci95_low": 569084883214365600,
+        "count": 75,
+        "mean": 605353136204896994
+      },
+      "fee_oscillation_pips": {
+        "ci95_high": 8882,
+        "ci95_low": 4966,
+        "count": 75,
+        "mean": 6924
+      },
+      "hook_gas_per_swap": {
+        "ci95_high": 80097,
+        "ci95_low": 80097,
+        "count": 75,
+        "mean": 80097
+      },
+      "inventory_pnl_quote_wad": {
+        "ci95_high": -587397287601959514245,
+        "ci95_low": -874626016969216822365,
+        "count": 75,
+        "mean": -731011652285588168305
+      },
+      "lp_fee_revenue_quote_wad": {
+        "ci95_high": 3112290761335875461,
+        "ci95_low": 2699855784264124539,
+        "count": 75,
+        "mean": 2906073272800000000
+      },
+      "lp_net_pnl_quote_wad": {
+        "ci95_high": -584526302962352198507,
+        "ci95_low": -871684855063224138103,
+        "count": 75,
+        "mean": -728105579012788168305
+      },
+      "mean_applied_fee_pips": {
+        "ci95_high": 837,
+        "ci95_low": 795,
+        "count": 75,
+        "mean": 816
+      },
+      "missing_callbacks": {
+        "ci95_high": 1,
+        "ci95_low": 1,
+        "count": 75,
+        "mean": 1
+      },
+      "reactive_callback_latency_steps": {
+        "ci95_high": 3,
+        "ci95_low": 3,
+        "count": 75,
+        "mean": 3
+      },
+      "realized_adverse_markout_quote_wad": {
+        "ci95_high": 12131999587574866785,
+        "ci95_low": 9443453916361305205,
+        "count": 75,
+        "mean": 10787726751968085995
+      },
+      "rejected_callbacks": {
+        "ci95_high": 3,
+        "ci95_low": 3,
+        "count": 75,
+        "mean": 3
+      },
+      "time_above_baseline_rate_wad": {
+        "ci95_high": 800855666364112223,
+        "ci95_low": 756922111413665553,
+        "count": 75,
+        "mean": 778888888888888888
+      },
+      "toxic_buy_mean_fee_pips": {
+        "ci95_high": 925,
+        "ci95_low": 883,
+        "count": 50,
+        "mean": 904
+      },
+      "toxic_notional_premium_rate_wad": {
+        "ci95_high": 938638124189868952,
+        "ci95_low": 875421200579213306,
+        "count": 65,
+        "mean": 907029662384541129
+      },
+      "toxic_sell_mean_fee_pips": {
+        "ci95_high": 942,
+        "ci95_low": 904,
+        "count": 25,
+        "mean": 923
+      },
+      "toxic_trader_fees_quote_wad": {
+        "ci95_high": 1879896449859593295,
+        "ci95_low": 1464465363473740037,
+        "count": 75,
+        "mean": 1672180906666666666
+      }
+    }
+  },
+  "by_scenario": {
+    "alternating_toxicity": {
+      "dead_band_no_persistence": {
+        "detection_latency_steps": {
+          "ci95_high": 39,
+          "ci95_low": 25,
+          "count": 5,
+          "mean": 32
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 635755465426528382,
+          "ci95_low": 489315126890440744,
+          "count": 5,
+          "mean": 562535296158484563
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 347209214829224679,
+          "ci95_low": 275862144191501429,
+          "count": 5,
+          "mean": 311535679510363054
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": 8797424018227315201,
+          "ci95_low": -12003748384563362339,
+          "count": 5,
+          "mean": -1603162183168023569
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "fixed_fee": {
+        "detection_latency_steps": {
+          "ci95_high": null,
+          "ci95_low": null,
+          "count": 0,
+          "mean": null
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 1000000000000000000,
+          "ci95_low": 1000000000000000000,
+          "count": 5,
+          "mean": 1000000000000000000
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 0,
+          "ci95_low": 0,
+          "count": 5,
+          "mean": 0
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": 8350765292291292078,
+          "ci95_low": -12482572858627339216,
+          "count": 5,
+          "mean": -2065903783168023569
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "raw_positive_markout": {
+        "detection_latency_steps": {
+          "ci95_high": 7,
+          "ci95_low": 5,
+          "count": 5,
+          "mean": 6
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 122741528736518419,
+          "ci95_low": 68241894710673143,
+          "count": 5,
+          "mean": 95491711723595781
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 596300629992606679,
+          "ci95_low": 514809491952958303,
+          "count": 5,
+          "mean": 555555060972782491
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": 9470780675434819371,
+          "ci95_low": -11396016241770866509,
+          "count": 5,
+          "mean": -962617783168023569
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "thetashield": {
+        "detection_latency_steps": {
+          "ci95_high": 193,
+          "ci95_low": 127,
+          "count": 2,
+          "mean": 160
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 1009450047498753077,
+          "ci95_low": 926756462041089795,
+          "count": 5,
+          "mean": 968103254769921436
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 82401244215703518,
+          "ci95_low": -15119192933652236,
+          "count": 5,
+          "mean": 33641025641025641
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": 8410791428338284702,
+          "ci95_low": -12420298594674331840,
+          "count": 5,
+          "mean": -2004753583168023569
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "volatility_only": {
+        "detection_latency_steps": {
+          "ci95_high": 4,
+          "ci95_low": 4,
+          "count": 5,
+          "mean": 4
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 57467226174177367,
+          "ci95_low": 39470972503151743,
+          "count": 5,
+          "mean": 48469099338664555
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 591365872393761624,
+          "ci95_low": 541571485606887514,
+          "count": 5,
+          "mean": 566468679000324569
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": 9755742835761884580,
+          "ci95_low": -11168319602097931718,
+          "count": 5,
+          "mean": -706288383168023569
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      }
+    },
+    "benign_noise": {
+      "dead_band_no_persistence": {
+        "detection_latency_steps": {
+          "ci95_high": null,
+          "ci95_low": null,
+          "count": 0,
+          "mean": null
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": null,
+          "ci95_low": null,
+          "count": 0,
+          "mean": null
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 0,
+          "ci95_low": 0,
+          "count": 5,
+          "mean": 0
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": 3142634609953579016,
+          "ci95_low": 1571353581707859560,
+          "count": 5,
+          "mean": 2356994095830719288
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "fixed_fee": {
+        "detection_latency_steps": {
+          "ci95_high": null,
+          "ci95_low": null,
+          "count": 0,
+          "mean": null
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": null,
+          "ci95_low": null,
+          "count": 0,
+          "mean": null
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 0,
+          "ci95_low": 0,
+          "count": 5,
+          "mean": 0
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": 3142634609953579016,
+          "ci95_low": 1571353581707859560,
+          "count": 5,
+          "mean": 2356994095830719288
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "raw_positive_markout": {
+        "detection_latency_steps": {
+          "ci95_high": null,
+          "ci95_low": null,
+          "count": 0,
+          "mean": null
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": null,
+          "ci95_low": null,
+          "count": 0,
+          "mean": null
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 192768486097916191,
+          "ci95_low": 82231513902083807,
+          "count": 5,
+          "mean": 137499999999999999
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": 3145491283323502314,
+          "ci95_low": 1577265308337936262,
+          "count": 5,
+          "mean": 2361378295830719288
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "thetashield": {
+        "detection_latency_steps": {
+          "ci95_high": null,
+          "ci95_low": null,
+          "count": 0,
+          "mean": null
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": null,
+          "ci95_low": null,
+          "count": 0,
+          "mean": null
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 0,
+          "ci95_low": 0,
+          "count": 5,
+          "mean": 0
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": 3142634609953579016,
+          "ci95_low": 1571353581707859560,
+          "count": 5,
+          "mean": 2356994095830719288
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "volatility_only": {
+        "detection_latency_steps": {
+          "ci95_high": null,
+          "ci95_low": null,
+          "count": 0,
+          "mean": null
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": null,
+          "ci95_low": null,
+          "count": 0,
+          "mean": null
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 825000000000000000,
+          "ci95_low": 825000000000000000,
+          "count": 5,
+          "mean": 825000000000000000
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": 3321753340341909246,
+          "ci95_low": 1748091251319529330,
+          "count": 5,
+          "mean": 2534922295830719288
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      }
+    },
+    "conflicting_references": {
+      "dead_band_no_persistence": {
+        "detection_latency_steps": {
+          "ci95_high": null,
+          "ci95_low": null,
+          "count": 0,
+          "mean": null
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 1000000000000000000,
+          "ci95_low": 1000000000000000000,
+          "count": 5,
+          "mean": 1000000000000000000
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 0,
+          "ci95_low": 0,
+          "count": 5,
+          "mean": 0
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -1238183726923949745250,
+          "ci95_low": -1504287710039677197730,
+          "count": 5,
+          "mean": -1371235718481813471490
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "fixed_fee": {
+        "detection_latency_steps": {
+          "ci95_high": null,
+          "ci95_low": null,
+          "count": 0,
+          "mean": null
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 1000000000000000000,
+          "ci95_low": 1000000000000000000,
+          "count": 5,
+          "mean": 1000000000000000000
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 0,
+          "ci95_low": 0,
+          "count": 5,
+          "mean": 0
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -1238183726923949745250,
+          "ci95_low": -1504287710039677197730,
+          "count": 5,
+          "mean": -1371235718481813471490
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "raw_positive_markout": {
+        "detection_latency_steps": {
+          "ci95_high": 8,
+          "ci95_low": 6,
+          "count": 5,
+          "mean": 7
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 52178797027170622,
+          "ci95_low": 24763558660880790,
+          "count": 5,
+          "mean": 38471177844025706
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 309199134358000073,
+          "ci95_low": 276266896177128771,
+          "count": 5,
+          "mean": 292733015267564422
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -1237045723400652547410,
+          "ci95_low": -1503170040362974395570,
+          "count": 5,
+          "mean": -1370107881881813471490
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "thetashield": {
+        "detection_latency_steps": {
+          "ci95_high": null,
+          "ci95_low": null,
+          "count": 0,
+          "mean": null
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 1000000000000000000,
+          "ci95_low": 1000000000000000000,
+          "count": 5,
+          "mean": 1000000000000000000
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 0,
+          "ci95_low": 0,
+          "count": 5,
+          "mean": 0
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -1238183726923949745250,
+          "ci95_low": -1504287710039677197730,
+          "count": 5,
+          "mean": -1371235718481813471490
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "volatility_only": {
+        "detection_latency_steps": {
+          "ci95_high": 10,
+          "ci95_low": 10,
+          "count": 5,
+          "mean": 10
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 55878767913761601,
+          "ci95_low": 38427795893214911,
+          "count": 5,
+          "mean": 47153281903488256
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 592909982623453638,
+          "ci95_low": 526636929530489378,
+          "count": 5,
+          "mean": 559773456076971508
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -1236857744664432797921,
+          "ci95_low": -1502983984299194145059,
+          "count": 5,
+          "mean": -1369920864481813471490
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      }
+    },
+    "fee_oscillation": {
+      "dead_band_no_persistence": {
+        "detection_latency_steps": {
+          "ci95_high": 16,
+          "ci95_low": 14,
+          "count": 5,
+          "mean": 15
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 570130494530836867,
+          "ci95_low": 528590109990041251,
+          "count": 5,
+          "mean": 549360302260439059
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 207899900924911981,
+          "ci95_low": 156345745901380005,
+          "count": 5,
+          "mean": 182122823413145993
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -3819434609783518043,
+          "ci95_low": -21440273769744419849,
+          "count": 5,
+          "mean": -12629854189763968946
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "fixed_fee": {
+        "detection_latency_steps": {
+          "ci95_high": null,
+          "ci95_low": null,
+          "count": 0,
+          "mean": null
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 1000000000000000000,
+          "ci95_low": 1000000000000000000,
+          "count": 5,
+          "mean": 1000000000000000000
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 0,
+          "ci95_low": 0,
+          "count": 5,
+          "mean": 0
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -4102843347118530826,
+          "ci95_low": -21765235032409407066,
+          "count": 5,
+          "mean": -12934039189763968946
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "raw_positive_markout": {
+        "detection_latency_steps": {
+          "ci95_high": 3,
+          "ci95_low": 3,
+          "count": 5,
+          "mean": 3
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 224531528048333260,
+          "ci95_low": 165202039797409686,
+          "count": 5,
+          "mean": 194866783922871473
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 552237632004645869,
+          "ci95_low": 431928309580650553,
+          "count": 5,
+          "mean": 492082970792648211
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -3356790651360079432,
+          "ci95_low": -21040730928167858460,
+          "count": 5,
+          "mean": -12198760789763968946
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "thetashield": {
+        "detection_latency_steps": {
+          "ci95_high": null,
+          "ci95_low": null,
+          "count": 0,
+          "mean": null
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 1000000000000000000,
+          "ci95_low": 1000000000000000000,
+          "count": 5,
+          "mean": 1000000000000000000
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 0,
+          "ci95_low": 0,
+          "count": 5,
+          "mean": 0
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -4102843347118530826,
+          "ci95_low": -21765235032409407066,
+          "count": 5,
+          "mean": -12934039189763968946
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "volatility_only": {
+        "detection_latency_steps": {
+          "ci95_high": 0,
+          "ci95_low": 0,
+          "count": 5,
+          "mean": 0
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 0,
+          "ci95_low": 0,
+          "count": 5,
+          "mean": 0
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 729959139211739351,
+          "ci95_low": 727392541365747677,
+          "count": 5,
+          "mean": 728675840288743514
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -2592325930670945342,
+          "ci95_low": -20209359248856992550,
+          "count": 5,
+          "mean": -11400842589763968946
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      }
+    },
+    "high_volatility_uninformed": {
+      "dead_band_no_persistence": {
+        "detection_latency_steps": {
+          "ci95_high": null,
+          "ci95_low": null,
+          "count": 0,
+          "mean": null
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": null,
+          "ci95_low": null,
+          "count": 0,
+          "mean": null
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 0,
+          "ci95_low": 0,
+          "count": 5,
+          "mean": 0
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": 3929233950380348834,
+          "ci95_low": -6378652901566634860,
+          "count": 5,
+          "mean": -1224709475593143013
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "fixed_fee": {
+        "detection_latency_steps": {
+          "ci95_high": null,
+          "ci95_low": null,
+          "count": 0,
+          "mean": null
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": null,
+          "ci95_low": null,
+          "count": 0,
+          "mean": null
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 0,
+          "ci95_low": 0,
+          "count": 5,
+          "mean": 0
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": 3929233950380348834,
+          "ci95_low": -6378652901566634860,
+          "count": 5,
+          "mean": -1224709475593143013
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "raw_positive_markout": {
+        "detection_latency_steps": {
+          "ci95_high": null,
+          "ci95_low": null,
+          "count": 0,
+          "mean": null
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": null,
+          "ci95_low": null,
+          "count": 0,
+          "mean": null
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 390580617719526604,
+          "ci95_low": 289419382280473394,
+          "count": 5,
+          "mean": 339999999999999999
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": 4021443093776114056,
+          "ci95_low": -6305738444962400082,
+          "count": 5,
+          "mean": -1142147675593143013
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "thetashield": {
+        "detection_latency_steps": {
+          "ci95_high": null,
+          "ci95_low": null,
+          "count": 0,
+          "mean": null
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": null,
+          "ci95_low": null,
+          "count": 0,
+          "mean": null
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 0,
+          "ci95_low": 0,
+          "count": 5,
+          "mean": 0
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": 3929233950380348834,
+          "ci95_low": -6378652901566634860,
+          "count": 5,
+          "mean": -1224709475593143013
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "volatility_only": {
+        "detection_latency_steps": {
+          "ci95_high": null,
+          "ci95_low": null,
+          "count": 0,
+          "mean": null
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": null,
+          "ci95_low": null,
+          "count": 0,
+          "mean": null
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 825000000000000000,
+          "ci95_low": 825000000000000000,
+          "count": 5,
+          "mean": 825000000000000000
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": 5375497100987857682,
+          "ci95_low": -4814974052174143708,
+          "count": 5,
+          "mean": 280261524406856987
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      }
+    },
+    "microtrade_spam": {
+      "dead_band_no_persistence": {
+        "detection_latency_steps": {
+          "ci95_high": 142,
+          "ci95_low": 80,
+          "count": 5,
+          "mean": 111
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 971431585259886198,
+          "ci95_low": 888015700373734838,
+          "count": 5,
+          "mean": 929723642816810518
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 47704272334707167,
+          "ci95_low": 27371259720376371,
+          "count": 5,
+          "mean": 37537766027541769
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -123023907316153150349,
+          "ci95_low": -137348223223651418841,
+          "count": 5,
+          "mean": -130186065269902284595
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "fixed_fee": {
+        "detection_latency_steps": {
+          "ci95_high": null,
+          "ci95_low": null,
+          "count": 0,
+          "mean": null
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 1000000000000000000,
+          "ci95_low": 1000000000000000000,
+          "count": 5,
+          "mean": 1000000000000000000
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 0,
+          "ci95_low": 0,
+          "count": 5,
+          "mean": 0
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -123038566055405111088,
+          "ci95_low": -137363218596399458102,
+          "count": 5,
+          "mean": -130200892325902284595
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "raw_positive_markout": {
+        "detection_latency_steps": {
+          "ci95_high": 0,
+          "ci95_low": 0,
+          "count": 5,
+          "mean": 0
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 57523813090323123,
+          "ci95_low": 27466749142475133,
+          "count": 5,
+          "mean": 42495281116399128
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 477754074908205250,
+          "ci95_low": 415547434074794390,
+          "count": 5,
+          "mean": 446650754491499820
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -122679104746097534547,
+          "ci95_low": -136985454681707034643,
+          "count": 5,
+          "mean": -129832279713902284595
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "thetashield": {
+        "detection_latency_steps": {
+          "ci95_high": null,
+          "ci95_low": null,
+          "count": 0,
+          "mean": null
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 1000000000000000000,
+          "ci95_low": 1000000000000000000,
+          "count": 5,
+          "mean": 1000000000000000000
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 0,
+          "ci95_low": 0,
+          "count": 5,
+          "mean": 0
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -123038566055405111088,
+          "ci95_low": -137363218596399458102,
+          "count": 5,
+          "mean": -130200892325902284595
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "volatility_only": {
+        "detection_latency_steps": {
+          "ci95_high": 8,
+          "ci95_low": 6,
+          "count": 5,
+          "mean": 7
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 65505118583321202,
+          "ci95_low": 26162542947694366,
+          "count": 5,
+          "mean": 45833830765507784
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 797877617918004846,
+          "ci95_low": 787940096258483416,
+          "count": 5,
+          "mean": 792908857088244131
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -122743674833493602874,
+          "ci95_low": -137067531634310966316,
+          "count": 5,
+          "mean": -129905603233902284595
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      }
+    },
+    "missing_callbacks": {
+      "dead_band_no_persistence": {
+        "detection_latency_steps": {
+          "ci95_high": 45,
+          "ci95_low": 27,
+          "count": 5,
+          "mean": 36
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 495529718853394992,
+          "ci95_low": 373682976295394992,
+          "count": 5,
+          "mean": 434606347574394992
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 176819934004237889,
+          "ci95_low": 102346052517227493,
+          "count": 5,
+          "mean": 139582993260732691
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -1346743984722814632705,
+          "ci95_low": -1681945804093863488605,
+          "count": 5,
+          "mean": -1514344894408339060655
+        },
+        "missing_callbacks": 75,
+        "rejected_callbacks": 0
+      },
+      "fixed_fee": {
+        "detection_latency_steps": {
+          "ci95_high": null,
+          "ci95_low": null,
+          "count": 0,
+          "mean": null
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 1000000000000000000,
+          "ci95_low": 1000000000000000000,
+          "count": 5,
+          "mean": 1000000000000000000
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 0,
+          "ci95_low": 0,
+          "count": 5,
+          "mean": 0
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -1347412482989612722353,
+          "ci95_low": -1682722885027065398957,
+          "count": 5,
+          "mean": -1515067684008339060655
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "raw_positive_markout": {
+        "detection_latency_steps": {
+          "ci95_high": 4,
+          "ci95_low": 2,
+          "count": 5,
+          "mean": 3
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 333189628305154208,
+          "ci95_low": 309348187738716302,
+          "count": 5,
+          "mean": 321268908021935255
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 273331141682846255,
+          "ci95_low": 185474981955891705,
+          "count": 5,
+          "mean": 229403061819368980
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -1346612318055358126453,
+          "ci95_low": -1681836051561319994857,
+          "count": 5,
+          "mean": -1514224184808339060655
+        },
+        "missing_callbacks": 75,
+        "rejected_callbacks": 0
+      },
+      "thetashield": {
+        "detection_latency_steps": {
+          "ci95_high": 82,
+          "ci95_low": 68,
+          "count": 5,
+          "mean": 75
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 564386570630101958,
+          "ci95_low": 532275987889723480,
+          "count": 5,
+          "mean": 548331279259912719
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 153047038531593634,
+          "ci95_low": 93853893461659324,
+          "count": 5,
+          "mean": 123450465996626479
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -1346689281965773818363,
+          "ci95_low": -1681840802450904302947,
+          "count": 5,
+          "mean": -1514265042208339060655
+        },
+        "missing_callbacks": 75,
+        "rejected_callbacks": 0
+      },
+      "volatility_only": {
+        "detection_latency_steps": {
+          "ci95_high": 18,
+          "ci95_low": 18,
+          "count": 5,
+          "mean": 18
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 378260492520214163,
+          "ci95_low": 337743960451279883,
+          "count": 5,
+          "mean": 358002226485747023
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 374019615462212684,
+          "ci95_low": 309440395886495816,
+          "count": 5,
+          "mean": 341730005674354250
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -1346557482640708351399,
+          "ci95_low": -1681823712175969769911,
+          "count": 5,
+          "mean": -1514190597408339060655
+        },
+        "missing_callbacks": 75,
+        "rejected_callbacks": 0
+      }
+    },
+    "neutral_inside_attack": {
+      "dead_band_no_persistence": {
+        "detection_latency_steps": {
+          "ci95_high": 25,
+          "ci95_low": 15,
+          "count": 5,
+          "mean": 20
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 213005733455862117,
+          "ci95_low": 135133747330433729,
+          "count": 5,
+          "mean": 174069740393147923
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 240847125888356491,
+          "ci95_low": 201956963264071091,
+          "count": 5,
+          "mean": 221402044576213791
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -806137817267561486399,
+          "ci95_low": -943123040714368587899,
+          "count": 5,
+          "mean": -874630428990965037149
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "fixed_fee": {
+        "detection_latency_steps": {
+          "ci95_high": null,
+          "ci95_low": null,
+          "count": 0,
+          "mean": null
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 1000000000000000000,
+          "ci95_low": 1000000000000000000,
+          "count": 5,
+          "mean": 1000000000000000000
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 0,
+          "ci95_low": 0,
+          "count": 5,
+          "mean": 0
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -807015558052404332512,
+          "ci95_low": -944125561929525741786,
+          "count": 5,
+          "mean": -875570559990965037149
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "raw_positive_markout": {
+        "detection_latency_steps": {
+          "ci95_high": 6,
+          "ci95_low": 4,
+          "count": 5,
+          "mean": 5
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 61871019357119559,
+          "ci95_low": 37390336680855767,
+          "count": 5,
+          "mean": 49630678018987663
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 350110372244322839,
+          "ci95_low": 236079752250080397,
+          "count": 5,
+          "mean": 293095062247201618
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -806018009382912692407,
+          "ci95_low": -943092696599017381891,
+          "count": 5,
+          "mean": -874555352990965037149
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "thetashield": {
+        "detection_latency_steps": {
+          "ci95_high": 58,
+          "ci95_low": 56,
+          "count": 5,
+          "mean": 57
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 455511550028976444,
+          "ci95_low": 388673078049669654,
+          "count": 5,
+          "mean": 422092314039323049
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 228699760821607800,
+          "ci95_low": 190834839640779328,
+          "count": 5,
+          "mean": 209767300231193564
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -806148385543092666184,
+          "ci95_low": -943156507638837408114,
+          "count": 5,
+          "mean": -874652446590965037149
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "volatility_only": {
+        "detection_latency_steps": {
+          "ci95_high": 0,
+          "ci95_low": 0,
+          "count": 5,
+          "mean": 0
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 0,
+          "ci95_low": 0,
+          "count": 5,
+          "mean": 0
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 597644993821241858,
+          "ci95_low": 586667232507484234,
+          "count": 5,
+          "mean": 592156113164363046
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -805875665205627639141,
+          "ci95_low": -943032553976302435157,
+          "count": 5,
+          "mean": -874454109590965037149
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      }
+    },
+    "out_of_order_callbacks": {
+      "dead_band_no_persistence": {
+        "detection_latency_steps": {
+          "ci95_high": 45,
+          "ci95_low": 35,
+          "count": 5,
+          "mean": 40
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 527051448349258239,
+          "ci95_low": 448610287682402885,
+          "count": 5,
+          "mean": 487830868015830562
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 201073338140487473,
+          "ci95_low": 128225907645218871,
+          "count": 5,
+          "mean": 164649622892853172
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -1326459690958391172005,
+          "ci95_low": -1590728382670542939851,
+          "count": 5,
+          "mean": -1458594036814467055928
+        },
+        "missing_callbacks": 5,
+        "rejected_callbacks": 70
+      },
+      "fixed_fee": {
+        "detection_latency_steps": {
+          "ci95_high": null,
+          "ci95_low": null,
+          "count": 0,
+          "mean": null
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 1000000000000000000,
+          "ci95_low": 1000000000000000000,
+          "count": 5,
+          "mean": 1000000000000000000
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 0,
+          "ci95_low": 0,
+          "count": 5,
+          "mean": 0
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -1327103648268399938745,
+          "ci95_low": -1591416356160534173111,
+          "count": 5,
+          "mean": -1459260002214467055928
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "raw_positive_markout": {
+        "detection_latency_steps": {
+          "ci95_high": 12,
+          "ci95_low": 2,
+          "count": 5,
+          "mean": 7
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 364147524518213195,
+          "ci95_low": 322909121850278923,
+          "count": 5,
+          "mean": 343528323184246059
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 312407746523175086,
+          "ci95_low": 222293893939072360,
+          "count": 5,
+          "mean": 267350820231123723
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -1326303406684548609354,
+          "ci95_low": -1590578296144385502502,
+          "count": 5,
+          "mean": -1458440851414467055928
+        },
+        "missing_callbacks": 5,
+        "rejected_callbacks": 70
+      },
+      "thetashield": {
+        "detection_latency_steps": {
+          "ci95_high": 81,
+          "ci95_low": 71,
+          "count": 5,
+          "mean": 76
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 640579032092248845,
+          "ci95_low": 549279504009584105,
+          "count": 5,
+          "mean": 594929268050916475
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 171392958399105268,
+          "ci95_low": 92966855127411262,
+          "count": 5,
+          "mean": 132179906763258265
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -1326407959687160972937,
+          "ci95_low": -1590696098341773138919,
+          "count": 5,
+          "mean": -1458552029014467055928
+        },
+        "missing_callbacks": 5,
+        "rejected_callbacks": 70
+      },
+      "volatility_only": {
+        "detection_latency_steps": {
+          "ci95_high": 17,
+          "ci95_low": 17,
+          "count": 5,
+          "mean": 17
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 384995487309033068,
+          "ci95_low": 371103196551044110,
+          "count": 5,
+          "mean": 378049341930038589
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 406339311260306241,
+          "ci95_low": 361445003643705169,
+          "count": 5,
+          "mean": 383892157452005705
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -1326230390084785356277,
+          "ci95_low": -1590545101544148755579,
+          "count": 5,
+          "mean": -1458387745814467055928
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 75
+      }
+    },
+    "oversized_observation": {
+      "dead_band_no_persistence": {
+        "detection_latency_steps": {
+          "ci95_high": 77,
+          "ci95_low": 51,
+          "count": 4,
+          "mean": 64
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 907072272963464964,
+          "ci95_low": 678791470964795092,
+          "count": 5,
+          "mean": 792931871964130028
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 115526287759310337,
+          "ci95_low": 24674704593145009,
+          "count": 5,
+          "mean": 70100496176227673
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -687951635189428910923,
+          "ci95_low": -797104500283493429129,
+          "count": 5,
+          "mean": -742528067736461170026
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "fixed_fee": {
+        "detection_latency_steps": {
+          "ci95_high": null,
+          "ci95_low": null,
+          "count": 0,
+          "mean": null
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 1000000000000000000,
+          "ci95_low": 1000000000000000000,
+          "count": 5,
+          "mean": 1000000000000000000
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 0,
+          "ci95_low": 0,
+          "count": 5,
+          "mean": 0
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -688043849857359921686,
+          "ci95_low": -797473324815562418366,
+          "count": 5,
+          "mean": -742758587336461170026
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "raw_positive_markout": {
+        "detection_latency_steps": {
+          "ci95_high": 10,
+          "ci95_low": 8,
+          "count": 5,
+          "mean": 9
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 89242820151949969,
+          "ci95_low": 39394880528761463,
+          "count": 5,
+          "mean": 64318850340355716
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 448197737856135136,
+          "ci95_low": 356930610018940890,
+          "count": 5,
+          "mean": 402564173937538013
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -686848057454193253564,
+          "ci95_low": -795981670018729086488,
+          "count": 5,
+          "mean": -741414863736461170026
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "thetashield": {
+        "detection_latency_steps": {
+          "ci95_high": null,
+          "ci95_low": null,
+          "count": 0,
+          "mean": null
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 1000000000000000000,
+          "ci95_low": 1000000000000000000,
+          "count": 5,
+          "mean": 1000000000000000000
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 0,
+          "ci95_low": 0,
+          "count": 5,
+          "mean": 0
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -688043849857359921686,
+          "ci95_low": -797473324815562418366,
+          "count": 5,
+          "mean": -742758587336461170026
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "volatility_only": {
+        "detection_latency_steps": {
+          "ci95_high": 0,
+          "ci95_low": 0,
+          "count": 5,
+          "mean": 0
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 0,
+          "ci95_low": 0,
+          "count": 5,
+          "mean": 0
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 742065740463355560,
+          "ci95_low": 721398733230715768,
+          "count": 5,
+          "mean": 731732236847035664
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -685701245193493410250,
+          "ci95_low": -794905045879428929802,
+          "count": 5,
+          "mean": -740303145536461170026
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      }
+    },
+    "persistent_informed_buying": {
+      "dead_band_no_persistence": {
+        "detection_latency_steps": {
+          "ci95_high": 33,
+          "ci95_low": 27,
+          "count": 5,
+          "mean": 30
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 235173158440591706,
+          "ci95_low": 134512991157543410,
+          "count": 5,
+          "mean": 184843074799067558
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 247612291134952588,
+          "ci95_low": 166912145603020182,
+          "count": 5,
+          "mean": 207262218368986385
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -1191210110092425548834,
+          "ci95_low": -1692755204961694161698,
+          "count": 5,
+          "mean": -1441982657527059855266
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "fixed_fee": {
+        "detection_latency_steps": {
+          "ci95_high": null,
+          "ci95_low": null,
+          "count": 0,
+          "mean": null
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 1000000000000000000,
+          "ci95_low": 1000000000000000000,
+          "count": 5,
+          "mean": 1000000000000000000
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 0,
+          "ci95_low": 0,
+          "count": 5,
+          "mean": 0
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -1192311001482578005512,
+          "ci95_low": -1693875994771541705020,
+          "count": 5,
+          "mean": -1443093498127059855266
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "raw_positive_markout": {
+        "detection_latency_steps": {
+          "ci95_high": 9,
+          "ci95_low": 3,
+          "count": 5,
+          "mean": 6
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 46589830398768141,
+          "ci95_low": 10151611365035169,
+          "count": 5,
+          "mean": 28370720881901655
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 482662991933260051,
+          "ci95_low": 323716688967435605,
+          "count": 5,
+          "mean": 403189840450347828
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -1191112629724854030473,
+          "ci95_low": -1692618330129265680059,
+          "count": 5,
+          "mean": -1441865479927059855266
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "thetashield": {
+        "detection_latency_steps": {
+          "ci95_high": 88,
+          "ci95_low": 58,
+          "count": 5,
+          "mean": 73
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 442266879412505499,
+          "ci95_low": 282633880715050889,
+          "count": 5,
+          "mean": 362450380063778194
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 208605574959333670,
+          "ci95_low": 116881856619345216,
+          "count": 5,
+          "mean": 162743715789339443
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -1191079183608621651840,
+          "ci95_low": -1692716463445498058692,
+          "count": 5,
+          "mean": -1441897823527059855266
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "volatility_only": {
+        "detection_latency_steps": {
+          "ci95_high": 9,
+          "ci95_low": 9,
+          "count": 5,
+          "mean": 9
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 52110597065407910,
+          "ci95_low": 35006143062093954,
+          "count": 5,
+          "mean": 43558370063750932
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 543507758340528500,
+          "ci95_low": 463547239381386066,
+          "count": 5,
+          "mean": 503527498860957283
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -1191064707049368741500,
+          "ci95_low": -1692649586404750969032,
+          "count": 5,
+          "mean": -1441857146727059855266
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      }
+    },
+    "persistent_informed_selling": {
+      "dead_band_no_persistence": {
+        "detection_latency_steps": {
+          "ci95_high": 33,
+          "ci95_low": 27,
+          "count": 5,
+          "mean": 30
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 238174760334968927,
+          "ci95_low": 136233656442561603,
+          "count": 5,
+          "mean": 187204208388765265
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 242474247543404631,
+          "ci95_low": 169993524785452011,
+          "count": 5,
+          "mean": 206233886164428321
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -740636888746711026554,
+          "ci95_low": -925458734017093119810,
+          "count": 5,
+          "mean": -833047811381902073182
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "fixed_fee": {
+        "detection_latency_steps": {
+          "ci95_high": null,
+          "ci95_low": null,
+          "count": 0,
+          "mean": null
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 1000000000000000000,
+          "ci95_low": 1000000000000000000,
+          "count": 5,
+          "mean": 1000000000000000000
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 0,
+          "ci95_low": 0,
+          "count": 5,
+          "mean": 0
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -741598561336038942822,
+          "ci95_low": -926769331827765203542,
+          "count": 5,
+          "mean": -834183946581902073182
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "raw_positive_markout": {
+        "detection_latency_steps": {
+          "ci95_high": 7,
+          "ci95_low": 5,
+          "count": 5,
+          "mean": 6
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 48394625356705449,
+          "ci95_low": 19271082954487871,
+          "count": 5,
+          "mean": 33832854155596660
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 479934141127685454,
+          "ci95_low": 202490579305910146,
+          "count": 5,
+          "mean": 341212360216797800
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -740413131145920279030,
+          "ci95_low": -925468638017883867334,
+          "count": 5,
+          "mean": -832940884581902073182
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "thetashield": {
+        "detection_latency_steps": {
+          "ci95_high": 70,
+          "ci95_low": 60,
+          "count": 5,
+          "mean": 65
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 377821314581743564,
+          "ci95_low": 301382104783080116,
+          "count": 5,
+          "mean": 339601709682411840
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 213067189887252857,
+          "ci95_low": 128505571820565767,
+          "count": 5,
+          "mean": 170786380853909312
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -740514688174128317778,
+          "ci95_low": -925343076589675828586,
+          "count": 5,
+          "mean": -832928882381902073182
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "volatility_only": {
+        "detection_latency_steps": {
+          "ci95_high": 9,
+          "ci95_low": 9,
+          "count": 5,
+          "mean": 9
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 51990394641681427,
+          "ci95_low": 43582765671468037,
+          "count": 5,
+          "mean": 47786580156574732
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 530596220247695734,
+          "ci95_low": 478358470312242750,
+          "count": 5,
+          "mean": 504477345279969242
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -740360797530687069392,
+          "ci95_low": -925548719233117076972,
+          "count": 5,
+          "mean": -832954758381902073182
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      }
+    },
+    "replayed_callbacks": {
+      "dead_band_no_persistence": {
+        "detection_latency_steps": {
+          "ci95_high": 29,
+          "ci95_low": 23,
+          "count": 5,
+          "mean": 26
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 172246217829937556,
+          "ci95_low": 111864822662878324,
+          "count": 5,
+          "mean": 142055520246407940
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 232820215806658718,
+          "ci95_low": 187750036294715598,
+          "count": 5,
+          "mean": 210285126050687158
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -1381147128888202752549,
+          "ci95_low": -1841491212539826092377,
+          "count": 5,
+          "mean": -1611319170714014422463
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 145
+      },
+      "fixed_fee": {
+        "detection_latency_steps": {
+          "ci95_high": null,
+          "ci95_low": null,
+          "count": 0,
+          "mean": null
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 1000000000000000000,
+          "ci95_low": 1000000000000000000,
+          "count": 5,
+          "mean": 1000000000000000000
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 0,
+          "ci95_low": 0,
+          "count": 5,
+          "mean": 0
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -1382120301804427226342,
+          "ci95_low": -1842778420023601618584,
+          "count": 5,
+          "mean": -1612449360914014422463
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "raw_positive_markout": {
+        "detection_latency_steps": {
+          "ci95_high": 4,
+          "ci95_low": 2,
+          "count": 5,
+          "mean": 3
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 37097719038912826,
+          "ci95_low": 14359734710479988,
+          "count": 5,
+          "mean": 25728726874696407
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 353563890891728854,
+          "ci95_low": 310794225624497610,
+          "count": 5,
+          "mean": 332179058258113232
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -1380971452599151927952,
+          "ci95_low": -1841493741628876916974,
+          "count": 5,
+          "mean": -1611232597114014422463
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 145
+      },
+      "thetashield": {
+        "detection_latency_steps": {
+          "ci95_high": 81,
+          "ci95_low": 63,
+          "count": 5,
+          "mean": 72
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 379882119768608577,
+          "ci95_low": 310160406577426113,
+          "count": 5,
+          "mean": 345021263173017345
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 192250846356494233,
+          "ci95_low": 115471659821259557,
+          "count": 5,
+          "mean": 153861253088876895
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -1381115564840315943141,
+          "ci95_low": -1841380482187712901785,
+          "count": 5,
+          "mean": -1611248023514014422463
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 145
+      },
+      "volatility_only": {
+        "detection_latency_steps": {
+          "ci95_high": 9,
+          "ci95_low": 9,
+          "count": 5,
+          "mean": 9
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 56007640860799431,
+          "ci95_low": 43485089197887473,
+          "count": 5,
+          "mean": 49746365029343452
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 568959953351297813,
+          "ci95_low": 473957359534211345,
+          "count": 5,
+          "mean": 521458656442754579
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -1380826429818518016881,
+          "ci95_low": -1841555997609510828045,
+          "count": 5,
+          "mean": -1611191213714014422463
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 150
+      }
+    },
+    "stale_references": {
+      "dead_band_no_persistence": {
+        "detection_latency_steps": {
+          "ci95_high": 60,
+          "ci95_low": 50,
+          "count": 5,
+          "mean": 55
+        },
+        "expired_reference_count": 400,
+        "false_negative_rate_wad": {
+          "ci95_high": 501846540928305914,
+          "ci95_low": 388572277899701100,
+          "count": 5,
+          "mean": 445209409414003507
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 177685516471861589,
+          "ci95_low": 127315756764705763,
+          "count": 5,
+          "mean": 152500636618283676
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -783352520279682954337,
+          "ci95_low": -882499954895309049741,
+          "count": 5,
+          "mean": -832926237587496002039
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "fixed_fee": {
+        "detection_latency_steps": {
+          "ci95_high": null,
+          "ci95_low": null,
+          "count": 0,
+          "mean": null
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 1000000000000000000,
+          "ci95_low": 1000000000000000000,
+          "count": 5,
+          "mean": 1000000000000000000
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 0,
+          "ci95_low": 0,
+          "count": 5,
+          "mean": 0
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -784037032767425832593,
+          "ci95_low": -883265970407566171485,
+          "count": 5,
+          "mean": -833651501587496002039
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "raw_positive_markout": {
+        "detection_latency_steps": {
+          "ci95_high": 12,
+          "ci95_low": 6,
+          "count": 5,
+          "mean": 9
+        },
+        "expired_reference_count": 400,
+        "false_negative_rate_wad": {
+          "ci95_high": 229855381455743759,
+          "ci95_low": 168021294586148431,
+          "count": 5,
+          "mean": 198938338020946095
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 309845220214578086,
+          "ci95_low": 159281339500216922,
+          "count": 5,
+          "mean": 234563279857397504
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -783079789759919153359,
+          "ci95_low": -882265479415072850719,
+          "count": 5,
+          "mean": -832672634587496002039
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "thetashield": {
+        "detection_latency_steps": {
+          "ci95_high": 120,
+          "ci95_low": 98,
+          "count": 5,
+          "mean": 109
+        },
+        "expired_reference_count": 400,
+        "false_negative_rate_wad": {
+          "ci95_high": 664081005856682423,
+          "ci95_low": 564200953302720021,
+          "count": 5,
+          "mean": 614140979579701222
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 139853479601589893,
+          "ci95_low": 72080312096907687,
+          "count": 5,
+          "mean": 105966895849248790
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -783423510251263082467,
+          "ci95_low": -882610130123728921611,
+          "count": 5,
+          "mean": -833016820187496002039
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "volatility_only": {
+        "detection_latency_steps": {
+          "ci95_high": 29,
+          "ci95_low": 29,
+          "count": 5,
+          "mean": 29
+        },
+        "expired_reference_count": 400,
+        "false_negative_rate_wad": {
+          "ci95_high": 218691029349970013,
+          "ci95_low": 189022283636563117,
+          "count": 5,
+          "mean": 203856656493266565
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 466018736626272638,
+          "ci95_low": 397495396299624992,
+          "count": 5,
+          "mean": 431757066462948815
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -782939861428139468030,
+          "ci95_low": -882170332946852536048,
+          "count": 5,
+          "mean": -832555097187496002039
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      }
+    },
+    "toxic_volatility_burst": {
+      "dead_band_no_persistence": {
+        "detection_latency_steps": {
+          "ci95_high": 10,
+          "ci95_low": 10,
+          "count": 5,
+          "mean": 10
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 424679119803025440,
+          "ci95_low": 296749451625545986,
+          "count": 5,
+          "mean": 360714285714285713
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 89051182433812454,
+          "ci95_low": 60948817566187544,
+          "count": 5,
+          "mean": 74999999999999999
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -53869109598622499729,
+          "ci95_low": -159879760726792851355,
+          "count": 5,
+          "mean": -106874435162707675542
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "fixed_fee": {
+        "detection_latency_steps": {
+          "ci95_high": null,
+          "ci95_low": null,
+          "count": 0,
+          "mean": null
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 1000000000000000000,
+          "ci95_low": 1000000000000000000,
+          "count": 5,
+          "mean": 1000000000000000000
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 0,
+          "ci95_low": 0,
+          "count": 5,
+          "mean": 0
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -54316003824756469665,
+          "ci95_low": -160280866900658881419,
+          "count": 5,
+          "mean": -107298435362707675542
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "raw_positive_markout": {
+        "detection_latency_steps": {
+          "ci95_high": 5,
+          "ci95_low": 3,
+          "count": 5,
+          "mean": 4
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 149101799786838609,
+          "ci95_low": 15183914498875675,
+          "count": 5,
+          "mean": 82142857142857142
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 407387914134456172,
+          "ci95_low": 210003390213369912,
+          "count": 5,
+          "mean": 308695652173913042
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -53817488485630924074,
+          "ci95_low": -159790560239784427010,
+          "count": 5,
+          "mean": -106804024362707675542
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "thetashield": {
+        "detection_latency_steps": {
+          "ci95_high": 51,
+          "ci95_low": 41,
+          "count": 4,
+          "mean": 46
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 976479133574074308,
+          "ci95_low": 744949437854497120,
+          "count": 5,
+          "mean": 860714285714285714
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 96151010570786197,
+          "ci95_low": 29935945950952931,
+          "count": 5,
+          "mean": 63043478260869564
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -54095899204723619159,
+          "ci95_low": -160204745520691731925,
+          "count": 5,
+          "mean": -107150322362707675542
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      },
+      "volatility_only": {
+        "detection_latency_steps": {
+          "ci95_high": 0,
+          "ci95_low": 0,
+          "count": 5,
+          "mean": 0
+        },
+        "expired_reference_count": 0,
+        "false_negative_rate_wad": {
+          "ci95_high": 0,
+          "ci95_low": 0,
+          "count": 5,
+          "mean": 0
+        },
+        "false_positive_rate_wad": {
+          "ci95_high": 771739130434782608,
+          "ci95_low": 771739130434782608,
+          "count": 5,
+          "mean": 771739130434782608
+        },
+        "lp_net_pnl_quote_wad": {
+          "ci95_high": -53573649124261025378,
+          "ci95_low": -159569262801154325706,
+          "count": 5,
+          "mean": -106571455962707675542
+        },
+        "missing_callbacks": 0,
+        "rejected_callbacks": 0
+      }
+    }
+  },
+  "calibration_mean_fee_pips": {
+    "dead_band_no_persistence": 707,
+    "fixed_fee": 500,
+    "raw_positive_markout": 730,
+    "thetashield": 727,
+    "volatility_only": 756
+  },
+  "dynamic_calibration_fee_spread_pips": 49,
+  "experiment": "phase5_five_policy_baselines",
+  "hook_gas_measurement": {
+    "after_swap_warm_gas": 47097,
+    "before_swap_gas": 33000,
+    "hook_gas_per_swap": 80097
+  },
+  "hypothesis_status": "not_evaluated_until_phase_6",
+  "interval_note": "mean and descriptive 95% normal interval across scenario-seed runs; not an inferential claim",
+  "policy_count": 5,
+  "research_config": {
+    "alpha_wad": 250000000000000000,
+    "base_fee_pips": 500,
+    "callback_delay_steps": 1,
+    "confidence_cap_wad": 600000000000000000,
+    "confidence_floor_wad": 500000000000000000,
+    "dead_band_k_wad": 1500000000000000000,
+    "epoch_observation_count": 8,
+    "markout_delay_steps": 2,
+    "maximum_decrease_pips": 500,
+    "maximum_fee_pips": 10000,
+    "maximum_increase_pips": 1000,
+    "maximum_reference_dispersion_wad": 20000000000000000,
+    "maximum_trade_notional_wad": 100000000000000000000,
+    "minimum_epoch_notional_wad": 8000000000000000000,
+    "minimum_fee_pips": 500,
+    "minimum_observation_notional_wad": 1000000000000000000,
+    "minimum_trailing_observations": 32,
+    "persistence_window": 5,
+    "recommendation_ttl_steps": 12,
+    "required_toxic_epochs": 3,
+    "target_observation_count": 8,
+    "toxic_threshold_wad": 750000000000000,
+    "trailing_window": 32
+  },
+  "run_count": 375,
+  "scenario_count": 15,
+  "schema_version": 1,
+  "seed_count": 5,
+  "selected_gain_fee_pips": {
+    "dead_band_no_persistence": 350000,
+    "fixed_fee": 0,
+    "raw_positive_markout": 100000,
+    "thetashield": 500000,
+    "volatility_only": 200000
+  }
+}

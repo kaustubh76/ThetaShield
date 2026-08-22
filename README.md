@@ -5,9 +5,9 @@ research project. It uses delayed signed markout, trailing-noise filtering,
 `n-of-k` persistence, and mechanical confidence scoring to raise fees only when
 order flow shows sustained evidence of adverse selection.
 
-> **Research status:** Phase 4 local end-to-end lifecycle gate verified. The
-> contracts are unaudited, all oracle and network interactions remain local
-> simulations, and nothing in this repository is ready for production deployment.
+> **Research status:** Phase 5 five-policy research harness gate verified. The
+> contracts are unaudited, the results are controlled synthetic outputs rather
+> than profitability claims, and nothing is ready for production deployment.
 
 ## Research question
 
@@ -80,6 +80,11 @@ maturity rules, epoch processing, and callback evidence are recorded in the
 The Phase 4 real local PoolManager-to-hook-to-Reactive-to-controller lifecycle,
 including fallback and callback-ordering evidence, is recorded in the
 [Phase 4 handoff](docs/PHASE4_HANDOFF.md).
+
+The Phase 5 scenario manifest, fair baseline calibration, complete metric set,
+repeated-seed outputs, measured local hook gas, and reproducible charts are
+recorded in the [Phase 5 handoff](docs/PHASE5_HANDOFF.md) and generated
+[baseline report](research/reports/PHASE5_BASELINES.md).
 
 ## Safety
 
