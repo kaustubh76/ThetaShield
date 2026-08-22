@@ -8,7 +8,7 @@ Every phase is verified before it is committed and pushed to `main`.
 | Phase 1 — Mathematics and research specification | Complete |
 | Phase 2 — Hook and origin controller | Complete |
 | Phase 3 — Reactive scheduler | Complete |
-| Phase 4 — Local end-to-end lifecycle | Pending |
+| Phase 4 — Local end-to-end lifecycle | Complete |
 | Phase 5 — Research harness and baselines | Pending |
 | Phase 6 — Sensitivity analysis and hypotheses | Pending |
 | Phase 7 — Security and release hardening | Pending |

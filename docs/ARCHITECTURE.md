@@ -85,3 +85,35 @@ persistence is active, and confidence meets the fee floor.
 The normalized feed included in Phase 3 is an owner-published development mock.
 The interface and decimal normalizer define the adapter boundary, but selecting
 and validating a decentralized production source remains future work.
+
+## Phase 4 verified local lifecycle
+
+The local acceptance harness connects every implemented component rather than
+replacing the swap side with an event emitter:
+
+```text
+PoolSwapTest -> PoolManager -> ThetaShieldHook -> SwapObserved
+                                              |
+                                              v
+Mock Reactive system -> ThetaShieldReactive <- normalized mock reference
+                              |
+                              v
+                     mock callback proxy
+                              |
+                              v
+                   ThetaShieldController
+                              |
+                              v
+             later PoolManager swap uses new fee
+```
+
+The delayed reference price is derived from the execution price recorded by the
+scheduler from the real hook event. The first epoch remains at baseline because
+it is cold-start data; a second adverse epoch activates the accelerated test
+persistence configuration and schedules a directional premium. A later real
+swap proves that the PoolManager's applied fee equals the controller's new fee.
+
+The same connected harness verifies recommendation expiry, replay of the latest
+callback, and delivery of an older callback after a newer one. Expiry selects
+the baseline at the hook, while both invalid callback deliveries fail at the
+controller and leave the newest recommendation unchanged.

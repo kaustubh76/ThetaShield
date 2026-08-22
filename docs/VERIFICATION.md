@@ -112,3 +112,31 @@ The authoritative whole-repository gate remains:
 ```sh
 FOUNDRY_PROFILE=ci make verify
 ```
+
+## Phase 4 gate
+
+Run the connected local lifecycle with:
+
+```sh
+forge test --force --match-contract ThetaShieldEndToEndTest -vv
+```
+
+The Phase 4 gate requires:
+
+- a real local Uniswap v4 `PoolManager`, dynamic-fee pool, router, and
+  `ThetaShieldHook` rather than a mock swap emitter;
+- delivery of the hook's real `SwapObserved` event to `ThetaShieldReactive`;
+- delayed reference publication based on the scheduler's recorded execution
+  price;
+- cold-start baseline output followed by a directional premium after another
+  adverse epoch;
+- successful callback-proxy RVM-ID injection into the authenticated controller;
+- a later real swap whose PoolManager fee equals the new controller fee;
+- baseline fallback on recommendation expiry; and
+- failed replay and older-after-newer callback deliveries without state change.
+
+The authoritative whole-repository gate remains:
+
+```sh
+FOUNDRY_PROFILE=ci make verify
+```
