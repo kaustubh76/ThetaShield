@@ -10,7 +10,7 @@ Every phase is verified before it is committed and pushed to `main`.
 | Phase 3 — Reactive scheduler | Complete |
 | Phase 4 — Local end-to-end lifecycle | Complete |
 | Phase 5 — Research harness and baselines | Complete |
-| Phase 6 — Sensitivity analysis and hypotheses | Pending |
+| Phase 6 — Sensitivity analysis and hypotheses | Complete |
 | Phase 7 — Security and release hardening | Pending |
 | Phase 8 — Live deployment | Pending approval and cost gate |
 | Phase 9 — Dashboard and submission | Pending |

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from math import isqrt
 from statistics import mean
 
@@ -143,7 +143,8 @@ def simulate_policy(
     fee_oscillation_pips = 0
     applied_fee_series: list[int] = []
 
-    flush_steps = config.markout_delay_steps + config.callback_delay_steps + config.epoch_observation_count + 2
+    observation_delay_steps = config.markout_delay_steps + config.markout_horizon_steps - 1
+    flush_steps = observation_delay_steps + config.callback_delay_steps + config.epoch_observation_count + 2
     for step in range(len(events) + flush_steps):
         for matured in observations_due.pop(step, []):
             if not matured.reference_available:
@@ -216,7 +217,9 @@ def simulate_policy(
                 first_detection_step[direction] = step - toxic_step
 
         if policy_name != "fixed_fee":
-            observations_due.setdefault(step + config.markout_delay_steps, []).append(event)
+            observations_due.setdefault(step + observation_delay_steps, []).append(
+                _event_at_horizon(events, event, config.markout_horizon_steps)
+            )
 
     delivery.finish(len(events) + flush_steps)
 
@@ -281,6 +284,27 @@ def correlation_wad(left: list[int], right: list[int]) -> int:
         return WAD if left == right else 0
     magnitude = abs(covariance) * WAD // denominator
     return -magnitude if covariance < 0 else magnitude
+
+
+def _event_at_horizon(
+    events: tuple[TradeEvent, ...],
+    event: TradeEvent,
+    horizon_steps: int,
+) -> TradeEvent:
+    if horizon_steps <= 0:
+        raise ValueError("markout horizon must be positive")
+    reference_index = min(event.index + horizon_steps - 1, len(events) - 1)
+    reference_event = events[reference_index]
+    maximum_dispersion_wad = max(
+        candidate.reference_dispersion_wad
+        for candidate in events[event.index : reference_index + 1]
+    )
+    return replace(
+        event,
+        reference_price_wad=reference_event.reference_price_wad,
+        reference_dispersion_wad=maximum_dispersion_wad,
+        reference_available=reference_event.reference_available,
+    )
 
 
 def mean_optional(values: list[int | None]) -> int | None:

@@ -170,3 +170,34 @@ The authoritative whole-repository gate remains:
 ```sh
 FOUNDRY_PROFILE=ci make verify
 ```
+
+## Phase 6 gate
+
+Regenerate and verify the sensitivity and hypothesis artifacts with:
+
+```sh
+make phase6-report
+make phase6-check
+```
+
+The Phase 6 gate requires:
+
+- a declared pass/fail/inconclusive protocol for every H1-H6 hypothesis;
+- 42 configurations covering all 11 required parameter families;
+- all 15 scenarios and five repeated seeds for every configuration;
+- a markout-horizon sweep that changes the future reference path as well as
+  observation latency;
+- paired baseline comparisons for LP outcome, false positives, manipulation
+  response, and directional discrimination;
+- a Pareto analysis of benign false positives, effective detection latency,
+  and LP net improvement;
+- raw and summarized CSV outputs, summary JSON, criteria manifest, generated
+  Markdown report, and three generated SVG charts;
+- explicit retention of failed and inconclusive hypotheses; and
+- exact artifact regeneration without manually edited chart inputs.
+
+The authoritative whole-repository gate remains:
+
+```sh
+FOUNDRY_PROFILE=ci make verify
+```

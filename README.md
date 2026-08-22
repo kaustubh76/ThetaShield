@@ -5,9 +5,9 @@ research project. It uses delayed signed markout, trailing-noise filtering,
 `n-of-k` persistence, and mechanical confidence scoring to raise fees only when
 order flow shows sustained evidence of adverse selection.
 
-> **Research status:** Phase 5 five-policy research harness gate verified. The
-> contracts are unaudited, the results are controlled synthetic outputs rather
-> than profitability claims, and nothing is ready for production deployment.
+> **Research status:** Phase 6 sensitivity and hypothesis evaluation implemented.
+> Four synthetic hypotheses pass and two fail under the declared criteria. The
+> contracts remain unaudited and nothing is ready for production deployment.
 
 ## Research question
 
@@ -85,6 +85,11 @@ The Phase 5 scenario manifest, fair baseline calibration, complete metric set,
 repeated-seed outputs, measured local hook gas, and reproducible charts are
 recorded in the [Phase 5 handoff](docs/PHASE5_HANDOFF.md) and generated
 [baseline report](research/reports/PHASE5_BASELINES.md).
+
+The Phase 6 parameter grid, decision criteria, raw sensitivity results, Pareto
+analysis, and retained failed hypotheses are recorded in the
+[Phase 6 handoff](docs/PHASE6_HANDOFF.md) and generated
+[hypothesis report](research/reports/PHASE6_HYPOTHESES.md).
 
 ## Safety
 

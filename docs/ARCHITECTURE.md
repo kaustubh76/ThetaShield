@@ -153,3 +153,42 @@ Dynamic baseline gains are chosen by a deterministic committed grid to minimize
 their calibration mean-fee distance from ThetaShield. This controls the fee
 budget without manually editing results. Phase 5 reports descriptive repeated-
 seed intervals only and intentionally leaves H1-H6 decisions to Phase 6.
+
+## Phase 6 sensitivity and decision pipeline
+
+Phase 6 holds the Phase 5 event streams fixed and changes one controller
+parameter family at a time:
+
+```text
+Phase 5 default + declared decision protocol
+                       |
+                       v
+       42 configurations x 15 scenarios x 5 seeds
+                       |
+          +------------+-------------+
+          |            |             |
+          v            v             v
+    raw sweep CSV   case summary   paired baseline evidence
+          |            |             |
+          +------------+-------------+
+                       |
+                       v
+       Pareto map + H1-H6 pass/fail/inconclusive
+```
+
+The 11 swept families are dead-band width, trailing window, markout horizon,
+epoch duration, persistence `n-of-k`, EWMA alpha, confidence threshold,
+toxicity threshold, fee gain, maximum fee, and coupled step-up/step-down limits.
+Coupled fields such as trailing-window and cold-start length move together so a
+case remains internally meaningful. All other controller parameters stay at the
+committed Phase 5 default.
+
+Markout-horizon cases select later prices from the same committed future-price
+path and delay policy observation accordingly. The Phase 5 default remains a
+one-step synthetic reference, so its generated economic results are unchanged.
+
+The Pareto analysis minimizes benign false-positive rate and effective
+detection latency while maximizing paired LP net improvement over fixed fees.
+A missed detection receives a conservative latency of 241 steps. H1-H6 rules
+are encoded in the generated decision manifest, and failed outcomes remain in
+the report rather than triggering parameter retuning.

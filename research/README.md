@@ -35,3 +35,20 @@ The five policies receive identical generated trade and price streams. Dynamic
 baseline gains are selected by a deterministic calibration grid to approximate
 ThetaShield's calibration mean-fee budget while preserving the same fee bounds,
 rate limits, and evaluation period.
+
+## Phase 6 commands
+
+```sh
+make phase6-report
+make phase6-check
+```
+
+`phase6-report` regenerates the declared decision protocol, 3,150 raw sweep
+rows, 42-case summary, H1-H6 decisions, Markdown report, and three SVG charts.
+The sweep covers all 11 required parameter families around the Phase 5 default.
+`phase6-check` rebuilds the same outputs in memory and rejects stale or manually
+edited artifacts.
+
+The generated report retains failed hypotheses. Current controlled synthetic
+results pass H1, H2, H3, and H6, while H4 and H5 fail their declared criteria.
+These labels are not live-market or production-readiness claims.

@@ -1,6 +1,6 @@
 PYTHON ?= python3
 
-.PHONY: build clean experiment-check experiment-report fmt fmt-check golden-check lint phase5-check python-check research-report research-test test verify
+.PHONY: build clean experiment-check experiment-report fmt fmt-check golden-check lint phase5-check phase6-check phase6-report python-check research-report research-test test verify
 
 build:
 	forge build --sizes
@@ -38,7 +38,13 @@ phase5-check:
 research-report:
 	$(PYTHON) -m research.experiments.phase5_baselines
 
+phase6-check:
+	$(PYTHON) -m research.experiments.phase6_sensitivity --check
+
+phase6-report:
+	$(PYTHON) -m research.experiments.phase6_sensitivity
+
 test:
 	forge test --force
 
-verify: fmt-check lint build test python-check research-test golden-check experiment-check phase5-check
+verify: fmt-check lint build test python-check research-test golden-check experiment-check phase5-check phase6-check

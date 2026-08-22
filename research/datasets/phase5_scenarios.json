@@ -62,6 +62,7 @@
     "dead_band_k_wad": 1500000000000000000,
     "epoch_observation_count": 8,
     "markout_delay_steps": 2,
+    "markout_horizon_steps": 1,
     "maximum_decrease_pips": 500,
     "maximum_fee_pips": 10000,
     "maximum_increase_pips": 1000,

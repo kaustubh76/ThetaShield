@@ -52,6 +52,7 @@ class ResearchConfig:
     confidence_floor_wad: int = 5 * 10**17
     toxic_threshold_wad: int = 75 * 10**13
     alpha_wad: int = 25 * 10**16
+    markout_horizon_steps: int = 1
     markout_delay_steps: int = 2
     callback_delay_steps: int = 1
     recommendation_ttl_steps: int = 12
