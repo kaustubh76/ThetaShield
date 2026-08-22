@@ -41,7 +41,7 @@ The CI profile gate (`FOUNDRY_PROFILE=ci make verify`) passes with:
 The required gate assertions are explicit:
 
 1. Symmetric benign input has exactly zero raw signed sum and a filtered mean of
-   `-0.02269 bp`, within the `0.2 bp` Phase 1 tolerance.
+   `-0.00498 bp`, within the `0.2 bp` Phase 1 tolerance.
 2. Changing the current observation cannot change the sigma used to score it.
 3. A negative outside-band markout remains negative.
 4. A neutral epoch between toxic epochs does not erase a 3-of-5 history.

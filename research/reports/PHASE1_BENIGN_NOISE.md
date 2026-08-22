@@ -9,7 +9,8 @@ underlying delayed markout is symmetric and zero mean?
 
 - Deterministic seed: `1337`
 - Observations: `4,096`
-- Input standard deviation: `0.002 WAD` (20 bps)
+- Integer-only discrete-uniform half-range: `0.003464101615137754 WAD`
+- Nominal input standard deviation: approximately `0.002 WAD` (20 bps)
 - Antithetic construction: every sampled markout has an equal negative partner
 - Trailing window: `32`, strictly excluding the current observation
 - Cold start: the first 32 observations cannot activate protection
@@ -23,16 +24,18 @@ underlying delayed markout is symmetric and zero mean?
 | Metric | Result |
 |---|---:|
 | Raw signed mean | `0 WAD` |
-| Filtered signed mean | `-2,269,008,399,009 WAD` (`-0.02269 bp`) |
-| Nonzero filtered observations | `628 / 4,064 scored` |
-| Positive / negative nonzero observations | `316 / 312` |
+| Filtered signed mean | `-497,670,101,036 WAD` (`-0.00498 bp`) |
+| Nonzero filtered observations | `606 / 4,064 scored` |
+| Positive / negative nonzero observations | `304 / 302` |
 | Toxic epochs | `0 / 508` |
 | Active premium epochs | `0 / 508` |
 | False-positive active rate | `0%` |
 | Burst sigma with current excluded | `0 WAD` |
 | Burst sigma in self-inclusion control | `8,570,991,287,109,666 WAD` |
 
-The filtered aggregate remains close to zero and does not exhibit the positive
+The integer-only generator avoids platform-dependent floating-point sampling so
+the report is byte-reproducible on macOS and Linux. The filtered aggregate
+remains close to zero and does not exhibit the positive
 bias caused by clipping negative markouts. The burst control also demonstrates
 the circularity failure: including the current burst would widen its own sigma,
 while the implemented half-open trailing window remains zero.

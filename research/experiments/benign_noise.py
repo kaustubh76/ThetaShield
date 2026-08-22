@@ -19,7 +19,8 @@ from research.thetashield.model import (
 
 SEED = 1_337
 OBSERVATION_COUNT = 4_096
-NOISE_SIGMA_WAD = 2 * 10**15
+NOMINAL_NOISE_SIGMA_WAD = 2 * 10**15
+NOISE_HALF_RANGE_WAD = 3_464_101_615_137_754
 TRAILING_WINDOW = 32
 MINIMUM_TRAILING_OBSERVATIONS = 32
 DEAD_BAND_K_WAD = 15 * 10**17
@@ -31,7 +32,10 @@ SINGLE_SOURCE_CAP_WAD = 6 * 10**17
 
 def run_experiment() -> dict[str, Any]:
     random_source = random.Random(SEED)
-    half_sample = [round(random_source.gauss(0, NOISE_SIGMA_WAD)) for _ in range(OBSERVATION_COUNT // 2)]
+    half_sample = [
+        random_source.randrange(-NOISE_HALF_RANGE_WAD, NOISE_HALF_RANGE_WAD + 1)
+        for _ in range(OBSERVATION_COUNT // 2)
+    ]
     markouts_wad = half_sample + [-value for value in half_sample]
     random_source.shuffle(markouts_wad)
 
@@ -96,7 +100,9 @@ def run_experiment() -> dict[str, Any]:
         "experiment": "phase1_symmetric_benign_noise",
         "seed": SEED,
         "observation_count": OBSERVATION_COUNT,
-        "noise_sigma_wad": NOISE_SIGMA_WAD,
+        "noise_distribution": "integer_discrete_uniform_antithetic",
+        "nominal_noise_sigma_wad": NOMINAL_NOISE_SIGMA_WAD,
+        "noise_half_range_wad": NOISE_HALF_RANGE_WAD,
         "trailing_window": TRAILING_WINDOW,
         "minimum_trailing_observations": MINIMUM_TRAILING_OBSERVATIONS,
         "dead_band_k_wad": DEAD_BAND_K_WAD,
