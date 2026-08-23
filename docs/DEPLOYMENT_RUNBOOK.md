@@ -2,11 +2,11 @@
 
 ## Release boundary
 
-Phase 7 supplies only read-only preflight and local dry-runs. It does not contain
-a broadcast-capable deployment script. A live Phase 8 deployment may begin only
-after all network values are independently rechecked, an exact native-token and
-fiat cost estimate is shown to the owner, and the owner explicitly approves the
-transaction spend.
+Phase 7 supplies read-only preflight and local dry-runs. Phase 8 adds separately
+reviewable broadcast-capable scripts. A live Phase 8 deployment may begin only
+after all network values are independently rechecked, the scripts have completed
+without `--broadcast`, an exact native-token and fiat cost estimate is shown to
+the owner, and the owner explicitly approves the transaction spend.
 
 ## Required inputs
 
@@ -16,8 +16,10 @@ origin, reference, and Reactive networks. The public owner/deployer default is
 remain outside Git and must never be pasted into a manifest or issue.
 
 Do not use `MockNormalizedReferencePriceFeed` for a production deployment. The
-production reference adapter, publisher allowlist, decimals, heartbeat, market
-ID, and source IDs need a separate review.
+Phase 8 configuration is explicitly a Sepolia/Lasna research demonstration with
+owner-published prices and official Uniswap test routers. A production release
+still requires a reviewed external adapter, publisher allowlist, decimals,
+heartbeat, market ID, source IDs and production router/liquidity policy.
 
 ## Preflight sequence
 
@@ -64,6 +66,19 @@ ID, and source IDs need a separate review.
 8. Verify source on each explorer, then execute one bounded acceptance swap and
    trace observation, reference, Cron processing, callback, and subsequent fee.
 9. Transfer/accept ownership according to the approved key policy.
+
+## Phase 8 script boundary
+
+- `DeployOrigin.s.sol` requires the initial owner, deployer and expected RVM ID
+  to be the same reviewed account. It checks both routers resolve to the exact
+  configured PoolManager before recording any transaction.
+- `DeployReactive.s.sol` uses the hard-coded
+  `THETASHIELD_PHASE8_SINGLE_SOURCE_TESTNET_DEMO_V1` profile. Its single-source
+  confidence is capped at 60%; it is intentionally easier to exercise than the
+  Phase 6.1 research candidate and must not be represented as that candidate.
+- `Phase8Acceptance.s.sol` separates the swap and feed publication so their
+  timing and costs can be controlled. A complete adverse-flow trace requires two
+  swap/reference cycles plus Reactive CRON processing and successful callbacks.
 
 ## Manifest and acceptance evidence
 

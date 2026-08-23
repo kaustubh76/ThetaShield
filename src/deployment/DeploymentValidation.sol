@@ -5,6 +5,7 @@ pragma solidity 0.8.26;
 /// @notice Fail-closed validation shared by deployment preflight scripts and tests.
 library DeploymentValidation {
     address internal constant REACTIVE_SYSTEM_CONTRACT = 0x0000000000000000000000000000000000fffFfF;
+    uint256 internal constant MINIMUM_CALLBACK_GAS_LIMIT = 100_000;
 
     struct OriginConfig {
         uint256 expectedChainId;
@@ -74,7 +75,7 @@ library DeploymentValidation {
         if (config.poolId == bytes32(0)) revert InvalidIdentifier("poolId");
         if (config.marketId == bytes32(0)) revert InvalidIdentifier("marketId");
         if (config.cronTopic == 0) revert InvalidIdentifier("cronTopic");
-        if (config.callbackGasLimit == 0 || config.callbackGasLimit > type(uint64).max) {
+        if (config.callbackGasLimit < MINIMUM_CALLBACK_GAS_LIMIT || config.callbackGasLimit > type(uint64).max) {
             revert CallbackGasLimitOutOfBounds(config.callbackGasLimit);
         }
         return keccak256(abi.encode(config));

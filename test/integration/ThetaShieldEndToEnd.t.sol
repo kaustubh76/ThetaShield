@@ -20,7 +20,7 @@ import {IThetaShieldController} from "../../src/interfaces/IThetaShieldControlle
 import {FeeCurve} from "../../src/libraries/FeeCurve.sol";
 import {FixedPointMath} from "../../src/libraries/FixedPointMath.sol";
 import {ThetaShieldReactive} from "../../src/reactive/ThetaShieldReactive.sol";
-import {HookMiner} from "../utils/HookMiner.sol";
+import {HookAddressMiner} from "../../src/deployment/HookAddressMiner.sol";
 
 contract ThetaShieldEndToEndTest is Deployers, ReactiveTest {
     uint256 private constant ORIGIN_CHAIN_ID = 11_155_111;
@@ -50,7 +50,7 @@ contract ThetaShieldEndToEndTest is Deployers, ReactiveTest {
 
         controller = new ThetaShieldController(address(this), address(proxy), rvmId);
         uint160 flags = Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG;
-        (address expectedAddress, bytes32 salt) = HookMiner.find(
+        (address expectedAddress, bytes32 salt) = HookAddressMiner.find(
             address(this),
             flags,
             type(ThetaShieldHook).creationCode,

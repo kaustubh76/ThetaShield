@@ -11,7 +11,7 @@ import {BalanceDelta, toBalanceDelta} from "@uniswap/v4-core/src/types/BalanceDe
 import {ThetaShieldController} from "../../src/controller/ThetaShieldController.sol";
 import {ThetaShieldHook} from "../../src/hook/ThetaShieldHook.sol";
 import {IThetaShieldController} from "../../src/interfaces/IThetaShieldController.sol";
-import {HookMiner} from "../utils/HookMiner.sol";
+import {HookAddressMiner} from "../../src/deployment/HookAddressMiner.sol";
 
 contract ThetaShieldHookGasTest is Deployers {
     address private constant CALLBACK_PROXY = address(0xCA11BAC);
@@ -28,7 +28,7 @@ contract ThetaShieldHookGasTest is Deployers {
 
         controller = new ThetaShieldController(address(this), CALLBACK_PROXY, RVM_ID);
         uint160 flags = Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG;
-        (address expectedAddress, bytes32 salt) = HookMiner.find(
+        (address expectedAddress, bytes32 salt) = HookAddressMiner.find(
             address(this),
             flags,
             type(ThetaShieldHook).creationCode,

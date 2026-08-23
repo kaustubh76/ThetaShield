@@ -125,8 +125,10 @@ contract DeploymentValidationTest is Test {
         harness.validateReactive(reactive, REACTIVE_CHAIN_ID);
 
         reactive = _reactiveConfig();
-        reactive.callbackGasLimit = 0;
-        vm.expectRevert(abi.encodeWithSelector(DeploymentValidation.CallbackGasLimitOutOfBounds.selector, uint256(0)));
+        reactive.callbackGasLimit = 99_999;
+        vm.expectRevert(
+            abi.encodeWithSelector(DeploymentValidation.CallbackGasLimitOutOfBounds.selector, uint256(99_999))
+        );
         harness.validateReactive(reactive, REACTIVE_CHAIN_ID);
     }
 

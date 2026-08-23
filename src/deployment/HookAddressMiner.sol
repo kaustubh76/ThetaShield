@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-/// @title HookMiner
+/// @title HookAddressMiner
 /// @notice Finds a CREATE2 salt whose address encodes exact Uniswap v4 hook flags.
 /// @dev Implements the same deterministic search used by Uniswap's MIT-licensed
 ///      periphery utility, specialized to the 14 permission bits in v4.0.0.
-library HookMiner {
+library HookAddressMiner {
     uint160 internal constant ALL_HOOK_MASK = uint160((1 << 14) - 1);
     uint256 internal constant MAX_LOOP = 160_000;
 
