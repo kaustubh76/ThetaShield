@@ -427,6 +427,7 @@ contract ThetaShieldReactiveTest is ReactiveTest {
             maximumFeePips: 10_000,
             confidenceFloorBps: 5_000,
             maximumRecommendationLifetime: 300,
+            minimumRecommendationInterval: 0,
             paused: false
         });
     }

@@ -5,10 +5,11 @@ research project. It uses delayed signed markout, trailing-noise filtering,
 `n-of-k` persistence, and mechanical confidence scoring to raise fees only when
 order flow shows sustained evidence of adverse selection.
 
-> **Research status:** Phase 6.1 remediation implemented. The original Phase 6
-> report still records four passes and two failures; a separate train/holdout
-> revision passes the failed H4/H5 criteria on reserved synthetic streams. The
-> contracts remain unaudited and nothing is ready for production deployment.
+> **Research status:** Phase 7 security and release hardening is implemented.
+> The original Phase 6 report still records four passes and two failures; a
+> separate train/holdout revision passes the failed H4/H5 criteria on reserved
+> synthetic streams. The contracts remain unaudited and nothing is ready for
+> production deployment.
 
 ## Research question
 
@@ -96,6 +97,12 @@ The versioned H4/H5 root-cause analysis, confidence-gated fast path, disjoint
 train/holdout protocol, and reserved-seed evidence are recorded in the
 [Phase 6.1 handoff](docs/PHASE61_HANDOFF.md) and generated
 [remediation report](research/reports/PHASE61_REMEDIATION.md).
+
+The Phase 7 threat model, stateful invariants, boundary fuzzing, gas evidence,
+dependency/secret gates, fork checks, and non-broadcasting deployment preflight
+are recorded in the [Phase 7 handoff](docs/PHASE7_HANDOFF.md). Review the
+[threat model](docs/THREAT_MODEL.md) and
+[deployment runbook](docs/DEPLOYMENT_RUNBOOK.md) before any Phase 8 planning.
 
 ## Safety
 

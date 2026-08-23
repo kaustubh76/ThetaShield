@@ -121,6 +121,36 @@ contract ThetaShieldControllerTest is Test {
         controller.applyRecommendation(RVM_ID, POOL_ID, supplied);
     }
 
+    function test_enforcesConfiguredRecommendationCooldown() external {
+        ThetaShieldController.PoolFeeConfig memory config = _config();
+        config.minimumRecommendationInterval = 30;
+        vm.prank(OWNER);
+        controller.configurePool(POOL_ID, config);
+
+        _apply(_validRecommendation(1));
+        uint64 acceptedAt = uint64(block.timestamp);
+
+        vm.prank(CALLBACK_PROXY);
+        vm.expectRevert(
+            abi.encodeWithSelector(ThetaShieldController.RecommendationTooSoon.selector, acceptedAt + 30, acceptedAt)
+        );
+        controller.applyRecommendation(RVM_ID, POOL_ID, _validRecommendation(2));
+
+        vm.warp(acceptedAt + 30);
+        _apply(_validRecommendation(2));
+        assertEq(controller.lastSequence(POOL_ID), 2);
+        assertEq(controller.lastRecommendationAt(POOL_ID), acceptedAt + 30);
+    }
+
+    function test_rejectsCooldownLongerThanRecommendationLifetime() external {
+        ThetaShieldController.PoolFeeConfig memory config = _config();
+        config.minimumRecommendationInterval = config.maximumRecommendationLifetime + 1;
+
+        vm.prank(OWNER);
+        vm.expectRevert(ThetaShieldController.InvalidPoolConfiguration.selector);
+        controller.configurePool(POOL_ID, config);
+    }
+
     function test_rejectsOutOfBoundsFeeRiskAndConfidence() external {
         ThetaShieldController.FeeRecommendation memory supplied = _validRecommendation(1);
         supplied.zeroForOneFee = 10_001;
@@ -244,6 +274,7 @@ contract ThetaShieldControllerTest is Test {
             maximumFeePips: 10_000,
             confidenceFloorBps: 6_000,
             maximumRecommendationLifetime: 300,
+            minimumRecommendationInterval: 0,
             paused: false
         });
     }

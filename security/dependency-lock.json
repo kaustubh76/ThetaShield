@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "reviewed_at": "2026-08-18",
+  "review_scope": "Reproducibility and source pinning; not a substitute for third-party audits or advisory monitoring.",
+  "submodules": {
+    "lib/forge-std": {
+      "commit": "bf647bd6046f2f7da30d0c2bf435e5c76a780c1b",
+      "url": "https://github.com/foundry-rs/forge-std"
+    },
+    "lib/reactive-lib": {
+      "commit": "f6990ce3526928d039fec78855b2004ff8d65c9f",
+      "url": "https://github.com/Reactive-Network/reactive-lib"
+    },
+    "lib/reactive-test-lib": {
+      "commit": "2ff9b2a68ca9956306ec943c10d1c757c1dd1956",
+      "url": "https://github.com/Reactive-Network/reactive-test-lib"
+    },
+    "lib/v4-core": {
+      "commit": "e50237c43811bd9b526eff40f26772152a42daba",
+      "url": "https://github.com/Uniswap/v4-core"
+    }
+  },
+  "toolchains": {
+    "solc": "0.8.26",
+    "foundry_ci": "v1.7.1",
+    "python_ci": "3.11"
+  },
+  "github_actions": {
+    "actions/checkout": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+    "actions/setup-python": "5fda3b95a4ea91299a34e894583c3862153e4b97",
+    "foundry-rs/foundry-toolchain": "908c540300062bd5a7e473851cdb4282204cee09"
+  }
+}

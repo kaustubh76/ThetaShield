@@ -229,3 +229,35 @@ The authoritative whole-repository gate remains:
 ```sh
 FOUNDRY_PROFILE=ci make verify
 ```
+
+## Phase 7 security and release gate
+
+Run the focused release-hardening gate with:
+
+```sh
+make phase7-check
+```
+
+The Phase 7 gate requires:
+
+- the dependency lock and tracked-secret scan pass;
+- controller boundary fuzzing covers fee, lifetime, and cooldown edges;
+- stateful invariants preserve fee bounds, auth/replay rejection, sequence
+  synchronization, premium-risk rules, and pause fallback;
+- cold/warm controller and hook gas snapshots remain below hard ceilings;
+- configured origin and Reactive forks have the expected chain IDs and
+  infrastructure bytecode, or are explicitly reported as skipped when local RPC
+  inputs are absent;
+- deployment validation fails on wrong chains, missing bytecode, invalid
+  identifiers, wrong Reactive system address, and invalid callback gas;
+- the deployment manifest schema parses successfully; and
+- the real local Uniswap-to-Reactive-to-controller dry-run passes without a
+  broadcast.
+
+For a Phase 8 release candidate, skipped fork tests are failures. Supply reviewed
+RPC/infrastructure values and rerun `make fork-check`, both read-only preflights,
+then the authoritative whole-repository gate:
+
+```sh
+FOUNDRY_PROFILE=ci make verify
+```

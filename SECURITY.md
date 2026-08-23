@@ -16,6 +16,18 @@ reproducing an issue.
 
 ## Security gates
 
-Before any live deployment, the project must complete callback-authentication,
-replay, sequence, timestamp, fee-bound, oracle-staleness, bounded-processing,
-gas-griefing, invariant, and deployment-configuration checks.
+Phase 7 implements callback-authentication, replay, sequence, timestamp,
+cooldown, fee/risk bounds, oracle-window, bounded-processing, gas, invariant,
+dependency, secret, and deployment-configuration checks. Run:
+
+```sh
+make phase7-check
+FOUNDRY_PROFILE=ci make verify
+```
+
+See the [threat model](docs/THREAT_MODEL.md),
+[dependency review](docs/DEPENDENCY_REVIEW.md), and
+[deployment runbook](docs/DEPLOYMENT_RUNBOOK.md). Passing local gates is not an
+audit. A production oracle, independent audit, live non-skipped fork checks,
+current infrastructure verification, exact cost estimate, and explicit owner
+approval remain mandatory before a deployment involving value.

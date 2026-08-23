@@ -17,6 +17,7 @@ contract ThetaShieldController is IThetaShieldController, OwnedTwoStep {
         uint24 maximumFeePips;
         uint16 confidenceFloorBps;
         uint64 maximumRecommendationLifetime;
+        uint64 minimumRecommendationInterval;
         bool paused;
     }
 
@@ -39,6 +40,7 @@ contract ThetaShieldController is IThetaShieldController, OwnedTwoStep {
     mapping(bytes32 poolId => FeeRecommendation recommendation) private _recommendations;
     mapping(bytes32 poolId => bool configured) public isPoolConfigured;
     mapping(bytes32 poolId => uint64 sequence) public lastSequence;
+    mapping(bytes32 poolId => uint64 timestamp) public lastRecommendationAt;
 
     error InvalidCallbackProxy(address caller);
     error InvalidRvmId(address supplied);
@@ -50,6 +52,7 @@ contract ThetaShieldController is IThetaShieldController, OwnedTwoStep {
     error StaleRecommendation(uint64 validUntil, uint64 currentTime);
     error InvalidRecommendationWindow(uint64 validAfter, uint64 validUntil);
     error RecommendationLifetimeTooLong(uint64 supplied, uint64 maximum);
+    error RecommendationTooSoon(uint256 earliest, uint64 currentTime);
     error FeeOutOfBounds(bool zeroForOne, uint24 supplied, uint24 minimum, uint24 maximum);
     error InvalidConfidence(uint16 confidenceBps);
     error RiskOutOfBounds(bool zeroForOne, int128 supplied);
@@ -63,6 +66,7 @@ contract ThetaShieldController is IThetaShieldController, OwnedTwoStep {
         uint24 maximumFeePips,
         uint16 confidenceFloorBps,
         uint64 maximumRecommendationLifetime,
+        uint64 minimumRecommendationInterval,
         bool paused
     );
     event RecommendationApplied(
@@ -93,6 +97,7 @@ contract ThetaShieldController is IThetaShieldController, OwnedTwoStep {
             config.minimumFeePips > config.baselineFeePips || config.baselineFeePips > config.maximumFeePips
                 || config.maximumFeePips > ThetaShieldUnits.FEE_PIPS || config.confidenceFloorBps > ThetaShieldUnits.BPS
                 || config.maximumRecommendationLifetime == 0
+                || config.minimumRecommendationInterval > config.maximumRecommendationLifetime
         ) revert InvalidPoolConfiguration();
 
         _poolConfigs[poolId] = config;
@@ -106,6 +111,7 @@ contract ThetaShieldController is IThetaShieldController, OwnedTwoStep {
             config.maximumFeePips,
             config.confidenceFloorBps,
             config.maximumRecommendationLifetime,
+            config.minimumRecommendationInterval,
             config.paused
         );
     }
@@ -151,6 +157,13 @@ contract ThetaShieldController is IThetaShieldController, OwnedTwoStep {
         if (lifetime > config.maximumRecommendationLifetime) {
             revert RecommendationLifetimeTooLong(lifetime, config.maximumRecommendationLifetime);
         }
+        uint64 previousRecommendationAt = lastRecommendationAt[poolId];
+        if (previousRecommendationAt != 0) {
+            uint256 earliestRecommendationAt = uint256(previousRecommendationAt) + config.minimumRecommendationInterval;
+            if (uint256(currentTime) < earliestRecommendationAt) {
+                revert RecommendationTooSoon(earliestRecommendationAt, currentTime);
+            }
+        }
         if (recommendation.confidenceBps > ThetaShieldUnits.BPS) {
             revert InvalidConfidence(recommendation.confidenceBps);
         }
@@ -167,6 +180,7 @@ contract ThetaShieldController is IThetaShieldController, OwnedTwoStep {
 
         _recommendations[poolId] = recommendation;
         lastSequence[poolId] = recommendation.sequence;
+        lastRecommendationAt[poolId] = currentTime;
 
         emit RecommendationApplied(
             poolId,

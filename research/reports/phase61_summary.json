@@ -83,9 +83,9 @@
   },
   "holdout_seed_count": 5,
   "hook_gas_measurement": {
-    "after_swap_warm_gas": 47097,
-    "before_swap_gas": 33000,
-    "hook_gas_per_swap": 80097
+    "after_swap_warm_gas": 47201,
+    "before_swap_gas": 33052,
+    "hook_gas_per_swap": 80253
   },
   "interpretation_boundary": "Controlled deterministic synthetic evidence only; this is not live-market, profitability, deployment, or security-audit evidence.",
   "schema_version": 1,

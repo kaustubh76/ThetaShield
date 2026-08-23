@@ -9,9 +9,9 @@
   "event_count_per_run": 240,
   "fairness_method": "deterministic gain grid matched to ThetaShield calibration mean fee",
   "hook_gas_measurement": {
-    "after_swap_warm_gas": 47097,
-    "before_swap_gas": 33000,
-    "hook_gas_per_swap": 80097
+    "after_swap_warm_gas": 47201,
+    "before_swap_gas": 33052,
+    "hook_gas_per_swap": 80253
   },
   "initial_price_wad": 2000000000000000000000,
   "policy_names": [

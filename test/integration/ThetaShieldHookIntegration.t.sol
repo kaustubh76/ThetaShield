@@ -182,6 +182,7 @@ contract ThetaShieldHookIntegrationTest is Deployers {
             maximumFeePips: 10_000,
             confidenceFloorBps: 6_000,
             maximumRecommendationLifetime: 300,
+            minimumRecommendationInterval: 0,
             paused: false
         });
     }

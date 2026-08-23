@@ -56,10 +56,10 @@
         "mean": 3928
       },
       "hook_gas_per_swap": {
-        "ci95_high": 80097,
-        "ci95_low": 80097,
+        "ci95_high": 80253,
+        "ci95_low": 80253,
         "count": 75,
-        "mean": 80097
+        "mean": 80253
       },
       "inventory_pnl_quote_wad": {
         "ci95_high": -587397287601959514245,
@@ -196,10 +196,10 @@
         "mean": 0
       },
       "hook_gas_per_swap": {
-        "ci95_high": 80097,
-        "ci95_low": 80097,
+        "ci95_high": 80253,
+        "ci95_low": 80253,
         "count": 75,
-        "mean": 80097
+        "mean": 80253
       },
       "inventory_pnl_quote_wad": {
         "ci95_high": -587397287601959514245,
@@ -336,10 +336,10 @@
         "mean": 5075
       },
       "hook_gas_per_swap": {
-        "ci95_high": 80097,
-        "ci95_low": 80097,
+        "ci95_high": 80253,
+        "ci95_low": 80253,
         "count": 75,
-        "mean": 80097
+        "mean": 80253
       },
       "inventory_pnl_quote_wad": {
         "ci95_high": -587397287601959514245,
@@ -476,10 +476,10 @@
         "mean": 2849
       },
       "hook_gas_per_swap": {
-        "ci95_high": 80097,
-        "ci95_low": 80097,
+        "ci95_high": 80253,
+        "ci95_low": 80253,
         "count": 75,
-        "mean": 80097
+        "mean": 80253
       },
       "inventory_pnl_quote_wad": {
         "ci95_high": -587397287601959514245,
@@ -616,10 +616,10 @@
         "mean": 6924
       },
       "hook_gas_per_swap": {
-        "ci95_high": 80097,
-        "ci95_low": 80097,
+        "ci95_high": 80253,
+        "ci95_low": 80253,
         "count": 75,
-        "mean": 80097
+        "mean": 80253
       },
       "inventory_pnl_quote_wad": {
         "ci95_high": -587397287601959514245,
@@ -2918,9 +2918,9 @@
   "dynamic_calibration_fee_spread_pips": 49,
   "experiment": "phase5_five_policy_baselines",
   "hook_gas_measurement": {
-    "after_swap_warm_gas": 47097,
-    "before_swap_gas": 33000,
-    "hook_gas_per_swap": 80097
+    "after_swap_warm_gas": 47201,
+    "before_swap_gas": 33052,
+    "hook_gas_per_swap": 80253
   },
   "hypothesis_status": "not_evaluated_until_phase_6",
   "interval_note": "mean and descriptive 95% normal interval across scenario-seed runs; not an inferential claim",
