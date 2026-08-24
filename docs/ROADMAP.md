@@ -13,7 +13,10 @@ Every phase is verified before it is committed and pushed to `main`.
 | Phase 6 — Sensitivity analysis and hypotheses | Complete |
 | Phase 6.1 — H4/H5 remediation and holdout audit | Complete |
 | Phase 7 — Security and release hardening | Complete |
-| Phase 8 — Live deployment | Pending approval and cost gate |
+| Phase 8A — Circle migration architecture | Complete |
+| Phase 8B — Circle contracts and local lifecycle | In progress |
+| Phase 8C — Circle release hardening | Pending |
+| Phase 8D — Live deployment | Pending fresh simulation and cost gate |
 | Phase 9 — Dashboard and submission | Complete; private dashboard deployed, live chain cards gated on Phase 8 |
 
 ## Phase 0 — Repository foundation
@@ -62,10 +65,30 @@ confirm the revised criteria on disjoint reserved seeds.
 Expand fuzzing, invariants, gas analysis, fork tests, threat documentation,
 dependency review, and deployment dry-runs.
 
-## Phase 8 — Live deployment
+## Phase 8A — Circle migration architecture
 
-After a cost estimate and explicit approval, deploy in dependency order and
-verify a real swap-to-Reactive-callback lifecycle.
+Retire the non-working Lasna candidate and define a Circle CCTP V2 generic
+message path between Unichain Sepolia and Ethereum Sepolia. Preserve the
+delayed bounded computation as a permissionlessly advanced contract rather
+than claiming that Circle provides scheduling.
+
+## Phase 8B — Circle contracts and local lifecycle
+
+Replace the Reactive subscription/callback boundary with authenticated Circle
+observation and recommendation messages. Verify the real PoolManager-to-hook-
+to-processor-to-controller lifecycle locally, including failure and replay
+cases.
+
+## Phase 8C — Circle release hardening
+
+Add Circle-specific validation, attestation relay tooling, fork tests,
+manifests, runbooks, dashboard language, and complete project verification.
+
+## Phase 8D — Live deployment
+
+After a fresh two-chain simulation and explicit Circle-specific cost approval,
+deploy in dependency order and verify a real swap-to-Circle-to-processor-to-
+Circle-to-controller lifecycle.
 
 ## Phase 9 — Dashboard and submission
 
@@ -74,5 +97,6 @@ copy, and a final clean-clone reproduction.
 
 The local dashboard, final report, demo script, draft submission, and Phase 9
 verification gate are complete. No external submission has been made. Live
-addresses and acceptance evidence remain intentionally absent while Phase 8 is
-pending.
+addresses and acceptance evidence remain intentionally absent while Phase 8D
+is pending. The migration decision is recorded in
+[`CIRCLE_MIGRATION.md`](CIRCLE_MIGRATION.md).
