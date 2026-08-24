@@ -347,7 +347,7 @@ export default function Home() {
           <h2>Local system proven.<br />Live acceptance pending.</h2>
         </div>
         <div className="release-list">
-          <p><i className="done" /><span><b>98 Solidity tests</b> · unit, fuzz, invariant, integration</span></p>
+          <p><i className="done" /><span><b>99 Solidity tests</b> · unit, fuzz, invariant, integration</span></p>
           <p><i className="done" /><span><b>38 research tests</b> · golden vectors and reproducible artifacts</span></p>
           <p><i className="done" /><span><b>Security gates</b> · dependency lock, secret scan, gas ceilings</span></p>
           <p><i className="pending" /><span><b>Public testnet lifecycle</b> · requires owner-approved spend</span></p>

@@ -1,7 +1,9 @@
 # Deployments
 
 No contracts have been deployed. Phase 8 dry-run manifests use schema version 2
-and record each network's native-token budget separately.
+and record each network's native-token budget separately. The current candidate
+is `sepolia-lasna-omni-phase8-dry-run.json`; the earlier Lasna manifest remains
+as historical evidence and must not be used for a broadcast.
 
 `manifest.schema.json` defines the required record for future dry-runs and live
 releases: source revision, networks, components, deployment transactions/blocks,

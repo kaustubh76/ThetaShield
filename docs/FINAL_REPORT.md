@@ -92,7 +92,7 @@ result.
 
 ### Verification snapshot
 
-- 98 Solidity tests pass in the standard local gate.
+- 99 Solidity tests pass in the standard local gate.
 - 38 Python research tests pass.
 - Stateful invariants complete 512 runs and 65,536 calls per invariant under
   the CI profile.
@@ -118,12 +118,12 @@ review.
 
 ## Deployment status
 
-No live deployment or acceptance lifecycle is claimed. The committed Phase 8
-manifest is a non-broadcasting dry run with predicted addresses from a past
-nonce snapshot. Those addresses and cost caps must be regenerated from current
-wallet nonces, balances, gas conditions, and official network infrastructure
-before approval. A live manifest can be created only after confirmed
-transactions and a verified swap-to-callback lifecycle.
+No live deployment or acceptance lifecycle is claimed. The current Phase 8
+manifest is a non-broadcasting Lasna Omni dry run with predicted addresses and
+bounded cost caps. Any nonce, balance, gas, source revision, or infrastructure
+change invalidates it and requires a new simulation before approval. A live
+manifest can be created only after confirmed transactions and a verified
+swap-to-callback lifecycle.
 
 ## Reproduction
 

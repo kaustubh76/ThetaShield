@@ -42,7 +42,7 @@ baseline fallback for every invalid or unavailable state.
 
 ## Evidence
 
-The local release gate passes 98 Solidity tests and 38 Python tests. Phase 6
+The local release gate passes 99 Solidity tests and 38 Python tests. Phase 6
 covers 42 configurations, 15 scenarios, and five seeds (3,150 raw runs). The
 original experiment passes H1, H2, H3, and H6 while failing H4 and H5. A
 versioned holdout experiment passes the original H4/H5 criteria: H4 rank

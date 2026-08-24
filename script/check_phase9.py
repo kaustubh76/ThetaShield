@@ -60,7 +60,7 @@ def main() -> None:
     for phrase in ("generateMetadata", "/og.png", "ThetaShield"):
         require(layout, phrase, "dashboard/app/layout.tsx")
 
-    for phrase in ("98 Solidity tests", "38 Python", "No live deployment"):
+    for phrase in ("99 Solidity tests", "38 Python", "No live deployment"):
         require(report, phrase, "docs/FINAL_REPORT.md")
 
     require(handoff, "Phase 9 is complete", "docs/PHASE9_HANDOFF.md")

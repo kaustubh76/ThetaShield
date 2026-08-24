@@ -59,7 +59,7 @@ Scroll to the autonomous system and release boundary.
 
 “The local lifecycle is complete: PoolManager, hook observation, delayed
 Reactive processing, authenticated callback, and later fee application. The
-release gate passes 98 Solidity and 38 Python tests, plus fuzzing, invariants,
+release gate passes 99 Solidity and 38 Python tests, plus fuzzing, invariants,
 gas ceilings, dependency checks, and reproducible research artifacts.”
 
 “The contracts remain unaudited and the live Phase 8 acceptance is still open.

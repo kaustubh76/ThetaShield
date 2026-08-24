@@ -26,7 +26,7 @@ test("server-renders the complete ThetaShield research dashboard", async () => {
   assert.match(html, /Current sample excluded from/);
   assert.match(html, /The failures stayed in the record/);
   assert.match(html, /59\.70%/);
-  assert.match(html, /98 Solidity tests/);
+  assert.match(html, /99 Solidity tests/);
   assert.match(html, /Live acceptance pending/);
   assert.match(html, /Risk proxy—not exact LVR/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton/i);

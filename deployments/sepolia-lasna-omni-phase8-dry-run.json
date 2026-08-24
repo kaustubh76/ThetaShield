@@ -1,0 +1,142 @@
+{
+  "schema_version": 2,
+  "mode": "dry-run",
+  "source_revision": "e1585a763a8e76c02f04f7e2c478d8aab3ed5f64",
+  "created_at": "2026-08-21T13:14:06Z",
+  "networks": [
+    {
+      "role": "origin",
+      "name": "Ethereum Sepolia",
+      "chain_id": 11155111,
+      "rpc_secret_name": "ORIGIN_RPC_URL"
+    },
+    {
+      "role": "reference",
+      "name": "Ethereum Sepolia",
+      "chain_id": 11155111,
+      "rpc_secret_name": "ORIGIN_RPC_URL"
+    },
+    {
+      "role": "reactive",
+      "name": "Reactive Lasna Omni",
+      "chain_id": 5318007,
+      "rpc_secret_name": "REACTIVE_RPC_URL"
+    }
+  ],
+  "components": [
+    {
+      "name": "MockNormalizedReferencePriceFeed",
+      "network_role": "reference",
+      "address": "0xb73ba61b1b9d50f9bd68bb0916ca30ca3ae2cd1f",
+      "transaction_hash": null,
+      "block_number": null,
+      "explorer_url": null,
+      "verified": false
+    },
+    {
+      "name": "ThetaShieldTestTokenAlpha",
+      "network_role": "origin",
+      "address": "0xa00db1d51f505c90583b0ab3798109e1e4de1831",
+      "transaction_hash": null,
+      "block_number": null,
+      "explorer_url": null,
+      "verified": false
+    },
+    {
+      "name": "ThetaShieldTestTokenBeta",
+      "network_role": "origin",
+      "address": "0xeeb18d96aabcec142d95ba2b9e7e3221832cf139",
+      "transaction_hash": null,
+      "block_number": null,
+      "explorer_url": null,
+      "verified": false
+    },
+    {
+      "name": "ThetaShieldController",
+      "network_role": "origin",
+      "address": "0xe370f6e512cfaf920e84e04d3877fbcefec49478",
+      "transaction_hash": null,
+      "block_number": null,
+      "explorer_url": null,
+      "verified": false
+    },
+    {
+      "name": "ThetaShieldHookFactory",
+      "network_role": "origin",
+      "address": "0x7cf0c9c0e993d7b179f5abcb7a1edc43374b7d1a",
+      "transaction_hash": null,
+      "block_number": null,
+      "explorer_url": null,
+      "verified": false
+    },
+    {
+      "name": "ThetaShieldHook",
+      "network_role": "origin",
+      "address": "0x6bb54be59003f941b2edd14d061a5e0ab29380c0",
+      "transaction_hash": null,
+      "block_number": null,
+      "explorer_url": null,
+      "verified": false
+    },
+    {
+      "name": "ThetaShieldReactive",
+      "network_role": "reactive",
+      "address": "0xd3fb3eb093c9bb0bf44198bbc9b8ce91479fe940",
+      "transaction_hash": null,
+      "block_number": null,
+      "explorer_url": null,
+      "verified": false
+    }
+  ],
+  "subscriptions": [
+    {
+      "chain_id": 11155111,
+      "emitter": "0x6bb54be59003f941b2edd14d061a5e0ab29380c0",
+      "topic_0": "0xe1655e511781940523ba9610e292e7d027c00210b5a7daa1633bbd57743f7cb3",
+      "transaction_hash": null
+    },
+    {
+      "chain_id": 11155111,
+      "emitter": "0xb73ba61b1b9d50f9bd68bb0916ca30ca3ae2cd1f",
+      "topic_0": "0x4dbacfcfebd9e4803ef5b809c5f6688b609b0c80e9b93d00fcfad764123c18bd",
+      "transaction_hash": null
+    },
+    {
+      "chain_id": 5318007,
+      "emitter": "0x0000000000000000000000000000000000fffFfF",
+      "topic_0": "0xf02d6ea5c22a71cffe930a4523fcb4f129be6c804db50e4202fb4e0b07ccb514",
+      "transaction_hash": null
+    }
+  ],
+  "acceptance": {
+    "preflight_fingerprints": [
+      "0xc118dcff1d8135fb79b332c7ce7f734a271ac72cd7e69d9ef239bb020509bcc8",
+      "0x41312a7101248f6e1b59af4acc814b1b31c6a91fb460bff776896569a1443974"
+    ],
+    "swap_transaction_hash": null,
+    "callback_transaction_hash": null,
+    "passed": false
+  },
+  "cost": [
+    {
+      "network_role": "origin",
+      "currency": "SepETH",
+      "gas_limit": 8337722,
+      "fee_cap_wei": "3000000000",
+      "funding": "0.005",
+      "estimated_maximum": "0.030013166",
+      "actual": null,
+      "approved_by_owner": false
+    },
+    {
+      "network_role": "reactive",
+      "currency": "lREACT",
+      "gas_limit": 7714020,
+      "fee_cap_wei": "250000000000",
+      "funding": "0.1",
+      "estimated_maximum": "2.028505000",
+      "actual": null,
+      "approved_by_owner": false
+    }
+  ]
+}
