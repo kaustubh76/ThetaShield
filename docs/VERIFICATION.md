@@ -11,7 +11,8 @@ make verify
 This checks Solidity formatting and lint diagnostics, compiles all contracts
 with the pinned compiler configuration, runs the Foundry test suite, compiles
 the Python model, runs its unit and randomized property tests, checks shared
-golden vectors, and reproduces every committed research artifact.
+golden vectors, reproduces every committed research artifact, and installs and
+verifies the dashboard from its lockfile.
 
 ## Dependency integrity
 
@@ -261,3 +262,27 @@ then the authoritative whole-repository gate:
 ```sh
 FOUNDRY_PROFILE=ci make verify
 ```
+
+## Phase 9 dashboard and submission gate
+
+Run the complete Phase 9 gate with:
+
+```sh
+make phase9-check
+```
+
+The Phase 9 gate requires:
+
+- exact dashboard dependency installation from `package-lock.json`;
+- lint and a production build;
+- server-rendered content assertions for the mechanism, evidence, limitations,
+  and release boundary;
+- zero high-severity production dependency advisories;
+- removal of disposable starter preview code and identity;
+- an interactive dashboard that labels illustrative scenarios as simulated;
+- a valid project-owned social preview image and request-host-derived metadata;
+- a final report, demo script, draft submission, and Phase 9 handoff; and
+- explicit preservation of the open Phase 8 live-deployment boundary.
+
+The submission file is draft content only. This gate does not send, publish, or
+submit the hook to any external service.

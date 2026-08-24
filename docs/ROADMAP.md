@@ -14,7 +14,7 @@ Every phase is verified before it is committed and pushed to `main`.
 | Phase 6.1 — H4/H5 remediation and holdout audit | Complete |
 | Phase 7 — Security and release hardening | Complete |
 | Phase 8 — Live deployment | Pending approval and cost gate |
-| Phase 9 — Dashboard and submission | Pending |
+| Phase 9 — Dashboard and submission | Complete locally; live cards gated on Phase 8 |
 
 ## Phase 0 — Repository foundation
 
@@ -71,3 +71,8 @@ verify a real swap-to-Reactive-callback lifecycle.
 
 Deliver the research dashboard, diagrams, manifests, report, demo, submission
 copy, and a final clean-clone reproduction.
+
+The local dashboard, final report, demo script, draft submission, and Phase 9
+verification gate are complete. No external submission has been made. Live
+addresses and acceptance evidence remain intentionally absent while Phase 8 is
+pending.

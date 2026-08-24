@@ -5,11 +5,12 @@ research project. It uses delayed signed markout, trailing-noise filtering,
 `n-of-k` persistence, and mechanical confidence scoring to raise fees only when
 order flow shows sustained evidence of adverse selection.
 
-> **Research status:** Phase 7 security and release hardening is implemented.
+> **Research status:** The local research build is complete through Phase 9.
 > The original Phase 6 report still records four passes and two failures; a
 > separate train/holdout revision passes the failed H4/H5 criteria on reserved
-> synthetic streams. The contracts remain unaudited and nothing is ready for
-> production deployment.
+> synthetic streams. The dashboard and submission package are complete, but
+> Phase 8 live acceptance remains open. The contracts are unaudited and are not
+> ready for production deployment.
 
 ## Research question
 
@@ -48,6 +49,7 @@ docs/         Architecture, roadmap, and verification records
 - Git with submodule support
 - Foundry
 - Python 3.11 or newer (required beginning in Phase 1)
+- Node.js 22.13 or newer and npm (required for the Phase 9 dashboard)
 
 ## Quick start
 
@@ -103,6 +105,13 @@ dependency/secret gates, fork checks, and non-broadcasting deployment preflight
 are recorded in the [Phase 7 handoff](docs/PHASE7_HANDOFF.md). Review the
 [threat model](docs/THREAT_MODEL.md) and
 [deployment runbook](docs/DEPLOYMENT_RUNBOOK.md) before any Phase 8 planning.
+
+The Phase 9 interactive dashboard, final report, demo script, and draft
+submission are recorded in the [Phase 9 handoff](docs/PHASE9_HANDOFF.md). Read
+the [final research report](docs/FINAL_REPORT.md), run the
+[demo script](docs/DEMO_SCRIPT.md), or review the unsubmitted
+[submission draft](docs/SUBMISSION.md). Use `make phase9-check` for the focused
+dashboard and handoff gate.
 
 ## Safety
 

@@ -1,6 +1,6 @@
 PYTHON ?= python3
 
-.PHONY: boundary-fuzz-check build clean dependency-check deployment-dry-run deployment-schema-check experiment-check experiment-report fmt fmt-check fork-check gas-check golden-check invariant-check lint phase5-check phase6-check phase6-report phase61-check phase61-report phase7-check python-check research-report research-test secret-check test verify
+.PHONY: boundary-fuzz-check build clean dashboard-check dashboard-deps dependency-check deployment-dry-run deployment-schema-check experiment-check experiment-report fmt fmt-check fork-check gas-check golden-check invariant-check lint phase5-check phase6-check phase6-report phase61-check phase61-report phase7-check phase9-check python-check research-report research-test secret-check test verify
 
 build:
 	forge build --sizes
@@ -77,7 +77,16 @@ deployment-schema-check:
 
 phase7-check: dependency-check secret-check boundary-fuzz-check invariant-check gas-check fork-check deployment-schema-check deployment-dry-run
 
+dashboard-deps:
+	npm --prefix dashboard ci --ignore-scripts --no-audit --no-fund
+
+dashboard-check: dashboard-deps
+	npm --prefix dashboard run verify
+
+phase9-check: dashboard-check
+	$(PYTHON) script/check_phase9.py
+
 test:
 	forge test --force
 
-verify: fmt-check lint build test python-check research-test dependency-check secret-check deployment-schema-check golden-check experiment-check phase5-check phase6-check phase61-check
+verify: fmt-check lint build test python-check research-test dependency-check secret-check deployment-schema-check golden-check experiment-check phase5-check phase6-check phase61-check phase9-check
