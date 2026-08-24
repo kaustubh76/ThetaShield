@@ -2,18 +2,24 @@
 pragma solidity 0.8.26;
 
 import {Test} from "forge-std/Test.sol";
+import {CircleMessages} from "../../src/circle/CircleMessages.sol";
 import {ThetaShieldController} from "../../src/controller/ThetaShieldController.sol";
+import {IMessageHandlerV2} from "../../src/interfaces/IMessageHandlerV2.sol";
+import {MockMessageTransmitterV2} from "../mocks/MockMessageTransmitterV2.sol";
 
 contract ThetaShieldControllerGasTest is Test {
     bytes32 private constant POOL_ID = keccak256("phase7-gas-pool");
-    address private constant CALLBACK_PROXY = address(0xCA11BAC);
-    address private constant RVM_ID = address(0xBEEF);
+    uint32 private constant PROCESSOR_DOMAIN = 0;
+    bytes32 private constant PROCESSOR = bytes32(uint256(uint160(address(0xBEEF))));
 
     ThetaShieldController private controller;
+    MockMessageTransmitterV2 private transmitter;
 
     function setUp() public {
         vm.warp(1_800_000_000);
-        controller = new ThetaShieldController(address(this), CALLBACK_PROXY, RVM_ID);
+        transmitter = new MockMessageTransmitterV2();
+        controller = new ThetaShieldController(address(this), transmitter);
+        controller.configureCirclePeer(PROCESSOR_DOMAIN, PROCESSOR);
         controller.configurePool(
             POOL_ID,
             ThetaShieldController.PoolFeeConfig({
@@ -31,14 +37,12 @@ contract ThetaShieldControllerGasTest is Test {
     function test_measureControllerOperationGas() external {
         ThetaShieldController.FeeRecommendation memory first = _recommendation(1, 1_000, 500);
         vm.startSnapshotGas("phase7_apply_recommendation_cold");
-        vm.prank(CALLBACK_PROXY);
-        controller.applyRecommendation(RVM_ID, POOL_ID, first);
+        _apply(first);
         uint256 coldApplyGas = vm.stopSnapshotGas("phase7_apply_recommendation_cold");
 
         ThetaShieldController.FeeRecommendation memory second = _recommendation(2, 1_500, 750);
         vm.startSnapshotGas("phase7_apply_recommendation_warm");
-        vm.prank(CALLBACK_PROXY);
-        controller.applyRecommendation(RVM_ID, POOL_ID, second);
+        _apply(second);
         uint256 warmApplyGas = vm.stopSnapshotGas("phase7_apply_recommendation_warm");
 
         vm.startSnapshotGas("phase7_fee_for_swap_warm");
@@ -52,6 +56,27 @@ contract ThetaShieldControllerGasTest is Test {
         assertLt(coldApplyGas, 200_000);
         assertLt(warmApplyGas, 100_000);
         assertLt(feeReadGas, 30_000);
+    }
+
+    function _apply(ThetaShieldController.FeeRecommendation memory recommendation) private {
+        CircleMessages.Recommendation memory delivered = CircleMessages.Recommendation({
+            poolId: POOL_ID,
+            zeroForOneFee: recommendation.zeroForOneFee,
+            oneForZeroFee: recommendation.oneForZeroFee,
+            zeroForOneRiskWad: recommendation.zeroForOneRiskWad,
+            oneForZeroRiskWad: recommendation.oneForZeroRiskWad,
+            confidenceBps: recommendation.confidenceBps,
+            validAfter: recommendation.validAfter,
+            validUntil: recommendation.validUntil,
+            sequence: recommendation.sequence
+        });
+        transmitter.deliverFinalized(
+            IMessageHandlerV2(address(controller)),
+            PROCESSOR_DOMAIN,
+            PROCESSOR,
+            2_000,
+            CircleMessages.encodeRecommendation(delivered)
+        );
     }
 
     function _recommendation(uint64 sequence, uint24 zeroForOneFee, uint24 oneForZeroFee)

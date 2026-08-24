@@ -9,15 +9,20 @@ import {IHooks} from "@uniswap/v4-core/src/interfaces/IHooks.sol";
 import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
 import {PoolKey} from "@uniswap/v4-core/src/types/PoolKey.sol";
 import {PoolId} from "@uniswap/v4-core/src/types/PoolId.sol";
+import {CircleMessages} from "../../src/circle/CircleMessages.sol";
+import {IMessageHandlerV2} from "../../src/interfaces/IMessageHandlerV2.sol";
+import {IThetaShieldCircleTransport} from "../../src/interfaces/IThetaShieldCircleTransport.sol";
 import {IThetaShieldController} from "../../src/interfaces/IThetaShieldController.sol";
 import {ThetaShieldController} from "../../src/controller/ThetaShieldController.sol";
 import {ThetaShieldBaseHook} from "../../src/hook/ThetaShieldBaseHook.sol";
 import {ThetaShieldHook} from "../../src/hook/ThetaShieldHook.sol";
 import {HookAddressMiner} from "../../src/deployment/HookAddressMiner.sol";
+import {MockMessageTransmitterV2} from "../mocks/MockMessageTransmitterV2.sol";
+import {MockThetaShieldCircleTransport} from "../mocks/MockThetaShieldCircleTransport.sol";
 
 contract ThetaShieldHookIntegrationTest is Deployers {
-    address private constant CALLBACK_PROXY = address(0xCA11BAC);
-    address private constant RVM_ID = address(0xBEEF);
+    uint32 private constant PROCESSOR_DOMAIN = 0;
+    bytes32 private constant PROCESSOR = bytes32(uint256(uint160(address(0xBEEF))));
     bytes32 private constant POOL_SWAP_TOPIC =
         keccak256("Swap(bytes32,address,int128,int128,uint160,uint128,int24,uint24)");
     bytes32 private constant OBSERVATION_TOPIC =
@@ -25,6 +30,8 @@ contract ThetaShieldHookIntegrationTest is Deployers {
 
     ThetaShieldController private controller;
     ThetaShieldHook private hook;
+    MockMessageTransmitterV2 private transmitter;
+    MockThetaShieldCircleTransport private transport;
     bytes32 private poolId;
 
     function setUp() public {
@@ -32,15 +39,22 @@ contract ThetaShieldHookIntegrationTest is Deployers {
         deployFreshManagerAndRouters();
         deployMintAndApprove2Currencies();
 
-        controller = new ThetaShieldController(address(this), CALLBACK_PROXY, RVM_ID);
+        transmitter = new MockMessageTransmitterV2();
+        transport = new MockThetaShieldCircleTransport();
+        controller = new ThetaShieldController(address(this), transmitter);
+        controller.configureCirclePeer(PROCESSOR_DOMAIN, PROCESSOR);
         uint160 flags = Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG;
         (address expectedAddress, bytes32 salt) = HookAddressMiner.find(
             address(this),
             flags,
             type(ThetaShieldHook).creationCode,
-            abi.encode(manager, IThetaShieldController(address(controller)))
+            abi.encode(
+                manager, IThetaShieldController(address(controller)), IThetaShieldCircleTransport(address(transport))
+            )
         );
-        hook = new ThetaShieldHook{salt: salt}(manager, IThetaShieldController(address(controller)));
+        hook = new ThetaShieldHook{salt: salt}(
+            manager, IThetaShieldController(address(controller)), IThetaShieldCircleTransport(address(transport))
+        );
         assertEq(address(hook), expectedAddress);
 
         PoolId typedPoolId;
@@ -95,6 +109,19 @@ contract ThetaShieldHookIntegrationTest is Deployers {
         assertEq(appliedFeePips, 2_500);
         assertFalse(usedBaseline);
         assertEq(observedAt, block.timestamp);
+        CircleMessages.Observation memory transported = transport.lastObservation();
+        assertEq(transported.poolId, poolId);
+        assertEq(transported.observationId, 1);
+        assertEq(transported.amount0, amount0);
+        assertEq(transported.amount1, amount1);
+    }
+
+    function test_circleOutageDoesNotRevertSwap() external {
+        transport.setSendsRevert(true);
+        swap(key, true, -100_000, ZERO_BYTES);
+
+        assertEq(hook.observationCount(poolId), 1);
+        assertEq(transport.sentCount(), 0);
     }
 
     function test_staleRecommendationExecutesWithBaselineFee() external {
@@ -171,8 +198,25 @@ contract ThetaShieldHookIntegrationTest is Deployers {
     }
 
     function _apply(ThetaShieldController.FeeRecommendation memory supplied) private {
-        vm.prank(CALLBACK_PROXY);
-        controller.applyRecommendation(RVM_ID, poolId, supplied);
+        transmitter.deliverFinalized(
+            IMessageHandlerV2(address(controller)),
+            PROCESSOR_DOMAIN,
+            PROCESSOR,
+            2_000,
+            CircleMessages.encodeRecommendation(
+                CircleMessages.Recommendation({
+                    poolId: poolId,
+                    zeroForOneFee: supplied.zeroForOneFee,
+                    oneForZeroFee: supplied.oneForZeroFee,
+                    zeroForOneRiskWad: supplied.zeroForOneRiskWad,
+                    oneForZeroRiskWad: supplied.oneForZeroRiskWad,
+                    confidenceBps: supplied.confidenceBps,
+                    validAfter: supplied.validAfter,
+                    validUntil: supplied.validUntil,
+                    sequence: supplied.sequence
+                })
+            )
+        );
     }
 
     function _config() private pure returns (ThetaShieldController.PoolFeeConfig memory) {

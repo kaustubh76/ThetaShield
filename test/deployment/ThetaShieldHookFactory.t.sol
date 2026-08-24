@@ -10,25 +10,45 @@ import {HookAddressMiner} from "../../src/deployment/HookAddressMiner.sol";
 import {ThetaShieldHookFactory} from "../../src/deployment/ThetaShieldHookFactory.sol";
 import {ThetaShieldHook} from "../../src/hook/ThetaShieldHook.sol";
 import {IThetaShieldController} from "../../src/interfaces/IThetaShieldController.sol";
+import {IThetaShieldCircleTransport} from "../../src/interfaces/IThetaShieldCircleTransport.sol";
+import {MockMessageTransmitterV2} from "../mocks/MockMessageTransmitterV2.sol";
+import {MockThetaShieldCircleTransport} from "../mocks/MockThetaShieldCircleTransport.sol";
 
 contract ThetaShieldHookFactoryTest is Test, Deployers {
     ThetaShieldController private controller;
     ThetaShieldHookFactory private factory;
+    MockThetaShieldCircleTransport private transport;
 
     function setUp() public {
         deployFreshManagerAndRouters();
-        controller = new ThetaShieldController(address(this), address(0xCA11BAC), address(0xBEEF));
+        controller = new ThetaShieldController(address(this), new MockMessageTransmitterV2());
+        transport = new MockThetaShieldCircleTransport();
         factory = new ThetaShieldHookFactory(address(this));
     }
 
     function test_ownerDeploysExactMinedHook() external {
         (address expectedHook, bytes32 salt) = _mine();
-        ThetaShieldHook hook = factory.deploy(salt, manager, IThetaShieldController(address(controller)), expectedHook);
+        ThetaShieldHook hook = factory.deploy(
+            salt,
+            manager,
+            IThetaShieldController(address(controller)),
+            IThetaShieldCircleTransport(address(transport)),
+            expectedHook
+        );
 
         assertEq(address(hook), expectedHook);
         assertEq(address(hook.poolManager()), address(manager));
         assertEq(address(hook.controller()), address(controller));
-        assertEq(factory.predict(salt, manager, IThetaShieldController(address(controller))), expectedHook);
+        assertEq(address(hook.circleTransport()), address(transport));
+        assertEq(
+            factory.predict(
+                salt,
+                manager,
+                IThetaShieldController(address(controller)),
+                IThetaShieldCircleTransport(address(transport))
+            ),
+            expectedHook
+        );
     }
 
     function test_nonOwnerCannotDeploy() external {
@@ -36,7 +56,13 @@ contract ThetaShieldHookFactoryTest is Test, Deployers {
         address outsider = address(0xBAD);
         vm.prank(outsider);
         vm.expectRevert(abi.encodeWithSelector(ThetaShieldHookFactory.NotOwner.selector, outsider));
-        factory.deploy(salt, manager, IThetaShieldController(address(controller)), expectedHook);
+        factory.deploy(
+            salt,
+            manager,
+            IThetaShieldController(address(controller)),
+            IThetaShieldCircleTransport(address(transport)),
+            expectedHook
+        );
     }
 
     function _mine() private view returns (address expectedHook, bytes32 salt) {
@@ -44,7 +70,11 @@ contract ThetaShieldHookFactoryTest is Test, Deployers {
             address(factory),
             Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG,
             type(ThetaShieldHook).creationCode,
-            abi.encode(IPoolManager(address(manager)), IThetaShieldController(address(controller)))
+            abi.encode(
+                IPoolManager(address(manager)),
+                IThetaShieldController(address(controller)),
+                IThetaShieldCircleTransport(address(transport))
+            )
         );
     }
 }

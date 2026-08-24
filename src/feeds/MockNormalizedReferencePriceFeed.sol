@@ -9,6 +9,7 @@ import {OwnedTwoStep} from "../security/OwnedTwoStep.sol";
 /// @notice Owner-published development feed. It is not decentralized or production-safe.
 contract MockNormalizedReferencePriceFeed is INormalizedReferencePriceFeed, OwnedTwoStep {
     mapping(bytes32 marketId => mapping(bytes32 sourceId => uint64 sequence)) public latestSequence;
+    mapping(bytes32 marketId => mapping(bytes32 sourceId => Reading reading)) private _latestReadings;
 
     error InvalidMarketOrSource();
     error InvalidPriceOrConfidence();
@@ -28,6 +29,13 @@ contract MockNormalizedReferencePriceFeed is INormalizedReferencePriceFeed, Owne
 
         sequence = latestSequence[marketId][sourceId] + 1;
         latestSequence[marketId][sourceId] = sequence;
+        _latestReadings[marketId][sourceId] =
+            Reading({sequence: sequence, priceWad: priceWad, confidenceWad: confidenceWad, observedAt: observedAt});
         emit ReferencePricePublished(marketId, sourceId, sequence, priceWad, confidenceWad, observedAt);
+    }
+
+    /// @inheritdoc INormalizedReferencePriceFeed
+    function latestReading(bytes32 marketId, bytes32 sourceId) external view returns (Reading memory reading) {
+        return _latestReadings[marketId][sourceId];
     }
 }

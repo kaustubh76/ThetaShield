@@ -2,12 +2,16 @@
 pragma solidity 0.8.26;
 
 import {ThetaShieldUnits} from "../base/ThetaShieldUnits.sol";
+import {CircleMessages} from "../circle/CircleMessages.sol";
+import {IMessageHandlerV2} from "../interfaces/IMessageHandlerV2.sol";
+import {IMessageTransmitterV2} from "../interfaces/IMessageTransmitterV2.sol";
 import {IThetaShieldController} from "../interfaces/IThetaShieldController.sol";
 import {OwnedTwoStep} from "../security/OwnedTwoStep.sol";
 
 /// @title ThetaShieldController
 /// @notice Authenticated origin-chain receiver and directional fee store.
-contract ThetaShieldController is IThetaShieldController, OwnedTwoStep {
+contract ThetaShieldController is IThetaShieldController, IMessageHandlerV2, OwnedTwoStep {
+    uint32 public constant FINALIZED_THRESHOLD = 2_000;
     /// @notice Absolute safety bound for a signed normalized risk value.
     uint256 public constant MAX_ABSOLUTE_RISK_WAD = 100e18;
 
@@ -32,8 +36,10 @@ contract ThetaShieldController is IThetaShieldController, OwnedTwoStep {
         uint64 sequence;
     }
 
-    address public immutable callbackProxy;
-    address public immutable expectedRvmId;
+    IMessageTransmitterV2 public immutable messageTransmitter;
+    uint32 public processorDomain;
+    bytes32 public processor;
+    bool public circlePeerSealed;
     bool public globallyPaused;
 
     mapping(bytes32 poolId => PoolFeeConfig config) private _poolConfigs;
@@ -42,8 +48,12 @@ contract ThetaShieldController is IThetaShieldController, OwnedTwoStep {
     mapping(bytes32 poolId => uint64 sequence) public lastSequence;
     mapping(bytes32 poolId => uint64 timestamp) public lastRecommendationAt;
 
-    error InvalidCallbackProxy(address caller);
-    error InvalidRvmId(address supplied);
+    error InvalidMessageTransmitter(address caller);
+    error InvalidCirclePeer(uint32 sourceDomain, bytes32 sender);
+    error InvalidCircleConfiguration();
+    error CirclePeerAlreadySealed();
+    error CirclePeerNotConfigured();
+    error UnfinalizedMessageRejected(uint32 finalityThresholdExecuted);
     error PoolNotConfigured(bytes32 poolId);
     error InvalidPoolId();
     error InvalidPoolConfiguration();
@@ -71,7 +81,7 @@ contract ThetaShieldController is IThetaShieldController, OwnedTwoStep {
     );
     event RecommendationApplied(
         bytes32 indexed poolId,
-        address indexed rvmId,
+        bytes32 indexed processor,
         uint64 indexed sequence,
         uint24 zeroForOneFee,
         uint24 oneForZeroFee,
@@ -83,11 +93,21 @@ contract ThetaShieldController is IThetaShieldController, OwnedTwoStep {
     );
     event GlobalPauseSet(bool paused);
     event PoolPauseSet(bytes32 indexed poolId, bool paused);
+    event CirclePeerConfigured(uint32 indexed processorDomain, bytes32 indexed processor);
 
-    constructor(address initialOwner, address callbackProxy_, address expectedRvmId_) OwnedTwoStep(initialOwner) {
-        if (callbackProxy_ == address(0) || expectedRvmId_ == address(0)) revert ZeroAddress();
-        callbackProxy = callbackProxy_;
-        expectedRvmId = expectedRvmId_;
+    constructor(address initialOwner, IMessageTransmitterV2 messageTransmitter_) OwnedTwoStep(initialOwner) {
+        if (address(messageTransmitter_) == address(0)) revert ZeroAddress();
+        messageTransmitter = messageTransmitter_;
+    }
+
+    /// @notice One-time configuration of the Ethereum-side Circle processor.
+    function configureCirclePeer(uint32 processorDomain_, bytes32 processor_) external onlyOwner {
+        if (circlePeerSealed) revert CirclePeerAlreadySealed();
+        if (processor_ == bytes32(0)) revert InvalidCircleConfiguration();
+        processorDomain = processorDomain_;
+        processor = processor_;
+        circlePeerSealed = true;
+        emit CirclePeerConfigured(processorDomain_, processor_);
     }
 
     /// @notice Adds or updates a supported pool without resetting replay protection.
@@ -129,11 +149,47 @@ contract ThetaShieldController is IThetaShieldController, OwnedTwoStep {
         emit PoolPauseSet(poolId, paused);
     }
 
-    /// @notice Applies a sequenced recommendation delivered by the configured callback proxy.
-    /// @dev Reactive callback delivery overwrites the first argument with the RVM identifier.
-    function applyRecommendation(address rvmId, bytes32 poolId, FeeRecommendation calldata recommendation) external {
-        if (msg.sender != callbackProxy) revert InvalidCallbackProxy(msg.sender);
-        if (rvmId != expectedRvmId) revert InvalidRvmId(rvmId);
+    /// @inheritdoc IMessageHandlerV2
+    function handleReceiveFinalizedMessage(
+        uint32 sourceDomain,
+        bytes32 sender,
+        uint32 finalityThresholdExecuted,
+        bytes calldata messageBody
+    ) external returns (bool) {
+        if (msg.sender != address(messageTransmitter)) {
+            revert InvalidMessageTransmitter(msg.sender);
+        }
+        if (!circlePeerSealed) revert CirclePeerNotConfigured();
+        if (sourceDomain != processorDomain || sender != processor) revert InvalidCirclePeer(sourceDomain, sender);
+        if (finalityThresholdExecuted < FINALIZED_THRESHOLD) {
+            revert UnfinalizedMessageRejected(finalityThresholdExecuted);
+        }
+
+        CircleMessages.Recommendation memory delivered = CircleMessages.decodeRecommendation(messageBody);
+        FeeRecommendation memory recommendation = FeeRecommendation({
+            zeroForOneFee: delivered.zeroForOneFee,
+            oneForZeroFee: delivered.oneForZeroFee,
+            zeroForOneRiskWad: delivered.zeroForOneRiskWad,
+            oneForZeroRiskWad: delivered.oneForZeroRiskWad,
+            confidenceBps: delivered.confidenceBps,
+            validAfter: delivered.validAfter,
+            validUntil: delivered.validUntil,
+            sequence: delivered.sequence
+        });
+        _applyRecommendation(delivered.poolId, recommendation);
+        return true;
+    }
+
+    /// @inheritdoc IMessageHandlerV2
+    function handleReceiveUnfinalizedMessage(uint32, bytes32, uint32 finalityThresholdExecuted, bytes calldata)
+        external
+        pure
+        returns (bool)
+    {
+        revert UnfinalizedMessageRejected(finalityThresholdExecuted);
+    }
+
+    function _applyRecommendation(bytes32 poolId, FeeRecommendation memory recommendation) private {
         _requireConfigured(poolId);
 
         uint64 previousSequence = lastSequence[poolId];
@@ -184,7 +240,7 @@ contract ThetaShieldController is IThetaShieldController, OwnedTwoStep {
 
         emit RecommendationApplied(
             poolId,
-            rvmId,
+            processor,
             recommendation.sequence,
             recommendation.zeroForOneFee,
             recommendation.oneForZeroFee,

@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.26;
 
-import {AbstractReactive} from "reactive-lib/abstract-base/AbstractReactive.sol";
 import {ThetaShieldUnits} from "../base/ThetaShieldUnits.sol";
-import {ThetaShieldController} from "../controller/ThetaShieldController.sol";
+import {CircleMessages} from "./CircleMessages.sol";
+import {IMessageHandlerV2} from "../interfaces/IMessageHandlerV2.sol";
+import {IMessageTransmitterV2} from "../interfaces/IMessageTransmitterV2.sol";
+import {INormalizedReferencePriceFeed} from "../interfaces/INormalizedReferencePriceFeed.sol";
 import {ConfidenceWeight} from "../libraries/ConfidenceWeight.sol";
 import {DeadBandFilter} from "../libraries/DeadBandFilter.sol";
 import {DirectionalMarkoutMath} from "../libraries/DirectionalMarkoutMath.sol";
@@ -15,35 +17,29 @@ import {PersistenceWindow} from "../libraries/PersistenceWindow.sol";
 import {ReferencePriceDispersion} from "../libraries/ReferencePriceDispersion.sol";
 import {TrailingVolatility} from "../libraries/TrailingVolatility.sol";
 
-/// @title ThetaShieldReactive
-/// @notice One-pool bounded scheduler for delayed markout and fee callbacks.
+/// @title ThetaShieldCircleProcessor
+/// @notice One-pool bounded processor for delayed markout and Circle recommendations.
 /// @dev One deployment intentionally serves one pool/market. This makes every
-///      observation, source, epoch, and CRON loop statically bounded.
-contract ThetaShieldReactive is AbstractReactive {
+///      observation, source, epoch, and processing loop statically bounded.
+contract ThetaShieldCircleProcessor is IMessageHandlerV2 {
+    uint32 public constant FINALIZED_THRESHOLD = 2_000;
     uint16 public constant ABSOLUTE_MAX_PENDING = 256;
-    uint16 public constant ABSOLUTE_MAX_PROCESS_PER_CRON = 64;
+    uint16 public constant ABSOLUTE_MAX_PROCESS_PER_CALL = 64;
     uint16 public constant ABSOLUTE_MAX_EPOCH_OBSERVATIONS = 128;
     uint8 public constant ABSOLUTE_MAX_REFERENCE_SOURCES = 16;
     uint8 public constant ABSOLUTE_MAX_REFERENCE_HISTORY = 8;
     uint16 public constant ABSOLUTE_MAX_FAST_PATH_HOLD_EPOCHS = 16;
     uint256 public constant MAX_ABSOLUTE_MARKOUT_WAD = 10e18;
 
-    uint256 public constant SWAP_OBSERVED_TOPIC =
-        uint256(keccak256("SwapObserved(bytes32,uint64,bool,int128,int128,uint160,uint24,bool,uint64)"));
-    uint256 public constant REFERENCE_PRICE_TOPIC =
-        uint256(keccak256("ReferencePricePublished(bytes32,bytes32,uint64,uint256,uint256,uint64)"));
-
     struct NetworkConfig {
-        uint256 originChainId;
-        uint256 referenceChainId;
-        uint256 reactiveChainId;
-        address hook;
+        address messageTransmitter;
+        uint32 originDomain;
+        bytes32 originTransport;
         address referenceFeed;
-        address controller;
+        uint32 controllerDomain;
+        bytes32 controller;
         bytes32 poolId;
         bytes32 marketId;
-        uint256 cronTopic;
-        uint64 callbackGasLimit;
     }
 
     struct TokenConfig {
@@ -61,7 +57,7 @@ contract ThetaShieldReactive is AbstractReactive {
         uint64 callbackClockSkew;
         uint64 maximumEventFutureSkew;
         uint16 maximumPendingObservations;
-        uint16 maximumProcessPerCron;
+        uint16 maximumProcessPerCall;
         uint16 maximumEpochObservations;
         uint16 trailingWindow;
         uint16 minimumTrailingObservations;
@@ -181,14 +177,15 @@ contract ThetaShieldReactive is AbstractReactive {
     mapping(uint8 side => mapping(uint16 index => int256 markoutWad)) private _markoutHistory;
     mapping(uint8 side => mapping(uint16 index => EpochObservationRecord record)) private _epochObservations;
 
-    uint64 public callbackSequence;
+    uint64 public recommendationSequence;
 
     error InvalidNetworkConfiguration();
     error InvalidSchedulerConfiguration();
     error InvalidReferenceSource(bytes32 sourceId);
     error DuplicateReferenceSource(bytes32 sourceId);
-    error OnlyReactiveService(address caller);
-    error UnsupportedLog(uint256 chainId, address emitter, uint256 topic0);
+    error InvalidMessageTransmitter(address caller);
+    error InvalidCirclePeer(uint32 sourceDomain, bytes32 sender);
+    error UnfinalizedMessageRejected(uint32 finalityThresholdExecuted);
     error InvalidSwapLog();
     error ObservationReplay(uint64 supplied, uint64 previous);
     error InvalidReferenceLog();
@@ -196,7 +193,7 @@ contract ThetaShieldReactive is AbstractReactive {
     error EventFromFuture(uint64 observedAt, uint64 currentTime);
     error TimestampOverflow();
     error ValueOutOfBounds();
-    error CallbackSequenceOverflow();
+    error RecommendationSequenceOverflow();
 
     event ObservationQueued(
         uint64 indexed observationId,
@@ -255,7 +252,7 @@ contract ThetaShieldReactive is AbstractReactive {
         SchedulerConfig memory schedulerConfig_,
         FeeCurve.Config memory feeCurveConfig_,
         bytes32[] memory referenceSources_
-    ) payable {
+    ) {
         _validateConfiguration(networkConfig_, tokenConfig_, schedulerConfig_, feeCurveConfig_, referenceSources_);
 
         networkConfig = networkConfig_;
@@ -280,28 +277,36 @@ contract ThetaShieldReactive is AbstractReactive {
 
         _sideStates[0].latestCalculatedFeePips = feeCurveConfig_.baseFeePips;
         _sideStates[1].latestCalculatedFeePips = feeCurveConfig_.baseFeePips;
-
-        if (!vm) _subscribe();
     }
 
-    /// @notice Processes one subscribed swap, reference, or CRON log.
-    function react(LogRecord calldata log) external override vmOnly {
-        if (msg.sender != address(SERVICE_ADDR)) revert OnlyReactiveService(msg.sender);
+    /// @inheritdoc IMessageHandlerV2
+    function handleReceiveFinalizedMessage(
+        uint32 sourceDomain,
+        bytes32 sender,
+        uint32 finalityThresholdExecuted,
+        bytes calldata messageBody
+    ) external returns (bool) {
+        if (msg.sender != networkConfig.messageTransmitter) {
+            revert InvalidMessageTransmitter(msg.sender);
+        }
+        if (sourceDomain != networkConfig.originDomain || sender != networkConfig.originTransport) {
+            revert InvalidCirclePeer(sourceDomain, sender);
+        }
+        if (finalityThresholdExecuted < FINALIZED_THRESHOLD) {
+            revert UnfinalizedMessageRejected(finalityThresholdExecuted);
+        }
 
-        if (log.topic_0 == SWAP_OBSERVED_TOPIC) {
-            _handleSwap(log);
-            return;
-        }
-        if (log.topic_0 == REFERENCE_PRICE_TOPIC) {
-            _handleReference(log);
-            return;
-        }
-        if (log.topic_0 == networkConfig.cronTopic) {
-            _handleCron(log);
-            return;
-        }
+        _handleObservation(CircleMessages.decodeObservation(messageBody));
+        return true;
+    }
 
-        revert UnsupportedLog(log.chain_id, log._contract, log.topic_0);
+    /// @inheritdoc IMessageHandlerV2
+    function handleReceiveUnfinalizedMessage(uint32, bytes32, uint32 finalityThresholdExecuted, bytes calldata)
+        external
+        pure
+        returns (bool)
+    {
+        revert UnfinalizedMessageRejected(finalityThresholdExecuted);
     }
 
     function referenceSourceCount() external view returns (uint256) {
@@ -342,53 +347,32 @@ contract ThetaShieldReactive is AbstractReactive {
         return _effectiveFee(_sideStates[_sideIndex(zeroForOne)]);
     }
 
-    function _subscribe() private {
-        service.subscribe(
-            networkConfig.originChainId,
-            networkConfig.hook,
-            SWAP_OBSERVED_TOPIC,
-            uint256(networkConfig.poolId),
-            REACTIVE_IGNORE,
-            REACTIVE_IGNORE
-        );
-        service.subscribe(
-            networkConfig.referenceChainId,
-            networkConfig.referenceFeed,
-            REFERENCE_PRICE_TOPIC,
-            uint256(networkConfig.marketId),
-            REACTIVE_IGNORE,
-            REACTIVE_IGNORE
-        );
-        service.subscribe(
-            networkConfig.reactiveChainId,
-            address(SERVICE_ADDR),
-            networkConfig.cronTopic,
-            REACTIVE_IGNORE,
-            REACTIVE_IGNORE,
-            REACTIVE_IGNORE
-        );
-    }
-
-    function _handleSwap(LogRecord calldata log) private {
+    function _handleObservation(CircleMessages.Observation memory observation) private {
         if (
-            log.chain_id != networkConfig.originChainId || log._contract != networkConfig.hook
-                || log.topic_1 != uint256(networkConfig.poolId) || log.topic_2 == 0 || log.topic_2 > type(uint64).max
-                || log.topic_3 > 1 || log.data.length != 192
+            observation.poolId != networkConfig.poolId || observation.observationId == 0 || observation.amount0 == 0
+                || observation.amount1 == 0 || (observation.amount0 < 0) == (observation.amount1 < 0)
+                || observation.sqrtPriceX96After == 0 || observation.appliedFeePips > ThetaShieldUnits.FEE_PIPS
+                || observation.observedAt == 0
         ) revert InvalidSwapLog();
 
-        // Topic bounds above make both conversions exact.
-        // forge-lint: disable-next-line(unsafe-typecast)
-        uint64 observationId = uint64(log.topic_2);
+        uint64 observationId = observation.observationId;
         if (observationId <= lastObservationId) revert ObservationReplay(observationId, lastObservationId);
 
-        SwapEventData memory eventData = _decodeSwapEvent(log.data);
+        SwapEventData memory eventData = SwapEventData({
+            amount0: observation.amount0,
+            amount1: observation.amount1,
+            sqrtPriceX96After: observation.sqrtPriceX96After,
+            appliedFeePips: observation.appliedFeePips,
+            usedBaseline: observation.usedBaseline,
+            observedAt: observation.observedAt
+        });
         uint64 currentTime = _currentTime();
         if (uint256(eventData.observedAt) > uint256(currentTime) + schedulerConfig.maximumEventFutureSkew) {
             revert EventFromFuture(eventData.observedAt, currentTime);
         }
 
         lastObservationId = observationId;
-        _queueObservation(observationId, log.topic_3 == 1, eventData, currentTime);
+        _queueObservation(observationId, observation.zeroForOne, eventData, currentTime);
     }
 
     function _queueObservation(
@@ -432,38 +416,18 @@ contract ThetaShieldReactive is AbstractReactive {
         emit ObservationQueued(observationId, slot, zeroForOne, executionPriceWad, notionalWad, matureAt, expiresAt);
     }
 
-    function _decodeSwapEvent(bytes calldata data) private pure returns (SwapEventData memory eventData) {
-        (
-            eventData.amount0,
-            eventData.amount1,
-            eventData.sqrtPriceX96After,
-            eventData.appliedFeePips,
-            eventData.usedBaseline,
-            eventData.observedAt
-        ) = abi.decode(data, (int128, int128, uint160, uint24, bool, uint64));
-        if (
-            eventData.amount0 == 0 || eventData.amount1 == 0 || (eventData.amount0 < 0) == (eventData.amount1 < 0)
-                || eventData.sqrtPriceX96After == 0 || eventData.appliedFeePips > ThetaShieldUnits.FEE_PIPS
-                || eventData.observedAt == 0
-        ) revert InvalidSwapLog();
-    }
-
-    function _handleReference(LogRecord calldata log) private {
-        if (
-            log.chain_id != networkConfig.referenceChainId || log._contract != networkConfig.referenceFeed
-                || log.topic_1 != uint256(networkConfig.marketId) || log.topic_2 == 0 || log.topic_3 == 0
-                || log.topic_3 > type(uint64).max || log.data.length != 96
-        ) revert InvalidReferenceLog();
-
-        bytes32 sourceId = bytes32(log.topic_2);
+    function syncReference(bytes32 sourceId) external returns (bool accepted) {
         if (referenceSourceIndex[sourceId] == 0) revert InvalidReferenceSource(sourceId);
-        // Topic bounds above make this conversion exact.
-        // forge-lint: disable-next-line(unsafe-typecast)
-        uint64 sequence = uint64(log.topic_3);
+        INormalizedReferencePriceFeed.Reading memory reading =
+            INormalizedReferencePriceFeed(networkConfig.referenceFeed).latestReading(networkConfig.marketId, sourceId);
+        uint64 sequence = reading.sequence;
         uint64 previousSequence = latestReferenceSequence[sourceId];
-        if (sequence <= previousSequence) revert ReferenceReplay(sourceId, sequence, previousSequence);
+        if (sequence == previousSequence && sequence != 0) return false;
+        if (sequence == 0 || sequence < previousSequence) revert ReferenceReplay(sourceId, sequence, previousSequence);
 
-        (uint256 priceWad, uint256 confidenceWad, uint64 observedAt) = abi.decode(log.data, (uint256, uint256, uint64));
+        uint256 priceWad = reading.priceWad;
+        uint256 confidenceWad = reading.confidenceWad;
+        uint64 observedAt = reading.observedAt;
         if (
             priceWad == 0 || priceWad > type(uint128).max || confidenceWad == 0 || confidenceWad > ThetaShieldUnits.WAD
                 || observedAt == 0
@@ -491,23 +455,21 @@ contract ThetaShieldReactive is AbstractReactive {
         if (count < historyLimit) _referenceHistoryCount[sourceId] = count + 1;
 
         emit ReferenceAccepted(sourceId, sequence, priceWad, confidenceWad, observedAt);
+        return true;
     }
 
-    function _handleCron(LogRecord calldata log) private {
-        if (
-            log.chain_id != networkConfig.reactiveChainId || log._contract != address(SERVICE_ADDR)
-                || log.topic_0 != networkConfig.cronTopic
-        ) revert UnsupportedLog(log.chain_id, log._contract, log.topic_0);
-
+    /// @notice Permissionlessly advances bounded mature work.
+    function process() external returns (bool recommendationDispatched) {
         bool finalized = _processPending();
         if (_finalizeMatureEpoch(0)) finalized = true;
         if (_finalizeMatureEpoch(1)) finalized = true;
         if (finalized) _scheduleRecommendation();
+        return finalized;
     }
 
     function _processPending() private returns (bool finalized) {
         uint16 slotCount = schedulerConfig.maximumPendingObservations;
-        uint16 maximumToInspect = schedulerConfig.maximumProcessPerCron;
+        uint16 maximumToInspect = schedulerConfig.maximumProcessPerCall;
         uint64 currentTime = _currentTime();
 
         for (uint16 inspected; inspected < maximumToInspect; ++inspected) {
@@ -878,9 +840,9 @@ contract ThetaShieldReactive is AbstractReactive {
     }
 
     function _scheduleRecommendation() private {
-        if (callbackSequence == type(uint64).max) revert CallbackSequenceOverflow();
-        uint64 sequence = callbackSequence + 1;
-        callbackSequence = sequence;
+        if (recommendationSequence == type(uint64).max) revert RecommendationSequenceOverflow();
+        uint64 sequence = recommendationSequence + 1;
+        recommendationSequence = sequence;
 
         SideState storage zeroForOne = _sideStates[0];
         SideState storage oneForZero = _sideStates[1];
@@ -903,7 +865,8 @@ contract ThetaShieldReactive is AbstractReactive {
         // forge-lint: disable-next-line(unsafe-typecast)
         uint64 validUntil = uint64(validUntilWide);
 
-        ThetaShieldController.FeeRecommendation memory recommendation = ThetaShieldController.FeeRecommendation({
+        CircleMessages.Recommendation memory recommendation = CircleMessages.Recommendation({
+            poolId: networkConfig.poolId,
             zeroForOneFee: zeroForOneFeePips,
             oneForZeroFee: oneForZeroFeePips,
             zeroForOneRiskWad: zeroForOne.latestRiskWad,
@@ -913,9 +876,7 @@ contract ThetaShieldReactive is AbstractReactive {
             validUntil: validUntil,
             sequence: sequence
         });
-        bytes memory payload = abi.encodeWithSelector(
-            ThetaShieldController.applyRecommendation.selector, address(0), networkConfig.poolId, recommendation
-        );
+        bytes memory payload = CircleMessages.encodeRecommendation(recommendation);
 
         emit RecommendationScheduled(
             sequence,
@@ -927,7 +888,10 @@ contract ThetaShieldReactive is AbstractReactive {
             validAfter,
             validUntil
         );
-        emit Callback(networkConfig.originChainId, networkConfig.controller, networkConfig.callbackGasLimit, payload);
+        IMessageTransmitterV2(networkConfig.messageTransmitter)
+            .sendMessage(
+                networkConfig.controllerDomain, networkConfig.controller, bytes32(0), FINALIZED_THRESHOLD, payload
+            );
     }
 
     function _effectiveFee(SideState storage state) private view returns (uint24) {
@@ -1007,10 +971,9 @@ contract ThetaShieldReactive is AbstractReactive {
         bytes32[] memory sources
     ) private pure {
         if (
-            network.originChainId == 0 || network.referenceChainId == 0 || network.reactiveChainId == 0
-                || network.hook == address(0) || network.referenceFeed == address(0) || network.controller == address(0)
-                || network.poolId == bytes32(0) || network.marketId == bytes32(0) || network.cronTopic == 0
-                || network.callbackGasLimit == 0
+            network.messageTransmitter == address(0) || network.originTransport == bytes32(0)
+                || network.referenceFeed == address(0) || network.controller == bytes32(0)
+                || network.poolId == bytes32(0) || network.marketId == bytes32(0)
         ) revert InvalidNetworkConfiguration();
         if (tokens.token0Decimals > 36 || tokens.token1Decimals > 36) revert InvalidSchedulerConfiguration();
         if (sources.length == 0 || sources.length > ABSOLUTE_MAX_REFERENCE_SOURCES) {
@@ -1023,9 +986,9 @@ contract ThetaShieldReactive is AbstractReactive {
                 || scheduler.epochDuration == 0 || scheduler.recommendationLifetime == 0
                 || scheduler.callbackClockSkew >= scheduler.recommendationLifetime
                 || scheduler.maximumPendingObservations == 0
-                || scheduler.maximumPendingObservations > ABSOLUTE_MAX_PENDING || scheduler.maximumProcessPerCron == 0
-                || scheduler.maximumProcessPerCron > ABSOLUTE_MAX_PROCESS_PER_CRON
-                || scheduler.maximumProcessPerCron > scheduler.maximumPendingObservations
+                || scheduler.maximumPendingObservations > ABSOLUTE_MAX_PENDING || scheduler.maximumProcessPerCall == 0
+                || scheduler.maximumProcessPerCall > ABSOLUTE_MAX_PROCESS_PER_CALL
+                || scheduler.maximumProcessPerCall > scheduler.maximumPendingObservations
                 || scheduler.maximumEpochObservations == 0
                 || scheduler.maximumEpochObservations > ABSOLUTE_MAX_EPOCH_OBSERVATIONS || scheduler.trailingWindow == 0
                 || scheduler.trailingWindow > 256 || scheduler.minimumTrailingObservations == 0

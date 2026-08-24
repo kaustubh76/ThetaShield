@@ -2,7 +2,9 @@
 pragma solidity 0.8.26;
 
 import {ThetaShieldBaseHook} from "./ThetaShieldBaseHook.sol";
+import {CircleMessages} from "../circle/CircleMessages.sol";
 import {IThetaShieldController} from "../interfaces/IThetaShieldController.sol";
+import {IThetaShieldCircleTransport} from "../interfaces/IThetaShieldCircleTransport.sol";
 import {Hooks} from "@uniswap/v4-core/src/libraries/Hooks.sol";
 import {LPFeeLibrary} from "@uniswap/v4-core/src/libraries/LPFeeLibrary.sol";
 import {StateLibrary} from "@uniswap/v4-core/src/libraries/StateLibrary.sol";
@@ -21,9 +23,11 @@ contract ThetaShieldHook is ThetaShieldBaseHook {
     using StateLibrary for IPoolManager;
 
     IThetaShieldController public immutable controller;
+    IThetaShieldCircleTransport public immutable circleTransport;
     mapping(bytes32 poolId => uint64 count) public observationCount;
 
     error ZeroController();
+    error ZeroCircleTransport();
     error StaticFeePoolNotSupported();
     error ObservationSequenceOverflow(bytes32 poolId);
 
@@ -38,10 +42,17 @@ contract ThetaShieldHook is ThetaShieldBaseHook {
         bool usedBaseline,
         uint64 observedAt
     );
+    event ObservationTransportFailed(bytes32 indexed poolId, uint64 indexed observationId, bytes reason);
 
-    constructor(IPoolManager poolManager_, IThetaShieldController controller_) ThetaShieldBaseHook(poolManager_) {
+    constructor(
+        IPoolManager poolManager_,
+        IThetaShieldController controller_,
+        IThetaShieldCircleTransport circleTransport_
+    ) ThetaShieldBaseHook(poolManager_) {
         if (address(controller_) == address(0)) revert ZeroController();
+        if (address(circleTransport_) == address(0)) revert ZeroCircleTransport();
         controller = controller_;
+        circleTransport = circleTransport_;
     }
 
     /// @inheritdoc ThetaShieldBaseHook
@@ -106,6 +117,24 @@ contract ThetaShieldHook is ThetaShieldBaseHook {
             usedBaseline,
             observedAt
         );
+
+        CircleMessages.Observation memory observation = CircleMessages.Observation({
+            poolId: poolId,
+            observationId: observationId,
+            zeroForOne: zeroForOne,
+            amount0: amount0,
+            amount1: amount1,
+            sqrtPriceX96After: sqrtPriceX96After,
+            appliedFeePips: appliedFeePips,
+            usedBaseline: usedBaseline,
+            observedAt: observedAt
+        });
+        // Circle availability must never make the PoolManager's swap fail. The
+        // observation event remains available for monitoring and recovery.
+        try circleTransport.sendObservation(observation) {}
+        catch (bytes memory reason) {
+            emit ObservationTransportFailed(poolId, observationId, reason);
+        }
     }
 
     function _requireDynamicFeePool(PoolKey calldata key) private pure {

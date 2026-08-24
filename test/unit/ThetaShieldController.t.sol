@@ -2,28 +2,36 @@
 pragma solidity 0.8.26;
 
 import {Test} from "forge-std/Test.sol";
+import {CircleMessages} from "../../src/circle/CircleMessages.sol";
 import {ThetaShieldController} from "../../src/controller/ThetaShieldController.sol";
+import {IMessageHandlerV2} from "../../src/interfaces/IMessageHandlerV2.sol";
 import {OwnedTwoStep} from "../../src/security/OwnedTwoStep.sol";
+import {MockMessageTransmitterV2} from "../mocks/MockMessageTransmitterV2.sol";
 
 contract ThetaShieldControllerTest is Test {
     address private constant OWNER = 0xd1DcAAFf9356d5a42f2eE6F90179C4509386a83f;
-    address private constant CALLBACK_PROXY = address(0xCA11BAC);
-    address private constant RVM_ID = address(0xBEEF);
+    uint32 private constant PROCESSOR_DOMAIN = 0;
+    bytes32 private constant PROCESSOR = bytes32(uint256(uint160(address(0xBEEF))));
     bytes32 private constant POOL_ID = keccak256("theta-shield-test-pool");
 
     ThetaShieldController private controller;
+    MockMessageTransmitterV2 private transmitter;
 
     function setUp() external {
         vm.warp(1_800_000_000);
-        controller = new ThetaShieldController(OWNER, CALLBACK_PROXY, RVM_ID);
+        transmitter = new MockMessageTransmitterV2();
+        controller = new ThetaShieldController(OWNER, transmitter);
+        vm.prank(OWNER);
+        controller.configureCirclePeer(PROCESSOR_DOMAIN, PROCESSOR);
         vm.prank(OWNER);
         controller.configurePool(POOL_ID, _config());
     }
 
     function test_usesProvidedAccountAsInitialOwner() external view {
         assertEq(controller.owner(), OWNER);
-        assertEq(controller.callbackProxy(), CALLBACK_PROXY);
-        assertEq(controller.expectedRvmId(), RVM_ID);
+        assertEq(address(controller.messageTransmitter()), address(transmitter));
+        assertEq(controller.processor(), PROCESSOR);
+        assertTrue(controller.circlePeerSealed());
     }
 
     function test_unsetRecommendationUsesBaseline() external view {
@@ -54,71 +62,74 @@ contract ThetaShieldControllerTest is Test {
         assertEq(controller.lastSequence(POOL_ID), 1);
     }
 
-    function test_rejectsUnauthorizedCallbackSender() external {
-        vm.expectRevert(abi.encodeWithSelector(ThetaShieldController.InvalidCallbackProxy.selector, address(this)));
-        controller.applyRecommendation(RVM_ID, POOL_ID, _validRecommendation(1));
+    function test_rejectsUnauthorizedMessageTransmitter() external {
+        vm.expectRevert(abi.encodeWithSelector(ThetaShieldController.InvalidMessageTransmitter.selector, address(this)));
+        controller.handleReceiveFinalizedMessage(
+            PROCESSOR_DOMAIN, PROCESSOR, 2_000, _encodedRecommendation(_validRecommendation(1))
+        );
     }
 
-    function test_rejectsWrongRvmIdentifier() external {
-        address wrongRvmId = address(0xBAD);
-        vm.prank(CALLBACK_PROXY);
-        vm.expectRevert(abi.encodeWithSelector(ThetaShieldController.InvalidRvmId.selector, wrongRvmId));
-        controller.applyRecommendation(wrongRvmId, POOL_ID, _validRecommendation(1));
+    function test_rejectsWrongCirclePeer() external {
+        bytes32 wrongProcessor = bytes32(uint256(uint160(address(0xBAD))));
+        vm.expectRevert(
+            abi.encodeWithSelector(ThetaShieldController.InvalidCirclePeer.selector, PROCESSOR_DOMAIN, wrongProcessor)
+        );
+        transmitter.deliverFinalized(
+            IMessageHandlerV2(address(controller)),
+            PROCESSOR_DOMAIN,
+            wrongProcessor,
+            2_000,
+            _encodedRecommendation(_validRecommendation(1))
+        );
     }
 
     function test_rejectsReplayAndOutOfOrderSequence() external {
         _apply(_validRecommendation(7));
 
-        vm.startPrank(CALLBACK_PROXY);
         vm.expectRevert(abi.encodeWithSelector(ThetaShieldController.RecommendationReplay.selector, 7, 7));
-        controller.applyRecommendation(RVM_ID, POOL_ID, _validRecommendation(7));
+        _apply(_validRecommendation(7));
         vm.expectRevert(abi.encodeWithSelector(ThetaShieldController.RecommendationReplay.selector, 6, 7));
-        controller.applyRecommendation(RVM_ID, POOL_ID, _validRecommendation(6));
-        vm.stopPrank();
+        _apply(_validRecommendation(6));
     }
 
     function test_rejectsFutureStaleAndMalformedWindows() external {
         ThetaShieldController.FeeRecommendation memory supplied = _validRecommendation(1);
         supplied.validAfter = uint64(block.timestamp + 1);
         supplied.validUntil = uint64(block.timestamp + 60);
-        vm.prank(CALLBACK_PROXY);
         vm.expectRevert(
             abi.encodeWithSelector(
                 ThetaShieldController.FutureRecommendation.selector, supplied.validAfter, uint64(block.timestamp)
             )
         );
-        controller.applyRecommendation(RVM_ID, POOL_ID, supplied);
+        _apply(supplied);
 
         supplied = _validRecommendation(1);
         supplied.validAfter = uint64(block.timestamp - 60);
         supplied.validUntil = uint64(block.timestamp);
-        vm.prank(CALLBACK_PROXY);
         vm.expectRevert(
             abi.encodeWithSelector(
                 ThetaShieldController.StaleRecommendation.selector, supplied.validUntil, uint64(block.timestamp)
             )
         );
-        controller.applyRecommendation(RVM_ID, POOL_ID, supplied);
+        _apply(supplied);
 
         supplied = _validRecommendation(1);
         supplied.validAfter = uint64(block.timestamp);
         supplied.validUntil = supplied.validAfter;
-        vm.prank(CALLBACK_PROXY);
         vm.expectRevert(
             abi.encodeWithSelector(
                 ThetaShieldController.InvalidRecommendationWindow.selector, supplied.validAfter, supplied.validUntil
             )
         );
-        controller.applyRecommendation(RVM_ID, POOL_ID, supplied);
+        _apply(supplied);
     }
 
     function test_rejectsOverlongRecommendation() external {
         ThetaShieldController.FeeRecommendation memory supplied = _validRecommendation(1);
         supplied.validUntil = supplied.validAfter + 301;
 
-        vm.prank(CALLBACK_PROXY);
         vm.expectRevert(abi.encodeWithSelector(ThetaShieldController.RecommendationLifetimeTooLong.selector, 301, 300));
-        controller.applyRecommendation(RVM_ID, POOL_ID, supplied);
+        _apply(supplied);
     }
 
     function test_enforcesConfiguredRecommendationCooldown() external {
@@ -130,11 +141,10 @@ contract ThetaShieldControllerTest is Test {
         _apply(_validRecommendation(1));
         uint64 acceptedAt = uint64(block.timestamp);
 
-        vm.prank(CALLBACK_PROXY);
         vm.expectRevert(
             abi.encodeWithSelector(ThetaShieldController.RecommendationTooSoon.selector, acceptedAt + 30, acceptedAt)
         );
-        controller.applyRecommendation(RVM_ID, POOL_ID, _validRecommendation(2));
+        _apply(_validRecommendation(2));
 
         vm.warp(acceptedAt + 30);
         _apply(_validRecommendation(2));
@@ -154,37 +164,32 @@ contract ThetaShieldControllerTest is Test {
     function test_rejectsOutOfBoundsFeeRiskAndConfidence() external {
         ThetaShieldController.FeeRecommendation memory supplied = _validRecommendation(1);
         supplied.zeroForOneFee = 10_001;
-        vm.prank(CALLBACK_PROXY);
         vm.expectRevert(
             abi.encodeWithSelector(ThetaShieldController.FeeOutOfBounds.selector, true, 10_001, 500, 10_000)
         );
-        controller.applyRecommendation(RVM_ID, POOL_ID, supplied);
+        _apply(supplied);
 
         supplied = _validRecommendation(1);
         supplied.zeroForOneRiskWad = 101e18;
-        vm.prank(CALLBACK_PROXY);
         vm.expectRevert(abi.encodeWithSelector(ThetaShieldController.RiskOutOfBounds.selector, true, int128(101e18)));
-        controller.applyRecommendation(RVM_ID, POOL_ID, supplied);
+        _apply(supplied);
 
         supplied = _validRecommendation(1);
         supplied.confidenceBps = 10_001;
-        vm.prank(CALLBACK_PROXY);
         vm.expectRevert(abi.encodeWithSelector(ThetaShieldController.InvalidConfidence.selector, 10_001));
-        controller.applyRecommendation(RVM_ID, POOL_ID, supplied);
+        _apply(supplied);
     }
 
     function test_rejectsPremiumWithoutPositiveRiskOrEnoughConfidence() external {
         ThetaShieldController.FeeRecommendation memory supplied = _validRecommendation(1);
         supplied.zeroForOneRiskWad = -1;
-        vm.prank(CALLBACK_PROXY);
         vm.expectRevert(abi.encodeWithSelector(ThetaShieldController.FeeRiskMismatch.selector, true, 2_500, int128(-1)));
-        controller.applyRecommendation(RVM_ID, POOL_ID, supplied);
+        _apply(supplied);
 
         supplied = _validRecommendation(1);
         supplied.confidenceBps = 5_999;
-        vm.prank(CALLBACK_PROXY);
         vm.expectRevert(abi.encodeWithSelector(ThetaShieldController.InsufficientConfidence.selector, 5_999, 6_000));
-        controller.applyRecommendation(RVM_ID, POOL_ID, supplied);
+        _apply(supplied);
     }
 
     function test_lowConfidenceBaselineUpdateAdvancesSequenceAndFallsBack() external {
@@ -237,9 +242,8 @@ contract ThetaShieldControllerTest is Test {
         assertTrue(usedBaseline);
         assertEq(controller.lastSequence(POOL_ID), 5);
 
-        vm.prank(CALLBACK_PROXY);
         vm.expectRevert(abi.encodeWithSelector(ThetaShieldController.RecommendationReplay.selector, 5, 5));
-        controller.applyRecommendation(RVM_ID, POOL_ID, _validRecommendation(5));
+        _apply(_validRecommendation(5));
     }
 
     function test_ownershipTransferRequiresPendingOwnerAcceptance() external {
@@ -263,8 +267,29 @@ contract ThetaShieldControllerTest is Test {
     }
 
     function _apply(ThetaShieldController.FeeRecommendation memory supplied) private {
-        vm.prank(CALLBACK_PROXY);
-        controller.applyRecommendation(RVM_ID, POOL_ID, supplied);
+        transmitter.deliverFinalized(
+            IMessageHandlerV2(address(controller)), PROCESSOR_DOMAIN, PROCESSOR, 2_000, _encodedRecommendation(supplied)
+        );
+    }
+
+    function _encodedRecommendation(ThetaShieldController.FeeRecommendation memory supplied)
+        private
+        pure
+        returns (bytes memory)
+    {
+        return CircleMessages.encodeRecommendation(
+            CircleMessages.Recommendation({
+                poolId: POOL_ID,
+                zeroForOneFee: supplied.zeroForOneFee,
+                oneForZeroFee: supplied.oneForZeroFee,
+                zeroForOneRiskWad: supplied.zeroForOneRiskWad,
+                oneForZeroRiskWad: supplied.oneForZeroRiskWad,
+                confidenceBps: supplied.confidenceBps,
+                validAfter: supplied.validAfter,
+                validUntil: supplied.validUntil,
+                sequence: supplied.sequence
+            })
+        );
     }
 
     function _config() private pure returns (ThetaShieldController.PoolFeeConfig memory) {

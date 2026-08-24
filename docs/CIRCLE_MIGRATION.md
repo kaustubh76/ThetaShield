@@ -69,8 +69,8 @@ Sepolia/Lasna dry-run manifests are historical and must not be broadcast.
 | Gate | Deliverable | Status |
 |---|---|---|
 | Phase 8A | Circle architecture and trust-boundary decision | Complete |
-| Phase 8B | Circle transport, processor, controller, hook, and local lifecycle tests | In progress |
-| Phase 8C | Circle deployment tooling, relayer, fork checks, docs, and dashboard | Pending |
+| Phase 8B | Circle transport, processor, controller, hook, and local lifecycle tests | Complete |
+| Phase 8C | Circle deployment tooling, relayer, fork checks, docs, and dashboard | In progress |
 | Phase 8D | Fresh two-chain simulation, explicit cost approval, deployment, and acceptance | Pending |
 
 Hook submission remains outside this plan and must not be performed.

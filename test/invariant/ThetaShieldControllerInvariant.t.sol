@@ -3,14 +3,18 @@ pragma solidity 0.8.26;
 
 import {StdInvariant} from "forge-std/StdInvariant.sol";
 import {Test} from "forge-std/Test.sol";
+import {CircleMessages} from "../../src/circle/CircleMessages.sol";
 import {ThetaShieldController} from "../../src/controller/ThetaShieldController.sol";
+import {IMessageHandlerV2} from "../../src/interfaces/IMessageHandlerV2.sol";
+import {MockMessageTransmitterV2} from "../mocks/MockMessageTransmitterV2.sol";
 
 contract ThetaShieldControllerHandler is Test {
     ThetaShieldController public immutable controller;
+    MockMessageTransmitterV2 public immutable transmitter;
     bytes32 public immutable poolId;
     address public immutable owner;
-    address public immutable callbackProxy;
-    address public immutable rvmId;
+    uint32 public immutable processorDomain;
+    bytes32 public immutable processor;
 
     uint64 public expectedLastSequence;
     bool public replayAccepted;
@@ -18,16 +22,18 @@ contract ThetaShieldControllerHandler is Test {
 
     constructor(
         ThetaShieldController controller_,
+        MockMessageTransmitterV2 transmitter_,
         bytes32 poolId_,
         address owner_,
-        address callbackProxy_,
-        address rvmId_
+        uint32 processorDomain_,
+        bytes32 processor_
     ) {
         controller = controller_;
+        transmitter = transmitter_;
         poolId = poolId_;
         owner = owner_;
-        callbackProxy = callbackProxy_;
-        rvmId = rvmId_;
+        processorDomain = processorDomain_;
+        processor = processor_;
     }
 
     function applyValid(
@@ -57,8 +63,7 @@ contract ThetaShieldControllerHandler is Test {
             sequence: sequence
         });
 
-        vm.prank(callbackProxy);
-        controller.applyRecommendation(rvmId, poolId, recommendation);
+        _deliver(recommendation);
         expectedLastSequence = sequence;
     }
 
@@ -68,14 +73,13 @@ contract ThetaShieldControllerHandler is Test {
         ThetaShieldController.FeeRecommendation memory recommendation = controller.currentRecommendation(poolId);
         recommendation.validAfter = currentTime;
         recommendation.validUntil = currentTime + 300;
-        vm.prank(callbackProxy);
-        try controller.applyRecommendation(rvmId, poolId, recommendation) {
+        try this.deliver(recommendation) {
             replayAccepted = true;
         } catch {}
     }
 
     function attemptUnauthorized(address caller) external {
-        if (caller == callbackProxy) caller = address(0xBAD);
+        if (caller == address(transmitter)) caller = address(0xBAD);
         uint64 currentTime = uint64(block.timestamp);
         ThetaShieldController.FeeRecommendation memory recommendation = ThetaShieldController.FeeRecommendation({
             zeroForOneFee: 500,
@@ -88,9 +92,40 @@ contract ThetaShieldControllerHandler is Test {
             sequence: expectedLastSequence + 1
         });
         vm.prank(caller);
-        try controller.applyRecommendation(rvmId, poolId, recommendation) {
+        try controller.handleReceiveFinalizedMessage(processorDomain, processor, 2_000, _encoded(recommendation)) {
             unauthorizedAccepted = true;
         } catch {}
+    }
+
+    function deliver(ThetaShieldController.FeeRecommendation calldata recommendation) external {
+        if (msg.sender != address(this)) revert();
+        _deliver(recommendation);
+    }
+
+    function _deliver(ThetaShieldController.FeeRecommendation memory recommendation) private {
+        transmitter.deliverFinalized(
+            IMessageHandlerV2(address(controller)), processorDomain, processor, 2_000, _encoded(recommendation)
+        );
+    }
+
+    function _encoded(ThetaShieldController.FeeRecommendation memory recommendation)
+        private
+        view
+        returns (bytes memory)
+    {
+        return CircleMessages.encodeRecommendation(
+            CircleMessages.Recommendation({
+                poolId: poolId,
+                zeroForOneFee: recommendation.zeroForOneFee,
+                oneForZeroFee: recommendation.oneForZeroFee,
+                zeroForOneRiskWad: recommendation.zeroForOneRiskWad,
+                oneForZeroRiskWad: recommendation.oneForZeroRiskWad,
+                confidenceBps: recommendation.confidenceBps,
+                validAfter: recommendation.validAfter,
+                validUntil: recommendation.validUntil,
+                sequence: recommendation.sequence
+            })
+        );
     }
 
     function setGlobalPause(bool paused) external {
@@ -110,15 +145,18 @@ contract ThetaShieldControllerHandler is Test {
 
 contract ThetaShieldControllerInvariantTest is StdInvariant, Test {
     bytes32 private constant POOL_ID = keccak256("phase7-invariant-pool");
-    address private constant CALLBACK_PROXY = address(0xCA11BAC);
-    address private constant RVM_ID = address(0xBEEF);
+    uint32 private constant PROCESSOR_DOMAIN = 0;
+    bytes32 private constant PROCESSOR = bytes32(uint256(uint160(address(0xBEEF))));
 
     ThetaShieldController private controller;
     ThetaShieldControllerHandler private handler;
+    MockMessageTransmitterV2 private transmitter;
 
     function setUp() public {
         vm.warp(1_800_000_000);
-        controller = new ThetaShieldController(address(this), CALLBACK_PROXY, RVM_ID);
+        transmitter = new MockMessageTransmitterV2();
+        controller = new ThetaShieldController(address(this), transmitter);
+        controller.configureCirclePeer(PROCESSOR_DOMAIN, PROCESSOR);
         controller.configurePool(
             POOL_ID,
             ThetaShieldController.PoolFeeConfig({
@@ -131,7 +169,9 @@ contract ThetaShieldControllerInvariantTest is StdInvariant, Test {
                 paused: false
             })
         );
-        handler = new ThetaShieldControllerHandler(controller, POOL_ID, address(this), CALLBACK_PROXY, RVM_ID);
+        handler = new ThetaShieldControllerHandler(
+            controller, transmitter, POOL_ID, address(this), PROCESSOR_DOMAIN, PROCESSOR
+        );
 
         bytes4[] memory selectors = new bytes4[](6);
         selectors[0] = handler.applyValid.selector;

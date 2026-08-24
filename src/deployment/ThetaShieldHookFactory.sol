@@ -3,6 +3,7 @@ pragma solidity 0.8.26;
 
 import {ThetaShieldHook} from "../hook/ThetaShieldHook.sol";
 import {IThetaShieldController} from "../interfaces/IThetaShieldController.sol";
+import {IThetaShieldCircleTransport} from "../interfaces/IThetaShieldCircleTransport.sol";
 import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
 
 /// @title ThetaShieldHookFactory
@@ -21,27 +22,35 @@ contract ThetaShieldHookFactory {
         owner = owner_;
     }
 
-    function deploy(bytes32 salt, IPoolManager poolManager, IThetaShieldController controller, address expectedAddress)
-        external
-        returns (ThetaShieldHook hook)
-    {
+    function deploy(
+        bytes32 salt,
+        IPoolManager poolManager,
+        IThetaShieldController controller,
+        IThetaShieldCircleTransport circleTransport,
+        address expectedAddress
+    ) external returns (ThetaShieldHook hook) {
         if (msg.sender != owner) revert NotOwner(msg.sender);
-        if (address(poolManager) == address(0) || address(controller) == address(0) || expectedAddress == address(0)) {
+        if (
+            address(poolManager) == address(0) || address(controller) == address(0)
+                || address(circleTransport) == address(0) || expectedAddress == address(0)
+        ) {
             revert ZeroAddress();
         }
 
-        hook = new ThetaShieldHook{salt: salt}(poolManager, controller);
+        hook = new ThetaShieldHook{salt: salt}(poolManager, controller, circleTransport);
         if (address(hook) != expectedAddress) revert UnexpectedHookAddress(address(hook), expectedAddress);
         emit HookDeployed(address(hook), address(poolManager), address(controller), salt);
     }
 
-    function predict(bytes32 salt, IPoolManager poolManager, IThetaShieldController controller)
-        external
-        view
-        returns (address)
-    {
-        bytes32 initCodeHash =
-            keccak256(abi.encodePacked(type(ThetaShieldHook).creationCode, abi.encode(poolManager, controller)));
+    function predict(
+        bytes32 salt,
+        IPoolManager poolManager,
+        IThetaShieldController controller,
+        IThetaShieldCircleTransport circleTransport
+    ) external view returns (address) {
+        bytes32 initCodeHash = keccak256(
+            abi.encodePacked(type(ThetaShieldHook).creationCode, abi.encode(poolManager, controller, circleTransport))
+        );
         bytes32 addressHash = keccak256(abi.encodePacked(bytes1(0xff), address(this), salt, initCodeHash));
         return address(uint160(uint256(addressHash)));
     }
