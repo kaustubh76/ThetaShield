@@ -113,6 +113,9 @@ the [final research report](docs/FINAL_REPORT.md), run the
 [submission draft](docs/SUBMISSION.md). Use `make phase9-check` for the focused
 dashboard and handoff gate.
 
+The owner-only dashboard preview is available at
+<https://thetashield-uhi10.rbrudra9439.chatgpt.site>.
+
 ## Safety
 
 - Never use real secrets in `.env.example`.

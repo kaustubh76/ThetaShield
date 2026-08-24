@@ -13,6 +13,9 @@
 - A Phase 9 integrity checker plus root Make targets for dependency install,
   dashboard verification, and clean-clone reproduction.
 
+The dashboard is deployed with owner-only access at
+<https://thetashield-uhi10.rbrudra9439.chatgpt.site>.
+
 ## Verification
 
 ```sh
@@ -28,7 +31,7 @@ the PNG social-card signature.
 
 ## Status
 
-Phase 9 is complete locally. The dashboard and submission material do not claim
-live deployment. Phase 8 stays open until the owner approves a regenerated
+Phase 9 is complete. The dashboard and submission material do not claim a live
+contract deployment. Phase 8 stays open until the owner approves a regenerated
 current cost cap and the real origin-to-Reactive-to-origin acceptance evidence
 is confirmed. The submission draft has not been sent externally.

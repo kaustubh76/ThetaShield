@@ -55,7 +55,7 @@ not exact LP loss or LVR, and the prototype makes no live-profitability claim.
 ## Links
 
 - Repository: <https://github.com/RudraBhaskar9439/ThetaShield> (private during development)
-- Dashboard: recorded after private preview deployment
+- Dashboard: <https://thetashield-uhi10.rbrudra9439.chatgpt.site> (owner-only private preview)
 - Architecture: `docs/ARCHITECTURE.md`
 - Final report: `docs/FINAL_REPORT.md`
 - Demo script: `docs/DEMO_SCRIPT.md`

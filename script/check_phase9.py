@@ -63,7 +63,7 @@ def main() -> None:
     for phrase in ("98 Solidity tests", "38 Python", "No live deployment"):
         require(report, phrase, "docs/FINAL_REPORT.md")
 
-    require(handoff, "Phase 9 is complete locally", "docs/PHASE9_HANDOFF.md")
+    require(handoff, "Phase 9 is complete", "docs/PHASE9_HANDOFF.md")
     require(submission, "has not been submitted", "docs/SUBMISSION.md")
 
     phase9_surface = "\n".join((page, layout, report, handoff, submission))
