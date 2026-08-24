@@ -28,6 +28,10 @@ heartbeat, market ID, source IDs and production router/liquidity policy.
 2. Run `FOUNDRY_PROFILE=ci make verify` and `make phase7-check`.
 3. Set the opt-in RPC and infrastructure values, then run `make fork-check`.
    Both fork checks must execute; a skipped test is not acceptable for Phase 8.
+   If the current Lasna RPC head is briefly ahead of its available upstream
+   state, read the current finalized block and set `REACTIVE_FORK_BLOCK_NUMBER`
+   for the read-only fork test. Never use that pin for a later broadcast or as
+   a substitute for rechecking the live head.
 4. Run the read-only origin preflight:
 
    ```sh

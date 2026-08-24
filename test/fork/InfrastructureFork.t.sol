@@ -16,7 +16,7 @@ contract InfrastructureForkTest is Test {
         uint256 expectedChainId = vm.envUint("ORIGIN_CHAIN_ID");
         address poolManager = vm.envAddress("ORIGIN_POOL_MANAGER");
         address callbackProxy = vm.envAddress("ORIGIN_CALLBACK_PROXY");
-        vm.createSelectFork(rpcUrl);
+        _selectFork(rpcUrl, "ORIGIN_FORK_BLOCK_NUMBER");
 
         assertEq(block.chainid, expectedChainId);
         assertGt(poolManager.code.length, 0, "PoolManager has no code on configured origin chain");
@@ -33,9 +33,18 @@ contract InfrastructureForkTest is Test {
         uint256 expectedChainId = vm.envUint("REACTIVE_CHAIN_ID");
         address configuredSystem = vm.envAddress("REACTIVE_SYSTEM_CONTRACT");
         assertEq(configuredSystem, REACTIVE_SYSTEM, "Reactive system address differs from pinned library");
-        vm.createSelectFork(rpcUrl);
+        _selectFork(rpcUrl, "REACTIVE_FORK_BLOCK_NUMBER");
 
         assertEq(block.chainid, expectedChainId);
         assertGt(configuredSystem.code.length, 0, "Reactive system contract has no code");
+    }
+
+    function _selectFork(string memory rpcUrl, string memory blockVariable) private {
+        uint256 forkBlock = vm.envOr(blockVariable, uint256(0));
+        if (forkBlock == 0) {
+            vm.createSelectFork(rpcUrl);
+        } else {
+            vm.createSelectFork(rpcUrl, forkBlock);
+        }
     }
 }
