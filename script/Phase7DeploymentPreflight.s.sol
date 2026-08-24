@@ -30,6 +30,7 @@ contract Phase7DeploymentPreflight is Script {
             originChainId: vm.envUint("ORIGIN_CHAIN_ID"),
             referenceChainId: vm.envUint("REFERENCE_CHAIN_ID"),
             systemContract: vm.envAddress("REACTIVE_SYSTEM_CONTRACT"),
+            expectedSystemCodeHash: vm.envBytes32("REACTIVE_SYSTEM_CODEHASH"),
             hook: vm.envAddress("THETASHIELD_HOOK"),
             referenceFeed: vm.envAddress("REFERENCE_FEED"),
             controller: vm.envAddress("THETASHIELD_CONTROLLER"),

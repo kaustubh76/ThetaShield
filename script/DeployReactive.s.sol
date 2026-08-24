@@ -33,6 +33,7 @@ contract DeployReactive is Script {
                 originChainId: network.originChainId,
                 referenceChainId: network.referenceChainId,
                 systemContract: vm.envAddress("REACTIVE_SYSTEM_CONTRACT"),
+                expectedSystemCodeHash: vm.envBytes32("REACTIVE_SYSTEM_CODEHASH"),
                 hook: network.hook,
                 referenceFeed: network.referenceFeed,
                 controller: network.controller,

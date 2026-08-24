@@ -86,6 +86,21 @@ contract DeploymentValidationTest is Test {
         harness.validateReactive(config, REACTIVE_CHAIN_ID);
     }
 
+    function test_wrongReactiveSystemCodeHashFailsClosed() external {
+        DeploymentValidation.ReactiveConfig memory config = _reactiveConfig();
+        bytes32 actualCodeHash = REACTIVE_SYSTEM.codehash;
+        config.expectedSystemCodeHash = keccak256("legacy-lasna-system");
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                DeploymentValidation.ReactiveSystemCodeHashMismatch.selector,
+                actualCodeHash,
+                config.expectedSystemCodeHash
+            )
+        );
+        harness.validateReactive(config, REACTIVE_CHAIN_ID);
+    }
+
     function test_zeroIdentifiersAndOversizedCallbackGasFailClosed() external {
         DeploymentValidation.ReactiveConfig memory config = _reactiveConfig();
         config.poolId = bytes32(0);
@@ -143,12 +158,13 @@ contract DeploymentValidationTest is Test {
         });
     }
 
-    function _reactiveConfig() private pure returns (DeploymentValidation.ReactiveConfig memory) {
+    function _reactiveConfig() private view returns (DeploymentValidation.ReactiveConfig memory) {
         return DeploymentValidation.ReactiveConfig({
             expectedChainId: REACTIVE_CHAIN_ID,
             originChainId: ORIGIN_CHAIN_ID,
             referenceChainId: ORIGIN_CHAIN_ID,
             systemContract: REACTIVE_SYSTEM,
+            expectedSystemCodeHash: REACTIVE_SYSTEM.codehash,
             hook: address(0x1001),
             referenceFeed: address(0x1002),
             controller: address(0x1003),

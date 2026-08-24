@@ -21,6 +21,7 @@ library DeploymentValidation {
         uint256 originChainId;
         uint256 referenceChainId;
         address systemContract;
+        bytes32 expectedSystemCodeHash;
         address hook;
         address referenceFeed;
         address controller;
@@ -37,6 +38,7 @@ library DeploymentValidation {
     error MissingCode(address target);
     error InvalidIdentifier(bytes32 field);
     error InvalidReactiveSystemContract(address supplied, address expected);
+    error ReactiveSystemCodeHashMismatch(bytes32 actual, bytes32 expected);
     error ReactiveAndOriginChainMatch(uint256 chainId);
     error CallbackGasLimitOutOfBounds(uint256 supplied);
 
@@ -66,6 +68,10 @@ library DeploymentValidation {
             revert InvalidReactiveSystemContract(config.systemContract, REACTIVE_SYSTEM_CONTRACT);
         }
         requireCode(config.systemContract);
+        bytes32 actualSystemCodeHash = config.systemContract.codehash;
+        if (actualSystemCodeHash != config.expectedSystemCodeHash) {
+            revert ReactiveSystemCodeHashMismatch(actualSystemCodeHash, config.expectedSystemCodeHash);
+        }
         _requireAddress(config.hook, "hook");
         _requireAddress(config.referenceFeed, "referenceFeed");
         _requireAddress(config.controller, "controller");

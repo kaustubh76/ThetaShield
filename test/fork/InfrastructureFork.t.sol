@@ -32,11 +32,13 @@ contract InfrastructureForkTest is Test {
 
         uint256 expectedChainId = vm.envUint("REACTIVE_CHAIN_ID");
         address configuredSystem = vm.envAddress("REACTIVE_SYSTEM_CONTRACT");
+        bytes32 expectedSystemCodeHash = vm.envBytes32("REACTIVE_SYSTEM_CODEHASH");
         assertEq(configuredSystem, REACTIVE_SYSTEM, "Reactive system address differs from pinned library");
         _selectFork(rpcUrl, "REACTIVE_FORK_BLOCK_NUMBER");
 
         assertEq(block.chainid, expectedChainId);
         assertGt(configuredSystem.code.length, 0, "Reactive system contract has no code");
+        assertEq(configuredSystem.codehash, expectedSystemCodeHash, "Reactive system bytecode is not Lasna Omni");
     }
 
     function _selectFork(string memory rpcUrl, string memory blockVariable) private {
