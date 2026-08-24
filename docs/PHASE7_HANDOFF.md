@@ -1,5 +1,8 @@
 # Phase 7 Handoff — Security and Release Hardening
 
+> Historical record: Lasna-specific preflight material was replaced by the
+> Circle release tooling in Phase 8C. Use the current deployment runbook.
+
 ## Delivered
 
 - A documented threat model with trust boundaries, explicit failure behavior,

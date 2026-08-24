@@ -1,5 +1,8 @@
 # Phase 3 Verification Handoff
 
+> Historical record: this Reactive/Lasna scheduler was retired in Phase 8A and
+> replaced by the Circle processor in Phase 8B. Do not deploy from this file.
+
 ## Scope completed
 
 Phase 3 implements and locally verifies the bounded Reactive scheduler without

@@ -1,57 +1,48 @@
 # ThetaShield
 
-ThetaShield is a directional adaptive-fee Uniswap v4 hook and Reactive Network
-research project. It uses delayed signed markout, trailing-noise filtering,
-`n-of-k` persistence, and mechanical confidence scoring to raise fees only when
-order flow shows sustained evidence of adverse selection.
+ThetaShield is a directional adaptive-fee Uniswap v4 hook. It waits for delayed
+signed markout, filters ordinary movement, requires persistent evidence, and
+raises only the swap direction supported by adverse-selection evidence.
 
-> **Research status:** The local research build is complete through Phase 9.
-> The original Phase 6 report still records four passes and two failures; a
-> separate train/holdout revision passes the failed H4/H5 criteria on reserved
-> synthetic streams. The dashboard and submission package are complete, but
-> Phase 8 live acceptance remains open. The contracts are unaudited and are not
-> ready for production deployment.
+The active testnet design uses Circle CCTP V2 generic messages between Unichain
+Sepolia and Ethereum Sepolia. Circle authenticates transport; a permissionless
+keeper relays attestations and advances the bounded processor. No IReact, RVM
+callback proxy, Lasna contract, or lREACT funding is part of the deployable path.
 
-## Research question
+> Research prototype: unaudited, testnet-only, and not a profitability claim.
+> The Circle contracts and real local lifecycle are implemented. No complete
+> live ThetaShield deployment is claimed yet, and the hook has not been
+> submitted.
 
-Can delayed signed markout distinguish persistent informed flow from ordinary
-volatility well enough to protect liquidity providers without taxing benign
-users?
+## How it works
 
-ThetaShield treats `notional x markout` as an adverse-selection proxy—one input
-to the fee controller. It is not an exact measurement of LP loss or LVR.
-
-## Core properties
-
-- Separate fee recommendations for `zeroForOne` and `oneForZero` swaps.
-- A trailing volatility band that excludes the observation being scored.
-- Signed soft-thresholding that preserves favorable and adverse direction.
-- Independent `n-of-k` persistence for both swap directions.
-- Formula-based confidence from sample count, directional agreement, and
-  reference-price dispersion.
-- Authenticated, sequenced, expiring fee recommendations with baseline fallback.
-- Bounded Reactive processing with explicit oracle and publisher assumptions.
+1. The Unichain Sepolia hook chooses the current directional fee and records a
+   compact post-swap observation.
+2. The origin transport sends that observation through finalized Circle CCTP.
+   Circle outages fail open for the swap: the observation event remains, but
+   transport failure never reverts the user's trade.
+3. An Ethereum Sepolia processor waits for delayed reference evidence and runs
+   bounded markout, trailing-noise, confidence, persistence, and fee logic.
+4. The processor sends a finalized Circle recommendation back to Unichain.
+5. The controller authenticates the Circle transmitter, source domain, sealed
+   processor peer, sequence, timing, confidence, fee, and risk bounds. Missing
+   or stale state returns the configured baseline.
 
 ## Repository map
 
 ```text
-src/          Solidity contracts, interfaces, types, and libraries
-script/       Deployment, configuration, and acceptance scripts
-test/         Unit, fuzz, invariant, integration, and fork tests
-research/     Reference model, experiments, datasets, reports, and tests
-dashboard/    Research and live-system dashboard
-deployments/  Auditable deployment manifests
-docs/         Architecture, roadmap, and verification records
+src/          Solidity hook, Circle transport/processor, controller, math
+script/       Circle preflight, deployment, relay, and acceptance tools
+test/         Unit, fuzz, invariant, integration, gas, and opt-in fork tests
+research/     Independent model and reproducible experiments
+dashboard/    Interactive research dashboard (simulated cards, not telemetry)
+deployments/  Auditable manifests and historical retired candidates
+docs/         Architecture, threat model, runbook, reports, and phase records
 ```
 
-## Requirements
+## Verify locally
 
-- Git with submodule support
-- Foundry
-- Python 3.11 or newer (required beginning in Phase 1)
-- Node.js 22.13 or newer and npm (required for the Phase 9 dashboard)
-
-## Quick start
+Requirements: Foundry, Python 3.11+, Node.js 22.13+, npm, and Git submodules.
 
 ```sh
 git clone --recurse-submodules git@github.com:RudraBhaskar9439/ThetaShield.git
@@ -59,72 +50,22 @@ cd ThetaShield
 make verify
 ```
 
-For an existing clone, initialize dependencies with:
+Start with [the architecture](docs/ARCHITECTURE.md), [deployment
+runbook](docs/DEPLOYMENT_RUNBOOK.md), [threat model](docs/THREAT_MODEL.md), and
+[Circle migration record](docs/CIRCLE_MIGRATION.md).
 
-```sh
-git submodule update --init --recursive
-```
+The older Phase 3/4/7/8 Lasna documents are retained only as historical evidence
+of the retired implementation and must not be used for deployment.
 
-See [the roadmap](docs/ROADMAP.md), [architecture](docs/ARCHITECTURE.md), and
-[verification guide](docs/VERIFICATION.md) before contributing.
+## Safety boundary
 
-The Phase 1 definitions and rounding rules are documented in the
-[mathematical specification](docs/MATHEMATICAL_SPECIFICATION.md). The independent
-Python model and Solidity libraries are checked against the same committed
-golden vectors.
-
-The Phase 2 trust boundaries, fee fallback rules, event schema, and local
-Uniswap v4 verification evidence are recorded in the
-[Phase 2 handoff](docs/PHASE2_HANDOFF.md).
-
-The Phase 3 subscriptions, bounded queues, reference-price assumptions,
-maturity rules, epoch processing, and callback evidence are recorded in the
-[Phase 3 handoff](docs/PHASE3_HANDOFF.md).
-
-The Phase 4 real local PoolManager-to-hook-to-Reactive-to-controller lifecycle,
-including fallback and callback-ordering evidence, is recorded in the
-[Phase 4 handoff](docs/PHASE4_HANDOFF.md).
-
-The Phase 5 scenario manifest, fair baseline calibration, complete metric set,
-repeated-seed outputs, measured local hook gas, and reproducible charts are
-recorded in the [Phase 5 handoff](docs/PHASE5_HANDOFF.md) and generated
-[baseline report](research/reports/PHASE5_BASELINES.md).
-
-The Phase 6 parameter grid, decision criteria, raw sensitivity results, Pareto
-analysis, and retained failed hypotheses are recorded in the
-[Phase 6 handoff](docs/PHASE6_HANDOFF.md) and generated
-[hypothesis report](research/reports/PHASE6_HYPOTHESES.md).
-
-The versioned H4/H5 root-cause analysis, confidence-gated fast path, disjoint
-train/holdout protocol, and reserved-seed evidence are recorded in the
-[Phase 6.1 handoff](docs/PHASE61_HANDOFF.md) and generated
-[remediation report](research/reports/PHASE61_REMEDIATION.md).
-
-The Phase 7 threat model, stateful invariants, boundary fuzzing, gas evidence,
-dependency/secret gates, fork checks, and non-broadcasting deployment preflight
-are recorded in the [Phase 7 handoff](docs/PHASE7_HANDOFF.md). Review the
-[threat model](docs/THREAT_MODEL.md) and
-[deployment runbook](docs/DEPLOYMENT_RUNBOOK.md) before any Phase 8 planning.
-
-The Phase 9 interactive dashboard, final report, demo script, and draft
-submission are recorded in the [Phase 9 handoff](docs/PHASE9_HANDOFF.md). Read
-the [final research report](docs/FINAL_REPORT.md), run the
-[demo script](docs/DEMO_SCRIPT.md), or review the unsubmitted
-[submission draft](docs/SUBMISSION.md). Use `make phase9-check` for the focused
-dashboard and handoff gate.
-
-The owner-only dashboard preview is available at
-<https://thetashield-uhi10.rbrudra9439.chatgpt.site>.
-
-## Safety
-
-- Never use real secrets in `.env.example`.
-- Deployment scripts must validate chain and infrastructure addresses.
-- No paid transaction or deployment occurs without an explicit cost estimate
-  and approval.
-- Live contracts and mock/demo components must be labeled unambiguously.
-
-## License
+- Never commit a private key or live credential.
+- Recheck official chain, Uniswap, and Circle addresses immediately before use.
+- Simulate every paid action and obtain a fresh exact spend approval before
+  broadcast.
+- The included owner-published reference feed is a testnet demo mock, not a
+  production oracle.
+- Nothing in this repository authorizes hook submission.
 
 This private research repository is currently all rights reserved. See
 [`LICENSE`](LICENSE).

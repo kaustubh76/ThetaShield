@@ -3,66 +3,41 @@
 This is copy-ready draft material only. It has not been submitted, posted, or
 sent to any external service.
 
-## Project
+## ThetaShield — Protect LPs from signal, not noise
 
-**ThetaShield — Protect LPs from signal, not noise.**
+ThetaShield is a directional adaptive-fee Uniswap v4 hook that uses delayed
+signed markout, strictly trailing noise filtering, persistence, and mechanical
+confidence to protect LPs from sustained adverse selection without reacting to
+ordinary volatility.
 
-## One-line description
+The hook runs on Unichain Sepolia. It sends compact observations through Circle
+CCTP V2 to a bounded Ethereum Sepolia processor. A permissionless keeper relays
+finalized attestations and advances delayed work. The processor sends a
+sequenced recommendation back through Circle, where the controller verifies the
+transmitter, source domain, sealed processor peer, sequence, validity,
+confidence, fee, and risk bounds. Missing or stale data returns the baseline.
 
-A directional adaptive-fee Uniswap v4 hook that uses delayed signed markout,
-trailing noise filtering, persistence, and mechanical confidence to protect LPs
-from sustained adverse selection without reacting to ordinary volatility.
+Technically distinctive properties:
 
-## Problem
+- separate state and fees for both swap directions;
+- the current observation cannot widen the volatility band scoring itself;
+- favorable/adverse sign is preserved instead of reduced to volatility;
+- bounded `n-of-k` persistence and an explicitly gated fast path;
+- Circle-authenticated transport with a permissionless, non-trusted keeper;
+- swap continuity when observation transport is unavailable; and
+- visible original H4/H5 failures plus disjoint train/holdout remediation.
 
-Volatility-only fee controllers can charge benign users during noisy but
-directionless markets. Raw markout controllers can react to transient samples.
-Both approaches can miss the fact that adverse selection is directional: buy
-flow and sell flow should not automatically receive the same premium.
+Evidence includes the Solidity lifecycle suite, 38 Python research tests, 3,150
+sensitivity runs, stateful invariants, boundary fuzzing, gas ceilings, golden
+vectors, and reproducible research artifacts. H4 reaches `-0.727` holdout rank
+correlation; H5 retains `59.70%` toxic coverage with a `20.79` percentage-point
+false-positive reduction. These are synthetic risk-proxy results, not exact LVR
+or profitability claims.
 
-## Solution
+Repository: <https://github.com/RudraBhaskar9439/ThetaShield> (private during development)
 
-ThetaShield applies separate fees for `zeroForOne` and `oneForZero` swaps. A v4
-hook emits post-swap observations, Reactive Network waits for delayed price
-evidence, and a bounded scheduler computes signed markout against a strictly
-trailing volatility band. Independent `n-of-k` histories plus formula-based
-confidence determine whether the signal is persistent. An authenticated origin
-controller enforces sequence, expiry, cooldown, risk, and fee bounds, with a
-baseline fallback for every invalid or unavailable state.
+Dashboard: <https://thetashield-uhi10.rbrudra9439.chatgpt.site> (private preview)
 
-## What is technically distinctive
-
-- The current observation cannot widen the volatility band used to score itself.
-- Favorable and adverse directions remain signed rather than being collapsed
-  into an unsigned volatility measure.
-- Buy- and sell-direction histories, risks, confidence, and fees are independent.
-- Delayed work is moved off the hook path into a bounded Reactive control loop.
-- Failed original hypotheses remain visible; remediation is versioned and uses
-  disjoint train/holdout seeds.
-
-## Evidence
-
-The local release gate passes 99 Solidity tests and 38 Python tests. Phase 6
-covers 42 configurations, 15 scenarios, and five seeds (3,150 raw runs). The
-original experiment passes H1, H2, H3, and H6 while failing H4 and H5. A
-versioned holdout experiment passes the original H4/H5 criteria: H4 rank
-correlation -0.727 with six Pareto points, and H5 retained toxic coverage
-59.70% with a 20.79 percentage-point false-positive reduction.
-
-These are controlled synthetic results. `notional × markout` is a risk proxy,
-not exact LP loss or LVR, and the prototype makes no live-profitability claim.
-
-## Links
-
-- Repository: <https://github.com/RudraBhaskar9439/ThetaShield> (private during development)
-- Dashboard: <https://thetashield-uhi10.rbrudra9439.chatgpt.site> (owner-only private preview)
-- Architecture: `docs/ARCHITECTURE.md`
-- Final report: `docs/FINAL_REPORT.md`
-- Demo script: `docs/DEMO_SCRIPT.md`
-
-## Current boundary
-
-The contracts are unaudited and testnet-only. Local end-to-end and deployment
-preflight evidence are complete. Live Phase 8 addresses and transaction hashes
-must not be added until current network checks, explicit spend approval,
-confirmed deployments, and a verified real callback lifecycle are complete.
+Current boundary: unaudited, testnet-only, mock reference publisher, and no
+complete public two-chain lifecycle yet. No submission should occur until the
+owner separately approves it.

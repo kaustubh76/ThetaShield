@@ -38,7 +38,7 @@ export async function generateMetadata(): Promise<Metadata> {
     description:
       "A Uniswap v4 hook that separates persistent directional adverse selection from ordinary volatility.",
     applicationName: "ThetaShield",
-    keywords: ["Uniswap v4", "Reactive Network", "dynamic fees", "LP protection", "markout"],
+    keywords: ["Uniswap v4", "Circle CCTP", "dynamic fees", "LP protection", "markout"],
     alternates: { canonical: origin },
     openGraph: {
       title: "ThetaShield — Protect LPs from signal, not noise.",

@@ -1,36 +1,28 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://thetashield.local/schemas/deployment-manifest.schema.json",
-  "title": "ThetaShield deployment manifest",
+  "$id": "https://thetashield.local/schemas/circle-deployment-manifest.schema.json",
+  "title": "ThetaShield Circle deployment manifest",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "schema_version",
-    "mode",
-    "source_revision",
-    "created_at",
-    "networks",
-    "components",
-    "subscriptions",
-    "acceptance",
-    "cost"
-  ],
+  "required": ["schema_version", "mode", "source_revision", "created_at", "networks", "components", "circle_messages", "acceptance", "cost"],
   "properties": {
-    "schema_version": { "const": 2 },
+    "schema_version": { "const": 3 },
     "mode": { "enum": ["dry-run", "live"] },
     "source_revision": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
     "created_at": { "type": "string", "format": "date-time" },
     "networks": {
       "type": "array",
-      "minItems": 1,
+      "minItems": 2,
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["role", "name", "chain_id", "rpc_secret_name"],
+        "required": ["role", "name", "chain_id", "circle_domain", "message_transmitter", "rpc_secret_name"],
         "properties": {
-          "role": { "enum": ["origin", "reactive", "reference"] },
+          "role": { "enum": ["origin", "processor"] },
           "name": { "type": "string", "minLength": 1 },
           "chain_id": { "type": "integer", "minimum": 1 },
+          "circle_domain": { "type": "integer", "minimum": 0, "maximum": 4294967295 },
+          "message_transmitter": { "type": "string", "pattern": "^0x[0-9a-fA-F]{40}$" },
           "rpc_secret_name": { "type": "string", "minLength": 1 }
         }
       }
@@ -43,7 +35,7 @@
         "required": ["name", "network_role", "address", "transaction_hash", "block_number", "explorer_url", "verified"],
         "properties": {
           "name": { "type": "string", "minLength": 1 },
-          "network_role": { "enum": ["origin", "reactive", "reference"] },
+          "network_role": { "enum": ["origin", "processor"] },
           "address": { "type": ["string", "null"], "pattern": "^0x[0-9a-fA-F]{40}$" },
           "transaction_hash": { "type": ["string", "null"], "pattern": "^0x[0-9a-fA-F]{64}$" },
           "block_number": { "type": ["integer", "null"], "minimum": 0 },
@@ -52,56 +44,50 @@
         }
       }
     },
-    "subscriptions": {
+    "circle_messages": {
       "type": "array",
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["chain_id", "emitter", "topic_0", "transaction_hash"],
+        "required": ["kind", "source_domain", "destination_domain", "send_transaction_hash", "relay_transaction_hash", "message_hash", "status"],
         "properties": {
-          "chain_id": { "type": "integer", "minimum": 1 },
-          "emitter": { "type": "string", "pattern": "^0x[0-9a-fA-F]{40}$" },
-          "topic_0": { "type": "string", "pattern": "^0x[0-9a-fA-F]{64}$" },
-          "transaction_hash": { "type": ["string", "null"], "pattern": "^0x[0-9a-fA-F]{64}$" }
+          "kind": { "enum": ["observation", "recommendation"] },
+          "source_domain": { "type": "integer", "minimum": 0 },
+          "destination_domain": { "type": "integer", "minimum": 0 },
+          "send_transaction_hash": { "type": ["string", "null"], "pattern": "^0x[0-9a-fA-F]{64}$" },
+          "relay_transaction_hash": { "type": ["string", "null"], "pattern": "^0x[0-9a-fA-F]{64}$" },
+          "message_hash": { "type": ["string", "null"], "pattern": "^0x[0-9a-fA-F]{64}$" },
+          "status": { "enum": ["not-started", "pending", "complete", "failed"] }
         }
       }
     },
     "acceptance": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["preflight_fingerprints", "swap_transaction_hash", "callback_transaction_hash", "passed"],
+      "required": ["preflight_fingerprints", "initial_swap_transaction_hash", "reference_transaction_hash", "processor_transaction_hash", "later_swap_transaction_hash", "expected_fee_pips", "observed_fee_pips", "passed"],
       "properties": {
-        "preflight_fingerprints": {
-          "type": "array",
-          "items": { "type": "string", "pattern": "^0x[0-9a-fA-F]{64}$" }
-        },
-        "swap_transaction_hash": { "type": ["string", "null"], "pattern": "^0x[0-9a-fA-F]{64}$" },
-        "callback_transaction_hash": { "type": ["string", "null"], "pattern": "^0x[0-9a-fA-F]{64}$" },
+        "preflight_fingerprints": { "type": "array", "items": { "type": "string", "pattern": "^0x[0-9a-fA-F]{64}$" } },
+        "initial_swap_transaction_hash": { "type": ["string", "null"], "pattern": "^0x[0-9a-fA-F]{64}$" },
+        "reference_transaction_hash": { "type": ["string", "null"], "pattern": "^0x[0-9a-fA-F]{64}$" },
+        "processor_transaction_hash": { "type": ["string", "null"], "pattern": "^0x[0-9a-fA-F]{64}$" },
+        "later_swap_transaction_hash": { "type": ["string", "null"], "pattern": "^0x[0-9a-fA-F]{64}$" },
+        "expected_fee_pips": { "type": ["integer", "null"], "minimum": 0, "maximum": 1000000 },
+        "observed_fee_pips": { "type": ["integer", "null"], "minimum": 0, "maximum": 1000000 },
         "passed": { "type": "boolean" }
       }
     },
     "cost": {
       "type": "array",
-      "minItems": 1,
+      "minItems": 2,
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": [
-          "network_role",
-          "currency",
-          "gas_limit",
-          "fee_cap_wei",
-          "funding",
-          "estimated_maximum",
-          "actual",
-          "approved_by_owner"
-        ],
+        "required": ["network_role", "currency", "gas_limit", "fee_cap_wei", "estimated_maximum", "actual", "approved_by_owner"],
         "properties": {
-          "network_role": { "enum": ["origin", "reactive", "reference"] },
+          "network_role": { "enum": ["origin", "processor"] },
           "currency": { "type": "string", "minLength": 1 },
           "gas_limit": { "type": "integer", "minimum": 0 },
           "fee_cap_wei": { "type": "string", "pattern": "^[0-9]+$" },
-          "funding": { "type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?$" },
           "estimated_maximum": { "type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?$" },
           "actual": { "type": ["string", "null"], "pattern": "^[0-9]+(\\.[0-9]+)?$" },
           "approved_by_owner": { "type": "boolean" }

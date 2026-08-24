@@ -1,108 +1,87 @@
-# Deployment Runbook
+# Circle Deployment Runbook
 
 ## Release boundary
 
-Phase 7 supplies read-only preflight and local dry-runs. Phase 8 adds separately
-reviewable broadcast-capable scripts. A live Phase 8 deployment may begin only
-after all network values are independently rechecked, the scripts have completed
-without `--broadcast`, an exact native-token and fiat cost estimate is shown to
-the owner, and the owner explicitly approves the transaction spend.
+This is an unaudited two-testnet demonstration. Do not broadcast until the exact
+commit passes all gates, both live infrastructure checks pass, every transaction
+has been simulated at the current nonce, a total maximum spend is presented,
+and the owner explicitly approves that Circle-specific spend. Do not submit the
+hook.
 
-## Required inputs
+## Networks
 
-Copy `.env.example` to an untracked `.env` and fill every value for the selected
-origin, reference, and Reactive networks. The public owner/deployer default is
-`0xd1DcAAFf9356d5a42f2eE6F90179C4509386a83f`; the corresponding private key must
-remain outside Git and must never be pasted into a manifest or issue.
+| Role | Chain | Chain ID | Circle domain |
+|---|---|---:|---:|
+| Origin | Unichain Sepolia | 1301 | 10 |
+| Processor/reference | Ethereum Sepolia | 11155111 | 0 |
 
-Do not use `MockNormalizedReferencePriceFeed` for a production deployment. The
-Phase 8 configuration is explicitly a Sepolia/Lasna research demonstration with
-owner-published prices and official Uniswap test routers. A production release
-still requires a reviewed external adapter, publisher allowlist, decimals,
-heartbeat, market ID, source IDs and production router/liquidity policy.
+The current testnet `MessageTransmitterV2` configured in `.env.example` is
+`0xE737e5cEBEEBa77EFE34D4aa090756590b1CE275` on both chains. Recheck Circle's
+official address registry immediately before simulation and broadcast.
 
-## Preflight sequence
+## Required checks
 
-1. Check out the exact intended commit with recursive submodules and require a
-   clean working tree.
-2. Run `FOUNDRY_PROFILE=ci make verify` and `make phase7-check`.
-3. Set the opt-in RPC and infrastructure values, then run `make fork-check`.
-   Both fork checks must execute; a skipped test is not acceptable for Phase 8.
-   Keep `REACTIVE_SYSTEM_CODEHASH` pinned to the reviewed Lasna Omni system
-   bytecode. The legacy and Omni endpoints share chain ID `5318007`, so chain ID
-   and system address checks alone cannot distinguish them; any code-hash
-   mismatch must abort the release.
-   If the current Lasna RPC head is briefly ahead of its available upstream
-   state, read the current finalized block and set `REACTIVE_FORK_BLOCK_NUMBER`
-   for the read-only fork test. Never use that pin for a later broadcast or as
-   a substitute for rechecking the live head.
-4. Run the read-only origin preflight:
+```sh
+cp .env.example .env
+make verify
+make fork-check
+
+forge script script/CircleDeploymentPreflight.s.sol:CircleDeploymentPreflight \
+  --rpc-url "$ORIGIN_RPC_URL" --sig "runOrigin()" -vv
+```
+
+After the reference feed exists, run `runProcessor()` against
+`$PROCESSOR_RPC_URL`. A skipped fork test, wrong chain/domain, noncanonical
+transmitter, missing code, router/PoolManager mismatch, dirty source tree, or
+changed fingerprint aborts the release.
+
+## Dependency order
+
+1. Simulate `DeployCircleOrigin.s.sol` on Unichain Sepolia. It deploys the
+   transport, controller, demo tokens, hook factory, deterministic hook, dynamic
+   pool, approvals, and bounded demo liquidity. Record all predicted addresses
+   and costs.
+2. Put the predicted origin transport, controller, hook, and pool ID in the
+   untracked environment, then simulate `DeployCircleProcessor.s.sol` on
+   Ethereum Sepolia. It deploys the owner-published demo feed and bounded Circle
+   processor.
+3. Simulate `ConfigureCirclePeers.s.sol` on Unichain. This one-time action seals
+   the hook/processor peers; verify every value before signing.
+4. Sum both-chain deployment and configuration costs, preserve a safety margin,
+   and obtain a fresh explicit approval. An earlier Lasna/lREACT approval is not
+   valid for Circle.
+5. Broadcast only the reviewed transactions in the same dependency order and
+   record receipts before continuing.
+
+## Acceptance lifecycle
+
+Each paid action is separate so it can be simulated and approved:
+
+1. Run `CircleAcceptance.runSwap()` on Unichain. The swap sends an observation.
+2. Fetch the finalized attestation:
 
    ```sh
-   forge script script/Phase7DeploymentPreflight.s.sol:Phase7DeploymentPreflight \
-     --rpc-url "$ORIGIN_RPC_URL" --sig "runOrigin()" -vv
+   python3 script/fetch_circle_attestation.py --source-domain 10 --tx-hash <swap-tx>
    ```
 
-5. Run the read-only Reactive preflight:
+3. Set `CIRCLE_MESSAGE`, `CIRCLE_ATTESTATION`, and the destination transmitter,
+   then simulate/broadcast `RelayCircleMessage.s.sol` on Ethereum Sepolia.
+4. After the configured markout horizon, run `CircleAcceptance.runReference()`
+   and then `runProcess()` on Ethereum Sepolia. The processor sends a
+   recommendation if mature work finalizes.
+5. Fetch that transaction's attestation with source domain `0` and relay it on
+   Unichain using `RelayCircleMessage.s.sol`.
+6. Run a later bounded swap and prove the PoolManager event fee matches the
+   controller's directional recommendation.
 
-   ```sh
-   forge script script/Phase7DeploymentPreflight.s.sol:Phase7DeploymentPreflight \
-     --rpc-url "$REACTIVE_RPC_URL" --sig "runReactive()" -vv
-   ```
-
-6. Record both configuration fingerprints. A changed fingerprint invalidates a
-   previous review.
-7. Simulate the proposed Phase 8 transactions, estimate cost with current fee
-   data, and present the complete transaction list and maximum spend for
-   explicit approval. Do not add `--broadcast` before approval.
-
-## Intended Phase 8 dependency order
-
-1. Confirm official PoolManager, callback proxy, Reactive system, Cron topic,
-   chain IDs, explorers, and production reference source.
-2. Deploy/configure the reference adapter or confirm the reviewed external feed.
-3. Deploy the origin controller with the callback proxy, RVM ID, and final
-   two-step owner.
-4. Mine the hook address with the required Uniswap v4 permission bits, deploy
-   the hook against the reviewed PoolManager/controller, and initialize the
-   dynamic-fee pool.
-5. Configure pool bounds, confidence floor, maximum lifetime, cooldown, and
-   initial pause state on the controller.
-6. Deploy the Reactive contract with the exact origin hook, controller,
-   reference source, market/pool identifiers, Cron topic, and bounded scheduler.
-7. Confirm subscriptions and fund only the minimum reviewed callback budget.
-8. Verify source on each explorer, then execute one bounded acceptance swap and
-   trace observation, reference, Cron processing, callback, and subsequent fee.
-9. Transfer/accept ownership according to the approved key policy.
-
-## Phase 8 script boundary
-
-- `DeployOrigin.s.sol` requires the initial owner, deployer and expected RVM ID
-  to be the same reviewed account. It checks both routers resolve to the exact
-  configured PoolManager before recording any transaction.
-- `DeployReactive.s.sol` uses the hard-coded
-  `THETASHIELD_PHASE8_SINGLE_SOURCE_TESTNET_DEMO_V1` profile. Its single-source
-  confidence is capped at 60%; it is intentionally easier to exercise than the
-  Phase 6.1 research candidate and must not be represented as that candidate.
-- `Phase8Acceptance.s.sol` separates the swap and feed publication so their
-  timing and costs can be controlled. A complete adverse-flow trace requires two
-  swap/reference cycles plus Reactive CRON processing and successful callbacks.
-
-## Manifest and acceptance evidence
-
-Every dry-run or live release record must validate against
-`deployments/manifest.schema.json` and include the source revision, networks,
-component addresses, transaction hashes, blocks, explorers, verification,
-subscriptions, preflight fingerprints, acceptance transactions, estimated and
-actual cost, and approval status. RPC URLs and credentials are referenced only
-by secret name, never stored.
+Circle API output and every source/destination transaction hash belong in the
+live manifest. Attestations are public message data, but RPC credentials and
+private keys never belong in Git.
 
 ## Abort and recovery
 
-Abort on any chain/address/code mismatch, changed fingerprint, skipped required
-fork test, unexpected bytecode, cost increase beyond approval, failed source
-verification, or incomplete callback trace. Before a test involving value,
-ensure the controller is at baseline or paused. If the system misbehaves after
-deployment, pause globally, stop funding callbacks, retain all transaction
-evidence, and do not retry until the cause is understood. Contract deployment
-is irreversible; a pause is containment, not rollback.
+Abort on any unexpected nonce, fee increase beyond approval, reverted action,
+unverified peer, expired attestation workflow, wrong fee, or incomplete event
+trace. If an already deployed system misbehaves, pause the controller, preserve
+receipts/logs, and investigate before retrying. Deployments and one-time peer
+seals are irreversible; pause is containment, not rollback.

@@ -1,5 +1,8 @@
 # Phase 2 Verification Handoff
 
+> Historical record: the callback/RVM controller described here was replaced by
+> the Circle-authenticated controller in Phase 8B. Do not deploy from this file.
+
 ## Scope completed
 
 Phase 2 implements the latency-sensitive origin-chain boundary without deploying

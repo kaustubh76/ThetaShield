@@ -54,13 +54,14 @@ def main() -> None:
         "The failures stayed in the record",
         "59.70%",
         "Risk proxy—not exact LVR",
+        "Circle CCTP",
     ):
         require(page, phrase, "dashboard/app/page.tsx")
 
     for phrase in ("generateMetadata", "/og.png", "ThetaShield"):
         require(layout, phrase, "dashboard/app/layout.tsx")
 
-    for phrase in ("99 Solidity tests", "38 Python", "No live deployment"):
+    for phrase in ("Circle CCTP", "Python", "No complete live deployment"):
         require(report, phrase, "docs/FINAL_REPORT.md")
 
     require(handoff, "Phase 9 is complete", "docs/PHASE9_HANDOFF.md")
@@ -69,7 +70,7 @@ def main() -> None:
     phase9_surface = "\n".join((page, layout, report, handoff, submission))
     if "site-creator-vinext-starter" in phase9_surface:
         raise SystemExit("starter identity remains in a Phase 9 artifact")
-    if any(name in f"{page}\n{layout}" for name in ("MARKOUT", "Circle", "Pyth")):
+    if any(name in f"{page}\n{layout}" for name in ("MARKOUT", "Pyth", "Reactive Network", "LASNA")):
         raise SystemExit("another project's identity leaked into the ThetaShield dashboard")
 
     check_png()

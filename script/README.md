@@ -1,27 +1,21 @@
-# Scripts
+# Circle Release Scripts
 
-`Phase7DeploymentPreflight.s.sol` performs read-only origin and Reactive network
-validation. It checks exact chain IDs, required bytecode, nonzero/distinct
-addresses and identifiers, the pinned Reactive system address, and the callback
-gas bound. It contains no broadcast call.
+All paid scripts must be simulated at the current nonce and reviewed before
+`--broadcast`. No script submits the hook.
 
-Run its `runOrigin()` and `runReactive()` entry points as documented in
-`docs/DEPLOYMENT_RUNBOOK.md`. A successful run emits a configuration fingerprint
-that must be recorded in the deployment manifest.
+- `CircleDeploymentPreflight.s.sol`: read-only origin/processor chain, code,
+  canonical transmitter, and Circle-domain validation.
+- `DeployCircleOrigin.s.sol`: Unichain Sepolia transport, controller, demo
+  tokens, deterministic hook, pool, approvals, and demo liquidity.
+- `DeployCircleProcessor.s.sol`: Ethereum Sepolia demo reference feed and
+  bounded processor.
+- `ConfigureCirclePeers.s.sol`: one-time origin hook/processor peer sealing.
+- `fetch_circle_attestation.py`: polls Circle's sandbox API for a finalized
+  message and attestation; never broadcasts.
+- `RelayCircleMessage.s.sol`: permissionlessly delivers one attested message on
+  its destination chain.
+- `CircleAcceptance.s.sol`: separate bounded swap, reference, and processor
+  actions for an auditable acceptance trace.
 
-`check_dependencies.py` verifies pinned build inputs and
-`check_secrets.py` rejects common credential material in tracked files. They are
-part of `make verify` and `make phase7-check`.
-
-`DeployOrigin.s.sol` deploys the Sepolia demo feed, fixed-supply test tokens,
-controller, deterministic hook factory/hook, dynamic-fee pool and bounded test
-liquidity. `DeployReactive.s.sol` installs the single-source testnet demo profile
-on Lasna and creates the three subscriptions. `Phase8Acceptance.s.sol` keeps the
-acceptance swap and reference publication as separate, independently simulated
-transactions.
-
-All three Phase 8 scripts are broadcast-capable by design. Run them without
-`--broadcast` first. No `--broadcast` command may be used until the current
-native-token and fiat estimate is approved by the owner. The included reference
-feed and official Uniswap test routers make this a testnet research release, not
-a production release for valuable assets.
+Use the exact dependency order and abort rules in
+`docs/DEPLOYMENT_RUNBOOK.md`. Lasna/Reactive scripts are retired and absent.

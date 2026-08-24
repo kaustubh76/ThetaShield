@@ -15,10 +15,15 @@ contract MockMessageTransmitterV2 is IMessageTransmitterV2 {
     }
 
     SentMessage private _lastMessage;
+    uint32 public localDomain;
     uint256 public sentCount;
     bool public sendsRevert;
 
     error MockSendFailure();
+
+    function setLocalDomain(uint32 value) external {
+        localDomain = value;
+    }
 
     function setSendsRevert(bool value) external {
         sendsRevert = value;
@@ -41,6 +46,10 @@ contract MockMessageTransmitterV2 is IMessageTransmitterV2 {
             messageBody: messageBody
         });
         ++sentCount;
+    }
+
+    function receiveMessage(bytes calldata, bytes calldata) external pure returns (bool success) {
+        return true;
     }
 
     function lastMessage() external view returns (SentMessage memory message) {

@@ -32,6 +32,7 @@ the PNG social-card signature.
 ## Status
 
 Phase 9 is complete. The dashboard and submission material do not claim a live
-contract deployment. Phase 8 stays open until the owner approves a regenerated
-current cost cap and the real origin-to-Reactive-to-origin acceptance evidence
-is confirmed. The submission draft has not been sent externally.
+contract deployment. Its system copy now reflects the Circle CCTP migration.
+Phase 8 stays open until a fresh two-chain simulation, Circle-specific approval,
+and the real Unichain-to-Ethereum-to-Unichain acceptance evidence are confirmed.
+The submission draft has not been sent externally.

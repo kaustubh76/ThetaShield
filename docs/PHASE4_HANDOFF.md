@@ -1,5 +1,8 @@
 # Phase 4 Verification Handoff
 
+> Historical record: this lifecycle predates the Circle migration. The current
+> lifecycle is `ThetaShieldCircleEndToEndTest`. Do not deploy from this file.
+
 ## Scope completed
 
 Phase 4 connects the real local origin-chain components to the Phase 3 Reactive

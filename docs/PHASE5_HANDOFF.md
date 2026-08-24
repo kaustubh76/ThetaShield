@@ -118,6 +118,10 @@ The pinned local compiler and EVM profile report:
 These are isolated hook-call measurements. They exclude PoolManager/router gas,
 network pricing, calldata pricing differences, and live transaction overhead.
 
+The figures above are the historical pre-Circle Phase 5 snapshot. The current
+Circle hook measurement is 33,192 `beforeSwap` plus 166,781 warm `afterSwap`, or
+199,973 gas, and the generated Phase 5/6/6.1 artifacts carry that current value.
+
 ## Verification evidence
 
 The focused Phase 5 checks require:

@@ -5,12 +5,6 @@
       "rev": "bf647bd6046f2f7da30d0c2bf435e5c76a780c1b"
     }
   },
-  "lib/reactive-lib": {
-    "rev": "f6990ce3526928d039fec78855b2004ff8d65c9f"
-  },
-  "lib/reactive-test-lib": {
-    "rev": "2ff9b2a68ca9956306ec943c10d1c757c1dd1956"
-  },
   "lib/v4-core": {
     "tag": {
       "name": "v4.0.0",

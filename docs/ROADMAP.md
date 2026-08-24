@@ -15,7 +15,7 @@ Every phase is verified before it is committed and pushed to `main`.
 | Phase 7 — Security and release hardening | Complete |
 | Phase 8A — Circle migration architecture | Complete |
 | Phase 8B — Circle contracts and local lifecycle | Complete |
-| Phase 8C — Circle release hardening | In progress |
+| Phase 8C — Circle release hardening | Complete |
 | Phase 8D — Live deployment | Pending fresh simulation and cost gate |
 | Phase 9 — Dashboard and submission | Complete; private dashboard deployed, live chain cards gated on Phase 8 |
 

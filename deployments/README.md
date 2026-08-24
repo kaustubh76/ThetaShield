@@ -1,15 +1,16 @@
 # Deployments
 
-No contracts have been deployed. Phase 8 dry-run manifests use schema version 2
-and record each network's native-token budget separately. The current candidate
-is `sepolia-lasna-omni-phase8-dry-run.json`; the earlier Lasna manifest remains
-as historical evidence and must not be used for a broadcast.
+No complete ThetaShield deployment is claimed. One orphan Ethereum Sepolia mock
+feed from the retired attempt is documented in the final report; it is not a
+Circle release component.
 
-`manifest.schema.json` defines the required record for future dry-runs and live
-releases: source revision, networks, components, deployment transactions/blocks,
-explorer and verification status, subscriptions, acceptance evidence, and
-estimated/actual approved cost and fee cap. RPC URLs are referenced by secret
-name only.
+The files in `archive/` are historical non-broadcast Lasna dry runs and must not
+be used. New Circle dry-runs and live records use schema version 3.
+
+`manifest.schema.json` records source revision, Circle domains, components,
+observation/recommendation relay transactions, later-fee evidence, and separate
+approved/actual native-token costs for both chains. RPC URLs are referenced by
+secret name only.
 
 Secrets and funded credentials must never be stored here. A live manifest must
 not be created as proof of success until its transactions are confirmed and its

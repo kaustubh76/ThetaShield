@@ -186,22 +186,22 @@ export default function Home() {
         <div><span>01</span><b>Trailing</b><p>The current observation cannot widen its own noise band.</p></div>
         <div><span>02</span><b>Persistent</b><p>One neutral epoch cannot erase sustained toxic history.</p></div>
         <div><span>03</span><b>Directional</b><p>Buy and sell recommendations evolve independently.</p></div>
-        <div><span>04</span><b>Autonomous</b><p>Reactive schedules delayed observation and authenticated callbacks.</p></div>
+        <div><span>04</span><b>Portable</b><p>Circle carries finalized observations and recommendations across chains.</p></div>
       </section>
 
       <section className="section mechanism" id="mechanism">
         <div className="section-heading">
           <p className="kicker">The mechanism</p>
           <h2>Future evidence cannot exist at execution.</h2>
-          <p>That is why the hook stays cheap and Reactive Network handles the delayed control loop.</p>
+          <p>That is why the hook stays small while a bounded Ethereum-side processor handles delayed evidence.</p>
         </div>
         <div className="mechanism-flow">
           {[
             ["01", "Execute", "The v4 hook selects a directional fee and emits compact execution evidence."],
-            ["02", "Wait", "Reactive holds the observation until the configured markout horizon matures."],
+            ["02", "Relay", "Circle CCTP authenticates the finalized observation on Ethereum Sepolia."],
             ["03", "Filter", "Signed markout is scored against trailing volatility that excludes itself."],
             ["04", "Persist", "Notional, confidence, and n-of-k history decide whether risk is sustained."],
-            ["05", "Callback", "An authenticated sequence updates only the affected fee direction."],
+            ["05", "Return", "Circle carries a sequenced recommendation back to the origin controller."],
           ].map(([number, title, copy]) => (
             <article key={number}>
               <span>{number}</span><h3>{title}</h3><p>{copy}</p>
@@ -312,7 +312,7 @@ export default function Home() {
             <div><strong>3,150</strong><span>Phase 6 sensitivity runs</span></div>
             <div><strong>90</strong><span>training-only remediation candidates</span></div>
             <div><strong>15 × 5</strong><span>scenarios × repeated seeds</span></div>
-            <div><strong>80,253</strong><span>measured hook gas per swap</span></div>
+            <div><strong>199,973</strong><span>measured Circle hook gas per swap</span></div>
           </article>
         </div>
 
@@ -330,14 +330,14 @@ export default function Home() {
         <div className="system-flow">
           <article><span>ORIGIN · UNISWAP V4</span><h3>ThetaShield Hook</h3><p>Select fee · emit observation</p></article>
           <i>→</i>
-          <article><span>REACTIVE · LASNA</span><h3>Scheduler + filter</h3><p>Mature · score · persist</p></article>
+          <article><span>ETHEREUM SEPOLIA · CIRCLE</span><h3>Bounded processor</h3><p>Relay · mature · score · persist</p></article>
           <i>→</i>
-          <article><span>AUTHENTICATED CALLBACK</span><h3>Origin controller</h3><p>Sequence · validate · store</p></article>
+          <article><span>FINALIZED CCTP MESSAGE</span><h3>Origin controller</h3><p>Domain · peer · sequence · store</p></article>
         </div>
         <div className="boundary-grid">
           <article><span>SAFE FALLBACK</span><h3>Expired recommendation → 5 bps</h3><p>Stale state cannot keep a premium alive. Pause and missing-data paths return to the configured baseline.</p></article>
-          <article><span>CALLBACK SECURITY</span><h3>Proxy + RVM ID + sequence</h3><p>Spoofed, replayed, out-of-order, future-dated, malformed, or out-of-range recommendations revert.</p></article>
-          <article><span>PROCESSING BOUND</span><h3>Fixed work per reaction</h3><p>Pending observations, epoch history, and cron processing are capped to prevent unbounded iteration and gas griefing.</p></article>
+          <article><span>MESSAGE SECURITY</span><h3>Transmitter + domain + peer</h3><p>Only finalized Circle messages from the sealed processor peer are accepted; replays and malformed recommendations revert.</p></article>
+          <article><span>PROCESSING BOUND</span><h3>Fixed work per keeper call</h3><p>Pending observations, reference history, epochs, and each permissionless processing call are capped.</p></article>
         </div>
       </section>
 
@@ -347,10 +347,10 @@ export default function Home() {
           <h2>Local system proven.<br />Live acceptance pending.</h2>
         </div>
         <div className="release-list">
-          <p><i className="done" /><span><b>99 Solidity tests</b> · unit, fuzz, invariant, integration</span></p>
+          <p><i className="done" /><span><b>Circle lifecycle tests</b> · real local PoolManager, two transports, later fee</span></p>
           <p><i className="done" /><span><b>38 research tests</b> · golden vectors and reproducible artifacts</span></p>
           <p><i className="done" /><span><b>Security gates</b> · dependency lock, secret scan, gas ceilings</span></p>
-          <p><i className="pending" /><span><b>Public testnet lifecycle</b> · requires owner-approved spend</span></p>
+          <p><i className="pending" /><span><b>Public Circle lifecycle</b> · requires fresh simulation and owner-approved spend</span></p>
         </div>
       </section>
 

@@ -1,34 +1,35 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.26;
 
-/// @title DeploymentValidation
-/// @notice Fail-closed validation shared by deployment preflight scripts and tests.
-library DeploymentValidation {
-    address internal constant REACTIVE_SYSTEM_CONTRACT = 0x0000000000000000000000000000000000fffFfF;
-    uint256 internal constant MINIMUM_CALLBACK_GAS_LIMIT = 100_000;
+import {IMessageTransmitterV2} from "../interfaces/IMessageTransmitterV2.sol";
 
+/// @title DeploymentValidation
+/// @notice Fail-closed Circle and Uniswap validation shared by deployment scripts and tests.
+library DeploymentValidation {
     struct OriginConfig {
         uint256 expectedChainId;
+        uint32 expectedCircleDomain;
         address poolManager;
-        address callbackProxy;
+        address messageTransmitter;
+        address expectedMessageTransmitter;
+        address swapRouter;
+        address modifyLiquidityRouter;
         address owner;
         address deployer;
-        address expectedRvmId;
     }
 
-    struct ReactiveConfig {
+    struct ProcessorConfig {
         uint256 expectedChainId;
-        uint256 originChainId;
-        uint256 referenceChainId;
-        address systemContract;
-        bytes32 expectedSystemCodeHash;
-        address hook;
+        uint32 expectedCircleDomain;
+        address messageTransmitter;
+        address expectedMessageTransmitter;
         address referenceFeed;
-        address controller;
+        uint32 originDomain;
+        bytes32 originTransport;
+        uint32 controllerDomain;
+        bytes32 controller;
         bytes32 poolId;
         bytes32 marketId;
-        uint256 cronTopic;
-        uint256 callbackGasLimit;
     }
 
     error WrongChain(uint256 actual, uint256 expected);
@@ -37,58 +38,65 @@ library DeploymentValidation {
     error DuplicateAddress(bytes32 leftField, bytes32 rightField);
     error MissingCode(address target);
     error InvalidIdentifier(bytes32 field);
-    error InvalidReactiveSystemContract(address supplied, address expected);
-    error ReactiveSystemCodeHashMismatch(bytes32 actual, bytes32 expected);
-    error ReactiveAndOriginChainMatch(uint256 chainId);
-    error CallbackGasLimitOutOfBounds(uint256 supplied);
+    error InvalidCircleMessageTransmitter(address supplied, address expected);
+    error CircleDomainQueryFailed(address transmitter);
+    error CircleDomainMismatch(uint32 actual, uint32 expected);
+    error LocalAndRemoteCircleDomainMatch(uint32 domain);
 
     function validateOrigin(OriginConfig memory config, uint256 actualChainId) internal view returns (bytes32) {
         _validateChain(actualChainId, config.expectedChainId);
         _requireAddress(config.poolManager, "poolManager");
-        _requireAddress(config.callbackProxy, "callbackProxy");
+        _requireAddress(config.messageTransmitter, "messageTransmitter");
+        _requireAddress(config.expectedMessageTransmitter, "expectedMessageTransmitter");
+        _requireAddress(config.swapRouter, "swapRouter");
+        _requireAddress(config.modifyLiquidityRouter, "modifyLiquidityRouter");
         _requireAddress(config.owner, "owner");
         _requireAddress(config.deployer, "deployer");
-        _requireAddress(config.expectedRvmId, "expectedRvmId");
-        if (config.poolManager == config.callbackProxy) {
-            revert DuplicateAddress("poolManager", "callbackProxy");
-        }
+        _requireDistinct(config.poolManager, "poolManager", config.messageTransmitter, "messageTransmitter");
+        _requireDistinct(config.swapRouter, "swapRouter", config.modifyLiquidityRouter, "modifyLiquidityRouter");
         requireCode(config.poolManager);
-        requireCode(config.callbackProxy);
+        requireCode(config.swapRouter);
+        requireCode(config.modifyLiquidityRouter);
+        _validateCircleTransmitter(
+            config.messageTransmitter, config.expectedMessageTransmitter, config.expectedCircleDomain
+        );
         return keccak256(abi.encode(config));
     }
 
-    function validateReactive(ReactiveConfig memory config, uint256 actualChainId) internal view returns (bytes32) {
+    function validateProcessor(ProcessorConfig memory config, uint256 actualChainId) internal view returns (bytes32) {
         _validateChain(actualChainId, config.expectedChainId);
-        if (config.originChainId == 0 || config.referenceChainId == 0) revert ZeroChainId();
-        if (config.originChainId == config.expectedChainId) {
-            revert ReactiveAndOriginChainMatch(config.expectedChainId);
-        }
-        _requireAddress(config.systemContract, "systemContract");
-        if (config.systemContract != REACTIVE_SYSTEM_CONTRACT) {
-            revert InvalidReactiveSystemContract(config.systemContract, REACTIVE_SYSTEM_CONTRACT);
-        }
-        requireCode(config.systemContract);
-        bytes32 actualSystemCodeHash = config.systemContract.codehash;
-        if (actualSystemCodeHash != config.expectedSystemCodeHash) {
-            revert ReactiveSystemCodeHashMismatch(actualSystemCodeHash, config.expectedSystemCodeHash);
-        }
-        _requireAddress(config.hook, "hook");
+        _requireAddress(config.messageTransmitter, "messageTransmitter");
+        _requireAddress(config.expectedMessageTransmitter, "expectedMessageTransmitter");
         _requireAddress(config.referenceFeed, "referenceFeed");
-        _requireAddress(config.controller, "controller");
-        if (config.hook == config.referenceFeed) revert DuplicateAddress("hook", "referenceFeed");
-        if (config.hook == config.controller) revert DuplicateAddress("hook", "controller");
-        if (config.referenceFeed == config.controller) revert DuplicateAddress("referenceFeed", "controller");
+        requireCode(config.referenceFeed);
+        _validateCircleTransmitter(
+            config.messageTransmitter, config.expectedMessageTransmitter, config.expectedCircleDomain
+        );
+        if (config.originDomain == config.expectedCircleDomain) {
+            revert LocalAndRemoteCircleDomainMatch(config.originDomain);
+        }
+        if (config.controllerDomain == config.expectedCircleDomain) {
+            revert LocalAndRemoteCircleDomainMatch(config.controllerDomain);
+        }
+        if (config.originTransport == bytes32(0)) revert InvalidIdentifier("originTransport");
+        if (config.controller == bytes32(0)) revert InvalidIdentifier("controller");
         if (config.poolId == bytes32(0)) revert InvalidIdentifier("poolId");
         if (config.marketId == bytes32(0)) revert InvalidIdentifier("marketId");
-        if (config.cronTopic == 0) revert InvalidIdentifier("cronTopic");
-        if (config.callbackGasLimit < MINIMUM_CALLBACK_GAS_LIMIT || config.callbackGasLimit > type(uint64).max) {
-            revert CallbackGasLimitOutOfBounds(config.callbackGasLimit);
-        }
         return keccak256(abi.encode(config));
     }
 
     function requireCode(address target) internal view {
         if (target.code.length == 0) revert MissingCode(target);
+    }
+
+    function _validateCircleTransmitter(address supplied, address expected, uint32 expectedDomain) private view {
+        if (supplied != expected) revert InvalidCircleMessageTransmitter(supplied, expected);
+        requireCode(supplied);
+        try IMessageTransmitterV2(supplied).localDomain() returns (uint32 actualDomain) {
+            if (actualDomain != expectedDomain) revert CircleDomainMismatch(actualDomain, expectedDomain);
+        } catch {
+            revert CircleDomainQueryFailed(supplied);
+        }
     }
 
     function _validateChain(uint256 actualChainId, uint256 expectedChainId) private pure {
@@ -98,5 +106,9 @@ library DeploymentValidation {
 
     function _requireAddress(address value, bytes32 field) private pure {
         if (value == address(0)) revert ZeroAddress(field);
+    }
+
+    function _requireDistinct(address left, bytes32 leftField, address right, bytes32 rightField) private pure {
+        if (left == right) revert DuplicateAddress(leftField, rightField);
     }
 }

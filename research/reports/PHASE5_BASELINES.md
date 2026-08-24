@@ -46,9 +46,9 @@ not an inferential confidence claim about live markets.
 
 ## Measured local hook gas
 
-- `beforeSwap`: 33,052 gas
-- warm `afterSwap`: 47,201 gas
-- measured hook operations per swap: 80,253 gas
+- `beforeSwap`: 33,192 gas
+- warm `afterSwap`: 166,781 gas
+- measured hook operations per swap: 199,973 gas
 
 These are isolated local EVM call measurements under the pinned compiler profile. They exclude the
 PoolManager/router transaction and are not a live-chain cost quote.

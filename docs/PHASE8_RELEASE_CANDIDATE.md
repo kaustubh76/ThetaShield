@@ -1,5 +1,8 @@
 # Phase 8 Release Candidate
 
+> RETIRED — DO NOT BROADCAST. This Lasna candidate was replaced by the Circle
+> CCTP release path before a ThetaShield hook/controller deployment occurred.
+
 ## Scope
 
 This candidate deploys a public testnet research demonstration on Ethereum

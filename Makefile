@@ -70,7 +70,7 @@ fork-check:
 
 deployment-dry-run:
 	forge test --force --match-contract DeploymentValidationTest -vv
-	forge test --force --match-contract ThetaShieldEndToEndTest -vv
+	forge test --force --match-contract ThetaShieldCircleEndToEndTest -vv
 
 deployment-schema-check:
 	$(PYTHON) -m json.tool deployments/manifest.schema.json >/dev/null
