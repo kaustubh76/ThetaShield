@@ -256,6 +256,7 @@ The interactive signal-lab cards are explicitly simulated. The separate **Live T
 | [Phase 8D handoff](docs/PHASE8D_HANDOFF.md) | Live deployment, receipts, spend, and acceptance evidence |
 | [Final research report](docs/FINAL_REPORT.md) | Delivered implementation, findings, and release boundary |
 | [Four-minute pitch](docs/WINNING_PITCH_SCRIPT.md) | Judge-oriented project narrative |
+| [Teammate handover video](docs/TEAMMATE_HANDOVER_VIDEO.md) | Rough recording script, repository tour, access boundary, and first-day checklist |
 
 Historical Phase 3/4/7/8 Lasna documents are retained for auditability. They are not current deployment instructions.
 
