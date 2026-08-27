@@ -13,7 +13,7 @@ lives, how to verify it, and which boundaries must not be crossed casually.
 Open these tabs in order:
 
 1. [`README.md`](../README.md)
-2. [ThetaShield dashboard](https://thetashield-uhi10.rbrudra9439.chatgpt.site)
+2. [ThetaShield dashboard](https://theta-shield.vercel.app)
 3. [Architecture image](THETASHIELD_ARCHITECTURE.png)
 4. [`docs/PHASE8D_HANDOFF.md`](PHASE8D_HANDOFF.md)
 5. [`deployments/unichain-sepolia-ethereum-sepolia-circle-phase8d-live.json`](../deployments/unichain-sepolia-ethereum-sepolia-circle-phase8d-live.json)

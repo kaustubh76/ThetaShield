@@ -18,7 +18,7 @@
 </p>
 
 <p align="center">
-  <a href="https://thetashield-uhi10.rbrudra9439.chatgpt.site/#live-proof"><strong>Live testnet proof</strong></a>
+  <a href="https://theta-shield.vercel.app/#live-proof"><strong>Live testnet proof</strong></a>
   ·
   <a href="docs/THETASHIELD_ARCHITECTURE.png">Architecture</a>
   ·
@@ -93,7 +93,7 @@ This boundary is intentional: the completed public acceptance lifecycle uses Cir
 
 The full observation → delayed processing → recommendation → later-fee lifecycle completed across Unichain Sepolia and Ethereum Sepolia. Both Circle peers are sealed, recommendation sequence `1` was installed, and a later PoolManager swap matched the controller's expected `500`-pip (`5 bps`) fee.
 
-The [live proof dashboard](https://thetashield-uhi10.rbrudra9439.chatgpt.site/#live-proof) reads current state directly from both public testnets, displays the active safety state, and links the complete receipt trail. It performs read-only RPC calls and never connects a wallet or spends funds.
+The [live proof dashboard](https://theta-shield.vercel.app/#live-proof) reads current state directly from both public testnets, displays the active safety state, and links the complete receipt trail. It performs read-only RPC calls and never connects a wallet or spends funds.
 
 ### Deployed contracts
 

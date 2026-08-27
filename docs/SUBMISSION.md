@@ -36,7 +36,7 @@ or profitability claims.
 
 Repository: <https://github.com/RudraBhaskar9439/ThetaShield> (private during development)
 
-Dashboard: <https://thetashield-uhi10.rbrudra9439.chatgpt.site> (private preview)
+Dashboard: <https://theta-shield.vercel.app> (public production deployment)
 
 Current boundary: unaudited, testnet-only, owner-published mock reference feed,
 and a completed public two-chain Circle acceptance lifecycle. The hook has not

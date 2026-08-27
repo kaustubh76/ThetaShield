@@ -13,8 +13,9 @@
 - A Phase 9 integrity checker plus root Make targets for dependency install,
   dashboard verification, and clean-clone reproduction.
 
-The dashboard is deployed with owner-only access at
-<https://thetashield-uhi10.rbrudra9439.chatgpt.site>.
+The original dashboard deployment remains owner-only at
+<https://thetashield-uhi10.rbrudra9439.chatgpt.site>. A public Vercel
+production deployment is available at <https://theta-shield.vercel.app>.
 
 ## Verification
 
