@@ -14,11 +14,12 @@ Open these tabs in order:
 
 1. [`README.md`](../README.md)
 2. [ThetaShield dashboard](https://theta-shield.vercel.app)
-3. [Video architecture](THETASHIELD_VIDEO_ARCHITECTURE.png)
-4. [`docs/PHASE8D_HANDOFF.md`](PHASE8D_HANDOFF.md)
-5. [`deployments/unichain-sepolia-ethereum-sepolia-circle-phase8d-live.json`](../deployments/unichain-sepolia-ethereum-sepolia-circle-phase8d-live.json)
-6. The repository tree in an editor
-7. A terminal at the repository root
+3. [Detailed Architecture 4](THETASHIELD_ARCHITECTURE4.png)
+4. [Simplified video architecture](THETASHIELD_VIDEO_ARCHITECTURE.png)
+5. [`docs/PHASE8D_HANDOFF.md`](PHASE8D_HANDOFF.md)
+6. [`deployments/unichain-sepolia-ethereum-sepolia-circle-phase8d-live.json`](../deployments/unichain-sepolia-ethereum-sepolia-circle-phase8d-live.json)
+7. The repository tree in an editor
+8. A terminal at the repository root
 
 Before pressing record:
 
