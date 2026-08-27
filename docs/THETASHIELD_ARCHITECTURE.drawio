@@ -1,0 +1,179 @@
+<mxfile host="app.diagrams.net" modified="2026-08-23T10:00:00.000Z" agent="Codex" version="24.7.17" type="device">
+  <diagram id="thetashield-winning-architecture" name="ThetaShield Architecture">
+    <mxGraphModel dx="1600" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" math="0" shadow="0" background="#0B1020">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="title" value="THETASHIELD  •  DIRECTIONAL MEMORY FOR UNISWAP v4" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontColor=#F8FAFC;fontSize=24;fontStyle=1;spacingLeft=4;" vertex="1" parent="1">
+          <mxGeometry x="40" y="25" width="1050" height="42" as="geometry"/>
+        </mxCell>
+        <mxCell id="subtitle" value="Solid arrows = live public-testnet acceptance  •  Dashed arrows = optional canary-gated acceleration" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontColor=#94A3B8;fontSize=12;spacingLeft=4;" vertex="1" parent="1">
+          <mxGeometry x="40" y="65" width="1000" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="thesis" value="MEASURE OUTCOMES → FILTER NOISE → PRICE ONLY THE HARMFUL DIRECTION" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#172554;strokeColor=#60A5FA;fontColor=#DBEAFE;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;arcSize=18;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="1090" y="25" width="460" height="58" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="unichainLane" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0F172A;gradientColor=none;strokeColor=#2563EB;strokeWidth=2;arcSize=14;" vertex="1" parent="1">
+          <mxGeometry x="40" y="110" width="990" height="290" as="geometry"/>
+        </mxCell>
+        <mxCell id="unichainTitle" value="UNICHAIN SEPOLIA  •  EXECUTION PLANE" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontColor=#93C5FD;fontSize=14;fontStyle=1;spacingLeft=4;" vertex="1" parent="1">
+          <mxGeometry x="60" y="125" width="420" height="28" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="trader" value="&lt;b&gt;TRADER / ROUTER&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#94A3B8&quot;&gt;No waiting for cross-chain work&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1E293B;strokeColor=#475569;fontColor=#F8FAFC;fontSize=12;align=center;verticalAlign=middle;arcSize=18;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="70" y="205" width="150" height="78" as="geometry"/>
+        </mxCell>
+        <mxCell id="pool" value="&lt;b&gt;UNISWAP v4&lt;/b&gt;&lt;br&gt;PoolManager&lt;br&gt;&lt;font color=&quot;#94A3B8&quot;&gt;Real dynamic-fee pool&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#172554;strokeColor=#3B82F6;fontColor=#F8FAFC;fontSize=12;align=center;verticalAlign=middle;arcSize=18;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="270" y="195" width="160" height="98" as="geometry"/>
+        </mxCell>
+        <mxCell id="hook" value="&lt;b&gt;THETASHIELD HOOK&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#BFDBFE&quot;&gt;beforeSwap&lt;/font&gt; → fee lookup&lt;br&gt;&lt;font color=&quot;#BFDBFE&quot;&gt;afterSwap&lt;/font&gt; → evidence&lt;br&gt;&lt;font color=&quot;#94A3B8&quot;&gt;Transport failure never reverts swap&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1D4ED8;strokeColor=#60A5FA;strokeWidth=2;fontColor=#FFFFFF;fontSize=12;align=center;verticalAlign=middle;arcSize=18;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="485" y="180" width="210" height="128" as="geometry"/>
+        </mxCell>
+        <mxCell id="controller" value="&lt;b&gt;FEE CONTROLLER&lt;/b&gt;&lt;br&gt;direction • sequence • TTL&lt;br&gt;confidence • risk • bounds&lt;br&gt;&lt;font color=&quot;#86EFAC&quot;&gt;Fallback: 500 pips / 5 bps&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#14532D;strokeColor=#22C55E;strokeWidth=2;fontColor=#F0FDF4;fontSize=12;align=center;verticalAlign=middle;arcSize=18;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="765" y="170" width="225" height="118" as="geometry"/>
+        </mxCell>
+        <mxCell id="transport" value="&lt;b&gt;CIRCLE TRANSPORT&lt;/b&gt;&lt;br&gt;sealed hook + processor peer&lt;br&gt;&lt;font color=&quot;#FED7AA&quot;&gt;finalized observation&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#7C2D12;strokeColor=#F59E0B;strokeWidth=2;fontColor=#FFF7ED;fontSize=12;align=center;verticalAlign=middle;arcSize=18;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="500" y="320" width="195" height="64" as="geometry"/>
+        </mxCell>
+        <mxCell id="controllerSafety" value="&lt;b&gt;SAFE BY DEFAULT&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#BBF7D0&quot;&gt;stale • missing • paused • low confidence&lt;/font&gt;&lt;br&gt;→ baseline, never an unbounded fee" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#052E16;strokeColor=#16A34A;fontColor=#F0FDF4;fontSize=11;align=center;verticalAlign=middle;arcSize=16;" vertex="1" parent="1">
+          <mxGeometry x="70" y="320" width="360" height="64" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="circleHub" value="&lt;b&gt;CIRCLE CCTP V2&lt;/b&gt;&lt;br&gt;Authenticated primary rail&lt;br&gt;&lt;font color=&quot;#FFEDD5&quot;&gt;finality • domain • sender&lt;/font&gt;" style="shape=hexagon;perimeter=hexagonPerimeter2;whiteSpace=wrap;html=1;fixedSize=1;fillColor=#9A3412;strokeColor=#FB923C;strokeWidth=3;fontColor=#FFFFFF;fontSize=13;align=center;verticalAlign=middle;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="705" y="405" width="215" height="90" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="ethereumLane" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0B1F1A;gradientColor=none;strokeColor=#10B981;strokeWidth=2;arcSize=14;" vertex="1" parent="1">
+          <mxGeometry x="40" y="500" width="990" height="195" as="geometry"/>
+        </mxCell>
+        <mxCell id="ethereumTitle" value="ETHEREUM SEPOLIA  •  DELAYED INTELLIGENCE PLANE" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontColor=#6EE7B7;fontSize=14;fontStyle=1;spacingLeft=4;" vertex="1" parent="1">
+          <mxGeometry x="60" y="510" width="500" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="feed" value="&lt;b&gt;REFERENCE FEED&lt;/b&gt;&lt;br&gt;delayed normalized price&lt;br&gt;&lt;font color=&quot;#94A3B8&quot;&gt;owner-published testnet demo&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#134E4A;strokeColor=#2DD4BF;fontColor=#F0FDFA;fontSize=12;align=center;verticalAlign=middle;arcSize=18;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="75" y="555" width="185" height="92" as="geometry"/>
+        </mxCell>
+        <mxCell id="processor" value="&lt;b&gt;BOUNDED PROCESSOR&lt;/b&gt;&lt;br&gt;delayed markout • trailing volatility&lt;br&gt;dead band • notional caps&lt;br&gt;confidence • persistence • direction&lt;br&gt;&lt;font color=&quot;#A7F3D0&quot;&gt;positive risk only can add premium&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#065F46;strokeColor=#34D399;strokeWidth=2;fontColor=#ECFDF5;fontSize=12;align=center;verticalAlign=middle;arcSize=18;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="320" y="545" width="255" height="132" as="geometry"/>
+        </mxCell>
+        <mxCell id="recommendation" value="&lt;b&gt;DIRECTIONAL RECOMMENDATION&lt;/b&gt;&lt;br&gt;buy fee ≠ sell fee&lt;br&gt;bounded • rate-limited • expiring&lt;br&gt;&lt;font color=&quot;#A7F3D0&quot;&gt;sequence N&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#064E3B;strokeColor=#10B981;fontColor=#ECFDF5;fontSize=12;align=center;verticalAlign=middle;arcSize=18;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="620" y="555" width="220" height="92" as="geometry"/>
+        </mxCell>
+        <mxCell id="keeper" value="&lt;b&gt;PERMISSIONLESS KEEPER&lt;/b&gt;&lt;br&gt;relay attestations • sync references&lt;br&gt;advance bounded mature work&lt;br&gt;&lt;font color=&quot;#94A3B8&quot;&gt;can delay, cannot forge&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1E293B;strokeColor=#64748B;fontColor=#F8FAFC;fontSize=11;align=center;verticalAlign=middle;arcSize=18;" vertex="1" parent="1">
+          <mxGeometry x="850" y="560" width="155" height="84" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="reactiveLane" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1E1633;gradientColor=none;strokeColor=#8B5CF6;strokeWidth=3;arcSize=14;dashed=1;dashPattern=8 6;" vertex="1" parent="1">
+          <mxGeometry x="1060" y="110" width="490" height="585" as="geometry"/>
+        </mxCell>
+        <mxCell id="reactiveTitle" value="REACTIVE NETWORK" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontColor=#C4B5FD;fontSize=19;fontStyle=1;spacingLeft=4;" vertex="1" parent="1">
+          <mxGeometry x="1085" y="130" width="300" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="reactiveStatus" value="OPTIONAL EVENT-DRIVEN ACCELERATION PLANE&lt;br&gt;&lt;font color=&quot;#C4B5FD&quot;&gt;experimental • secondary • canary-gated&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4C1D95;strokeColor=#A78BFA;fontColor=#FFFFFF;fontSize=11;fontStyle=1;align=center;verticalAlign=middle;arcSize=18;" vertex="1" parent="1">
+          <mxGeometry x="1090" y="175" width="430" height="62" as="geometry"/>
+        </mxCell>
+        <mxCell id="reactiveObserve" value="&lt;b&gt;1  OBSERVE&lt;/b&gt;&lt;br&gt;Hook observation events&lt;br&gt;Reference update events" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#312E81;strokeColor=#818CF8;fontColor=#EEF2FF;fontSize=12;align=center;verticalAlign=middle;arcSize=18;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="1100" y="275" width="185" height="88" as="geometry"/>
+        </mxCell>
+        <mxCell id="reactiveWake" value="&lt;b&gt;2  WAKE + MONITOR&lt;/b&gt;&lt;br&gt;maturity triggers&lt;br&gt;stuck-message detection&lt;br&gt;retry / expiry signals" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#5B21B6;strokeColor=#A78BFA;fontColor=#F5F3FF;fontSize=12;align=center;verticalAlign=middle;arcSize=18;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="1305" y="265" width="195" height="108" as="geometry"/>
+        </mxCell>
+        <mxCell id="reactiveCallback" value="&lt;b&gt;3  SECONDARY CALLBACK&lt;/b&gt;&lt;br&gt;redundant liveness path&lt;br&gt;&lt;font color=&quot;#DDD6FE&quot;&gt;enabled only after destination canary passes&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4C1D95;strokeColor=#C4B5FD;strokeWidth=2;fontColor=#FAF5FF;fontSize=12;align=center;verticalAlign=middle;arcSize=18;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="1195" y="410" width="235" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="reactiveBoundary" value="&lt;b&gt;WHY THE BOUNDARY MATTERS&lt;/b&gt;&lt;br&gt;Earlier Lasna emitted correctly targeted callback requests, but destination delivery did not complete.&lt;br&gt;&lt;br&gt;&lt;font color=&quot;#E9D5FF&quot;&gt;ThetaShield isolates that liveness risk: Reactive can accelerate, but cannot block swaps or forge a Circle recommendation.&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2E1065;strokeColor=#7C3AED;fontColor=#F5F3FF;fontSize=11;align=left;verticalAlign=middle;spacing=12;arcSize=16;" vertex="1" parent="1">
+          <mxGeometry x="1090" y="545" width="430" height="125" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="safetyLane" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#111827;strokeColor=#334155;strokeWidth=1;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="40" y="725" width="1510" height="130" as="geometry"/>
+        </mxCell>
+        <mxCell id="safetyTitle" value="FAILURE DOES NOT BECOME A TRADER OUTAGE" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontColor=#E2E8F0;fontSize=13;fontStyle=1;spacingLeft=4;" vertex="1" parent="1">
+          <mxGeometry x="60" y="740" width="450" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="safe1" value="&lt;b&gt;TRANSPORT UNAVAILABLE&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#86EFAC&quot;&gt;swap succeeds&lt;/font&gt; • failure event emitted" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#052E16;strokeColor=#15803D;fontColor=#F0FDF4;fontSize=11;align=center;verticalAlign=middle;arcSize=16;" vertex="1" parent="1">
+          <mxGeometry x="70" y="785" width="300" height="52" as="geometry"/>
+        </mxCell>
+        <mxCell id="safe2" value="&lt;b&gt;STALE / LOW CONFIDENCE&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#86EFAC&quot;&gt;controller returns 5 bps baseline&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#052E16;strokeColor=#15803D;fontColor=#F0FDF4;fontSize=11;align=center;verticalAlign=middle;arcSize=16;" vertex="1" parent="1">
+          <mxGeometry x="415" y="785" width="300" height="52" as="geometry"/>
+        </mxCell>
+        <mxCell id="safe3" value="&lt;b&gt;FORGED / REPLAYED MESSAGE&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#86EFAC&quot;&gt;rejected before state advances&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#052E16;strokeColor=#15803D;fontColor=#F0FDF4;fontSize=11;align=center;verticalAlign=middle;arcSize=16;" vertex="1" parent="1">
+          <mxGeometry x="760" y="785" width="300" height="52" as="geometry"/>
+        </mxCell>
+        <mxCell id="safe4" value="&lt;b&gt;KEEPER / REACTIVE STOPPED&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#86EFAC&quot;&gt;updates expire; swaps continue&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#052E16;strokeColor=#15803D;fontColor=#F0FDF4;fontSize=11;align=center;verticalAlign=middle;arcSize=16;" vertex="1" parent="1">
+          <mxGeometry x="1105" y="785" width="390" height="52" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="eTraderPool" value="1  swap" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#60A5FA;strokeWidth=2;fontColor=#BFDBFE;fontSize=11;labelBackgroundColor=#0B1020;endArrow=block;endFill=1;" edge="1" parent="1" source="trader" target="pool">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ePoolHook" value="callbacks" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#60A5FA;strokeWidth=2;fontColor=#BFDBFE;fontSize=11;labelBackgroundColor=#0B1020;endArrow=block;endFill=1;" edge="1" parent="1" source="pool" target="hook">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="eHookController" value="feeForSwap(direction)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#22C55E;strokeWidth=2;fontColor=#86EFAC;fontSize=10;labelBackgroundColor=#0B1020;startArrow=block;startFill=1;endArrow=block;endFill=1;" edge="1" parent="1" source="hook" target="controller">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="eHookTransport" value="2  execution evidence" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#FB923C;strokeWidth=2;fontColor=#FED7AA;fontSize=10;labelBackgroundColor=#0B1020;endArrow=block;endFill=1;" edge="1" parent="1" source="hook" target="transport">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="eTransportCircle" value="finalized CCTP" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#FB923C;strokeWidth=2;fontColor=#FED7AA;fontSize=10;labelBackgroundColor=#0B1020;endArrow=block;endFill=1;" edge="1" parent="1" source="transport" target="circleHub">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="eCircleProcessor" value="3  authenticated observation" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#FB923C;strokeWidth=2;fontColor=#FED7AA;fontSize=10;labelBackgroundColor=#0B1020;endArrow=block;endFill=1;" edge="1" parent="1" source="circleHub" target="processor">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="eFeedProcessor" value="4  delayed reference" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#2DD4BF;strokeWidth=2;fontColor=#99F6E4;fontSize=10;labelBackgroundColor=#0B1020;endArrow=block;endFill=1;" edge="1" parent="1" source="feed" target="processor">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="eProcessorRecommendation" value="5  score each direction" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#34D399;strokeWidth=2;fontColor=#A7F3D0;fontSize=10;labelBackgroundColor=#0B1020;endArrow=block;endFill=1;" edge="1" parent="1" source="processor" target="recommendation">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="eRecommendationCircle" value="6  sequenced recommendation" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#FB923C;strokeWidth=2;fontColor=#FED7AA;fontSize=10;labelBackgroundColor=#0B1020;endArrow=block;endFill=1;" edge="1" parent="1" source="recommendation" target="circleHub">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="eCircleController" value="7  verify + install" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#FB923C;strokeWidth=2;fontColor=#FED7AA;fontSize=10;labelBackgroundColor=#0B1020;endArrow=block;endFill=1;" edge="1" parent="1" source="circleHub" target="controller">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="eKeeperCircle" value="relay attestation" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#94A3B8;strokeWidth=1;fontColor=#CBD5E1;fontSize=9;endArrow=open;endFill=0;" edge="1" parent="1" source="keeper" target="circleHub">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="eKeeperProcessor" value="advance work" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#94A3B8;strokeWidth=1;fontColor=#CBD5E1;fontSize=9;endArrow=open;endFill=0;" edge="1" parent="1" source="keeper" target="processor">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="eObserveWake" value="matching logs" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#A78BFA;strokeWidth=2;fontColor=#DDD6FE;fontSize=10;endArrow=block;endFill=1;dashed=1;dashPattern=6 4;" edge="1" parent="1" source="reactiveObserve" target="reactiveWake">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="eWakeCallback" value="event-driven action" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#A78BFA;strokeWidth=2;fontColor=#DDD6FE;fontSize=10;endArrow=block;endFill=1;dashed=1;dashPattern=6 4;" edge="1" parent="1" source="reactiveWake" target="reactiveCallback">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="eHookReactive" value="observation event" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#8B5CF6;strokeWidth=2;fontColor=#C4B5FD;fontSize=9;labelBackgroundColor=#1E1633;endArrow=open;endFill=0;dashed=1;dashPattern=6 4;" edge="1" parent="1" source="hook" target="reactiveObserve">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="720" y="155"/>
+              <mxPoint x="1045" y="155"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="eFeedReactive" value="reference event" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#8B5CF6;strokeWidth=2;fontColor=#C4B5FD;fontSize=9;labelBackgroundColor=#1E1633;endArrow=open;endFill=0;dashed=1;dashPattern=6 4;" edge="1" parent="1" source="feed" target="reactiveObserve">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="280" y="680"/>
+              <mxPoint x="1035" y="680"/>
+              <mxPoint x="1035" y="320"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="eReactiveProcessor" value="canary-gated wake / redundant delivery" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#8B5CF6;strokeWidth=2;fontColor=#C4B5FD;fontSize=9;endArrow=open;endFill=0;dashed=1;dashPattern=6 4;" edge="1" parent="1" source="reactiveCallback" target="processor">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1040" y="705"/>
+              <mxPoint x="590" y="705"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

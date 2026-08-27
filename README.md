@@ -61,6 +61,17 @@ approved/actual costs are in [the Phase 8D handoff](docs/PHASE8D_HANDOFF.md) and
 The older Phase 3/4/7/8 Lasna documents are retained only as historical evidence
 of the retired implementation and must not be used for deployment.
 
+## Presentation assets
+
+- [Four-minute judge narrative](docs/WINNING_PITCH_SCRIPT.md)
+- [Editable draw.io architecture](docs/THETASHIELD_ARCHITECTURE.drawio)
+- [Architecture preview](docs/THETASHIELD_ARCHITECTURE.png)
+
+The architecture gives Reactive Network a separate, clearly labeled optional
+acceleration plane. It does not represent Reactive as part of the completed
+Circle acceptance path or claim that the historical destination callback
+succeeded.
+
 ## Safety boundary
 
 - Never commit a private key or live credential.
