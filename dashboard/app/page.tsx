@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 
 type ScenarioId = "benign" | "volatile" | "buy" | "sell";
 
@@ -115,12 +115,197 @@ const policyRows = [
   ["ThetaShield", "7.27", "Yes", "Yes", "Directional + persistent"],
 ];
 
+type FeeState = { feePips: number; usedBaseline: boolean };
+
+type LiveProof = {
+  ok: true;
+  generatedAt: string;
+  poolId: string;
+  recommendationExpired: boolean;
+  origin: {
+    chainId: number;
+    blockNumber: number;
+    contractsHealthy: boolean;
+    circlePeerSealed: boolean;
+    observationCount: number;
+    buy: FeeState;
+    sell: FeeState;
+    lastSequence: number;
+    recommendation: {
+      confidenceBps: number;
+      validAfter: number;
+      validUntil: number;
+      sequence: number;
+    };
+  };
+  processor: {
+    chainId: number;
+    blockNumber: number;
+    contractHealthy: boolean;
+    pendingCount: number;
+    settledCount: number;
+    expiredCount: number;
+    lastObservationId: number;
+    recommendationSequence: number;
+  };
+};
+
+const explorers = {
+  unichain: "https://unichain-sepolia.blockscout.com",
+  ethereum: "https://eth-sepolia.blockscout.com",
+};
+
+const liveAddresses = [
+  ["Hook", "0xC53d57f4778E67B73B5535dEb2B841D56CBE40C0", explorers.unichain],
+  ["Controller", "0x6db44e172C7E1bae468A6e1e3683f34D7f3fD791", explorers.unichain],
+  ["Circle transport", "0x24daf359bA811c9dd6903649b968eC6D76C3e568", explorers.unichain],
+  ["Processor", "0x10970CC15d1DF81bA6c8968F87036b21c694d744", explorers.ethereum],
+] as const;
+
+const liveReceipts = [
+  ["01", "Swap observed", "Unichain Sepolia", "0xb81b1e11daa419162a172b84636ba8d0398c7da9e7fe90b59224e2535e33f5d6", explorers.unichain],
+  ["02", "Observation received", "Ethereum Sepolia", "0x52c7f55ff3c85a31cbf1990cce3f0d5290133304302d45533fd449e2f26583f9", explorers.ethereum],
+  ["03", "Reference synchronized", "Ethereum Sepolia", "0xcc9f2065a76e6b32060d6b40ddf502336137878ccbeb3729f8f5d438a7e76f2d", explorers.ethereum],
+  ["04", "Observation settled", "Ethereum Sepolia", "0x7f13d36606793df918907e8a68b9fe792440880eb748f05240a2bf3c6f68889b", explorers.ethereum],
+  ["05", "Recommendation sent", "Ethereum Sepolia", "0x7d58946a80cc2fb604feb784c547fdfc2055b940aa3101af5e3cb3d5e2c7cfb0", explorers.ethereum],
+  ["06", "Recommendation installed", "Unichain Sepolia", "0xb39029264e3828380c23f5ca97c279371bcf5c518def0f1b95f1db6b3f6aeb19", explorers.unichain],
+] as const;
+
+function shortHex(value: string, left = 8, right = 6) {
+  return `${value.slice(0, left)}…${value.slice(-right)}`;
+}
+
+function feeBps(feePips: number) {
+  return (feePips / 100).toFixed(2);
+}
+
+function formatChainTime(seconds: number) {
+  return new Intl.DateTimeFormat("en", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZoneName: "short",
+  }).format(new Date(seconds * 1_000));
+}
+
 function MetricBar({ label, value }: { label: string; value: number }) {
   return (
     <div className="metric-bar">
       <div><span>{label}</span><b>{value}%</b></div>
       <i style={{ "--value": `${value}%` } as CSSProperties} />
     </div>
+  );
+}
+
+function LiveProofPanel() {
+  const [proof, setProof] = useState<LiveProof | null>(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/live", { cache: "no-store" });
+      const payload = (await response.json()) as LiveProof | { message?: string };
+      if (!response.ok || !("ok" in payload) || payload.ok !== true) {
+        throw new Error("message" in payload && payload.message ? payload.message : "Testnet RPC unavailable");
+      }
+      setProof(payload);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Testnet RPC unavailable");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const initial = window.setTimeout(() => void refresh(), 0);
+    const interval = window.setInterval(() => void refresh(), 60_000);
+    return () => {
+      window.clearTimeout(initial);
+      window.clearInterval(interval);
+    };
+  }, [refresh]);
+
+  const safeBaseline = proof ? proof.origin.buy.usedBaseline && proof.origin.sell.usedBaseline : true;
+  const statusCopy = proof?.recommendationExpired
+    ? "Safe baseline active · recommendation expired"
+    : safeBaseline
+      ? "Safe baseline active"
+      : "Live directional recommendation active";
+
+  return (
+    <>
+      <div className="live-toolbar">
+        <div>
+          <span className={`live-status ${proof ? "ok" : error ? "error" : ""}`}><i />{proof ? "Live read" : error ? "RPC unavailable" : "Connecting"}</span>
+          <p>{proof ? `Read at ${new Date(proof.generatedAt).toLocaleTimeString()}` : "Reading both public testnets…"}</p>
+        </div>
+        <button className="refresh-button" disabled={loading} onClick={() => void refresh()} type="button">
+          {loading ? "Reading on-chain state…" : "Refresh on-chain state"}
+        </button>
+      </div>
+
+      {error && !proof ? <div className="rpc-error"><b>Live RPC read paused.</b><span>{error}. The verified receipt trail remains available below.</span></div> : null}
+
+      <div className="live-grid" aria-live="polite">
+        <article className="live-card origin-card">
+          <div className="live-card-header"><span>ORIGIN · UNICHAIN SEPOLIA</span><b>{proof ? `block ${proof.origin.blockNumber.toLocaleString()}` : "reading…"}</b></div>
+          <div className="live-fees">
+            <div><span>BUY-BASE FEE</span><strong>{proof ? feeBps(proof.origin.buy.feePips) : "—"}</strong><small>bps</small></div>
+            <div><span>SELL-BASE FEE</span><strong>{proof ? feeBps(proof.origin.sell.feePips) : "—"}</strong><small>bps</small></div>
+          </div>
+          <dl className="live-facts">
+            <div><dt>Hook observations</dt><dd>{proof?.origin.observationCount ?? "—"}</dd></div>
+            <div><dt>Installed sequence</dt><dd>{proof?.origin.lastSequence ?? "—"}</dd></div>
+            <div><dt>Contract code</dt><dd className={proof?.origin.contractsHealthy ? "healthy" : ""}>{proof ? (proof.origin.contractsHealthy ? "verified present" : "missing") : "—"}</dd></div>
+            <div><dt>Circle peer</dt><dd className={proof?.origin.circlePeerSealed ? "healthy" : ""}>{proof ? (proof.origin.circlePeerSealed ? "sealed" : "open") : "—"}</dd></div>
+          </dl>
+        </article>
+
+        <article className="live-card processor-card">
+          <div className="live-card-header"><span>PROCESSOR · ETHEREUM SEPOLIA</span><b>{proof ? `block ${proof.processor.blockNumber.toLocaleString()}` : "reading…"}</b></div>
+          <div className="processor-counts">
+            <div><strong>{proof?.processor.pendingCount ?? "—"}</strong><span>pending</span></div>
+            <div><strong>{proof?.processor.settledCount ?? "—"}</strong><span>settled</span></div>
+            <div><strong>{proof?.processor.expiredCount ?? "—"}</strong><span>expired</span></div>
+          </div>
+          <dl className="live-facts">
+            <div><dt>Last observation</dt><dd>{proof?.processor.lastObservationId ?? "—"}</dd></div>
+            <div><dt>Recommendation sequence</dt><dd>{proof?.processor.recommendationSequence ?? "—"}</dd></div>
+            <div><dt>Contract code</dt><dd className={proof?.processor.contractHealthy ? "healthy" : ""}>{proof ? (proof.processor.contractHealthy ? "verified present" : "missing") : "—"}</dd></div>
+            <div><dt>Chain ID</dt><dd>{proof?.processor.chainId ?? "—"}</dd></div>
+          </dl>
+        </article>
+      </div>
+
+      <div className={`live-proof-note ${proof && !safeBaseline ? "active" : ""}`}>
+        <i />
+        <div><b>{statusCopy}</b><p>{proof?.recommendationExpired ? "Sequence 1 remains auditable, but its validity window ended. Both swap directions safely return the configured 5 bps baseline." : "The displayed fee is the value the deployed hook controller currently returns for the proven pool."}</p></div>
+        {proof ? <span>confidence {proof.origin.recommendation.confidenceBps / 100}% · valid until {formatChainTime(proof.origin.recommendation.validUntil)}</span> : null}
+      </div>
+
+      <div className="receipt-heading"><span>LIVE RECEIPT TRAIL</span><b>Six public transactions · open any receipt</b></div>
+      <div className="receipt-rail">
+        {liveReceipts.map(([number, title, chain, hash, explorer]) => (
+          <a className="receipt-step" href={`${explorer}/tx/${hash}`} key={hash} rel="noreferrer" target="_blank">
+            <span className="receipt-index">{number}</span>
+            <span className="receipt-copy"><b>{title}</b><small>{chain}</small><code>{shortHex(hash)}</code></span>
+            <span aria-hidden="true">↗</span>
+          </a>
+        ))}
+      </div>
+
+      <div className="address-strip">
+        {liveAddresses.map(([label, address, explorer]) => (
+          <a href={`${explorer}/address/${address}`} key={address} rel="noreferrer" target="_blank"><span>{label}</span><code>{shortHex(address)}</code><b>↗</b></a>
+        ))}
+      </div>
+      <p className="proof-disclosure">Read-only proof. Refreshing performs public RPC reads; it never connects a wallet, signs a message, or spends testnet funds.</p>
+    </>
   );
 }
 
@@ -141,6 +326,7 @@ export default function Home() {
         <nav aria-label="Primary navigation">
           <a href="#mechanism">Mechanism</a>
           <a href="#lab">Signal lab</a>
+          <a href="#live-proof">Live proof</a>
           <a href="#evidence">Evidence</a>
           <a href="#system">System</a>
         </nav>
@@ -156,8 +342,8 @@ export default function Home() {
             supported by persistent adverse-selection evidence.
           </p>
           <div className="hero-actions">
-            <a className="primary-action" href="#lab">Run the signal lab</a>
-            <a className="secondary-action" href="#evidence">Inspect the research</a>
+            <a className="primary-action" href="#live-proof">View live testnet proof</a>
+            <a className="secondary-action" href="#lab">Run the signal lab</a>
           </div>
           <p className="trust-line">Risk proxy—not exact LVR, individual LP loss, or a profitability claim.</p>
         </div>
@@ -272,6 +458,14 @@ export default function Home() {
             <p>Single-source testnet mode caps confidence at 60%. Research values shown here use the multi-source model.</p>
           </article>
         </div>
+      </section>
+
+      <section className="section live-proof" id="live-proof">
+        <div className="section-heading split-heading">
+          <div><p className="kicker">Live testnet proof</p><h2>Don’t trust the demo. Read the contracts.</h2></div>
+          <p>Read directly from deployed contracts across Unichain Sepolia and Ethereum Sepolia. This panel separates current chain state from the simulated signal lab.</p>
+        </div>
+        <LiveProofPanel />
       </section>
 
       <section className="section evidence" id="evidence">

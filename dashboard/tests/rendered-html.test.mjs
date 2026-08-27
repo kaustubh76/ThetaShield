@@ -30,6 +30,11 @@ test("server-renders the complete ThetaShield research dashboard", async () => {
   assert.match(html, /Circle CCTP/);
   assert.match(html, /Live Circle loop proven/);
   assert.match(html, /Risk proxy—not exact LVR/);
+  assert.match(html, /Live testnet proof/i);
+  assert.match(html, /Read directly from deployed contracts/i);
+  assert.match(html, /Refresh on-chain state/i);
+  assert.match(html, /LIVE RECEIPT TRAIL/i);
+  assert.match(html, /Read-only proof/i);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton|Reactive Network|Lasna/i);
 });
 
