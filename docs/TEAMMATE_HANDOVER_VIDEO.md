@@ -14,7 +14,7 @@ Open these tabs in order:
 
 1. [`README.md`](../README.md)
 2. [ThetaShield dashboard](https://theta-shield.vercel.app)
-3. [Architecture image](THETASHIELD_ARCHITECTURE.png)
+3. [Video architecture](THETASHIELD_VIDEO_ARCHITECTURE.png)
 4. [`docs/PHASE8D_HANDOFF.md`](PHASE8D_HANDOFF.md)
 5. [`deployments/unichain-sepolia-ethereum-sepolia-circle-phase8d-live.json`](../deployments/unichain-sepolia-ethereum-sepolia-circle-phase8d-live.json)
 6. The repository tree in an editor
@@ -117,12 +117,14 @@ alive; the fee returns to baseline.”
 
 **Point to the purple architecture lane.**
 
-“Reactive Network is the optional acceleration and secondary-liveness plane.
-It can observe events, wake mature work, and monitor stuck messages. It is not
-the primary transport in the completed release. Earlier Lasna callback
-requests were emitted, but public destination delivery did not complete, so
-Reactive was isolated behind a canary instead of being allowed to block swaps.
-The proven primary path is Circle.”
+“Reactive Network is ThetaShield’s automation and resilience plane. It observes
+hook evidence, reference updates, and relay health; schedules maturity-aware
+work; monitors stuck messages; and drives recovery and redundant delivery.
+Circle is the authenticated cross-chain rail verified by the current public
+testnet trace. The Reactive callback route is canary-gated because the earlier
+Lasna run emitted correctly targeted callback requests but public destination
+delivery did not complete. This boundary preserves swap safety while keeping
+Reactive central to the event-to-action control loop.”
 
 ### 4:15–5:30 — Signal Lab
 
@@ -342,10 +344,12 @@ No. Anyone may relay attestations and call bounded processing, but Circle
 authenticates message delivery and the processor/controller enforce the math,
 peers, domains, sequences, timing, and bounds.
 
-### Is Reactive Network currently required?
+### What is Reactive Network's role?
 
-No. It is the optional secondary acceleration and monitoring plane. Circle is
-the proven authenticated primary transport in the current release.
+Reactive is the automation and resilience plane: event observation,
+maturity-aware scheduling, liveness monitoring, retry signals, and the
+canary-gated redundant delivery route. Circle is the authenticated transport
+verified by the current public testnet acceptance trace.
 
 ### Can the project be used with real funds now?
 
@@ -358,7 +362,8 @@ operational controls are not complete.
 - [ ] The Live Testnet Proof was called read-only on-chain state.
 - [ ] The live 5 bps result was explained as cold-start/expired safe fallback.
 - [ ] Circle was described as the proven primary rail.
-- [ ] Reactive was described as optional and canary-gated.
+- [ ] Reactive was described as the automation and resilience plane, with its
+      callback route accurately identified as canary-gated.
 - [ ] No private key, balance, seed phrase, `.env`, email, or token appeared.
 - [ ] No transaction was broadcast.
 - [ ] The hook was explicitly described as not submitted.

@@ -248,6 +248,7 @@ The interactive signal-lab cards are explicitly simulated. The separate **Live T
 |---|---|
 | [Architecture](docs/ARCHITECTURE.md) | Component responsibilities, message lifecycle, and failure behavior |
 | [Editable draw.io architecture](docs/THETASHIELD_ARCHITECTURE.drawio) | Presentation-ready system diagram |
+| [Video architecture](docs/THETASHIELD_VIDEO_ARCHITECTURE.drawio) | Editable 16:9 diagram with a dedicated Reactive automation and resilience plane |
 | [Mathematical specification](docs/MATHEMATICAL_SPECIFICATION.md) | Units, formulas, rounding, confidence, and persistence |
 | [Threat model](docs/THREAT_MODEL.md) | Trust boundaries, attack surfaces, controls, and residual risks |
 | [Verification guide](docs/VERIFICATION.md) | Whole-repository and focused verification gates |
