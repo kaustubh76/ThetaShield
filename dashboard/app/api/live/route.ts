@@ -10,6 +10,8 @@ const HOOK = "0xC53d57f4778E67B73B5535dEb2B841D56CBE40C0";
 const CONTROLLER = "0x6db44e172C7E1bae468A6e1e3683f34D7f3fD791";
 const TRANSPORT = "0x24daf359bA811c9dd6903649b968eC6D76C3e568";
 const PROCESSOR = "0x10970CC15d1DF81bA6c8968F87036b21c694d744";
+const ABI_SIGN_BIT = BigInt("0x8000000000000000000000000000000000000000000000000000000000000000");
+const ABI_UINT256_MODULUS = BigInt("0x10000000000000000000000000000000000000000000000000000000000000000");
 
 const selectors = {
   observationCount: "0x2ed9666f",
@@ -78,7 +80,7 @@ function unsigned(word: string): number {
 
 function signed(word: string): string {
   const value = BigInt(`0x${word}`);
-  const signedValue = value >= 1n << 255n ? value - (1n << 256n) : value;
+  const signedValue = value >= ABI_SIGN_BIT ? value - ABI_UINT256_MODULUS : value;
   return signedValue.toString();
 }
 
