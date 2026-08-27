@@ -31,8 +31,7 @@ the PNG social-card signature.
 
 ## Status
 
-Phase 9 is complete. The dashboard and submission material do not claim a live
-contract deployment. Its system copy now reflects the Circle CCTP migration.
-Phase 8 stays open until a fresh two-chain simulation, Circle-specific approval,
-and the real Unichain-to-Ethereum-to-Unichain acceptance evidence are confirmed.
-The submission draft has not been sent externally.
+Phase 9 is complete. Its system copy reflects the Circle CCTP migration and the
+completed Phase 8D public testnet acceptance trace. The private dashboard is
+published, but its scenario cards remain clearly labelled as simulations rather
+than live telemetry. The submission draft has not been sent externally.

@@ -144,7 +144,7 @@ export default function Home() {
           <a href="#evidence">Evidence</a>
           <a href="#system">System</a>
         </nav>
-        <span className="release-state"><i /> Research prototype</span>
+        <span className="release-state"><i /> Live testnet · research</span>
       </header>
 
       <section className="hero" id="top">
@@ -344,13 +344,13 @@ export default function Home() {
       <section className="release-section">
         <div>
           <p className="kicker">Current release boundary</p>
-          <h2>Local system proven.<br />Live acceptance pending.</h2>
+          <h2>Live Circle loop proven.<br />Testnet-only.</h2>
         </div>
         <div className="release-list">
-          <p><i className="done" /><span><b>Circle lifecycle tests</b> · real local PoolManager, two transports, later fee</span></p>
+          <p><i className="done" /><span><b>Public Circle lifecycle</b> · Unichain → Ethereum → Unichain, later-fee proof</span></p>
           <p><i className="done" /><span><b>38 research tests</b> · golden vectors and reproducible artifacts</span></p>
           <p><i className="done" /><span><b>Security gates</b> · dependency lock, secret scan, gas ceilings</span></p>
-          <p><i className="pending" /><span><b>Public Circle lifecycle</b> · requires fresh simulation and owner-approved spend</span></p>
+          <p><i className="done" /><span><b>Phase 8D acceptance</b> · sequence 1 installed, 500-pip proof matched</span></p>
         </div>
       </section>
 

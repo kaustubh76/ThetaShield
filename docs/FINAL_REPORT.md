@@ -12,10 +12,12 @@ between Unichain Sepolia and an Ethereum Sepolia processor. Circle authenticates
 transport; a permissionless keeper relays attestations and advances bounded
 work. Reactive/Lasna is retired from the deployable path.
 
-No complete live deployment is claimed. One earlier Ethereum Sepolia mock-feed
-experiment exists at `0xb73ba61b1b9d50f9bd68bb0916ca30ca3ae2cd1f`, but no
-ThetaShield Circle transport, processor, controller, hook, or pool deployment is
-represented as complete. The hook has not been submitted.
+A complete live testnet deployment and Circle acceptance lifecycle is recorded
+from source revision `7dcaadad351b238a64133f053f195e11d9a2ef71`. The hook,
+transport, controller, demo pool, and tokens run on Unichain Sepolia; the demo
+feed and bounded processor run on Ethereum Sepolia. Finalized observations and
+a sequenced recommendation crossed both directions, and a later PoolManager
+swap matched the controller's expected fee. The hook has not been submitted.
 
 ## Delivered implementation
 
@@ -61,8 +63,8 @@ confidence, queue, history, source, and processing bounds constrain state.
 
 The remaining blockers for anything beyond a testnet demo are an external
 oracle adapter, independent audits, monitored redundant keepers, hardware-backed
-or multisig ownership, incident response, and a complete public two-chain
-acceptance trace.
+or multisig ownership, and incident response. The public two-chain acceptance
+trace itself is complete and linked from `docs/PHASE8D_HANDOFF.md`.
 
 ## Reproduce
 
@@ -73,4 +75,5 @@ make verify
 ```
 
 See `docs/ARCHITECTURE.md`, `docs/THREAT_MODEL.md`,
-`docs/DEPLOYMENT_RUNBOOK.md`, and `docs/CIRCLE_MIGRATION.md`.
+`docs/DEPLOYMENT_RUNBOOK.md`, `docs/CIRCLE_MIGRATION.md`, and
+`docs/PHASE8D_HANDOFF.md`.

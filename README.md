@@ -10,9 +10,9 @@ keeper relays attestations and advances the bounded processor. No IReact, RVM
 callback proxy, Lasna contract, or lREACT funding is part of the deployable path.
 
 > Research prototype: unaudited, testnet-only, and not a profitability claim.
-> The Circle contracts and real local lifecycle are implemented. No complete
-> live ThetaShield deployment is claimed yet, and the hook has not been
-> submitted.
+> The Circle deployment and public two-chain acceptance lifecycle are complete.
+> The owner-published demo feed is not a production oracle, and the hook has not
+> been submitted.
 
 ## How it works
 
@@ -53,6 +53,10 @@ make verify
 Start with [the architecture](docs/ARCHITECTURE.md), [deployment
 runbook](docs/DEPLOYMENT_RUNBOOK.md), [threat model](docs/THREAT_MODEL.md), and
 [Circle migration record](docs/CIRCLE_MIGRATION.md).
+
+The live addresses, Circle message hashes, acceptance receipts, and exact
+approved/actual costs are in [the Phase 8D handoff](docs/PHASE8D_HANDOFF.md) and
+[live deployment manifest](deployments/unichain-sepolia-ethereum-sepolia-circle-phase8d-live.json).
 
 The older Phase 3/4/7/8 Lasna documents are retained only as historical evidence
 of the retired implementation and must not be used for deployment.

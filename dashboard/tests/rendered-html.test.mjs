@@ -26,9 +26,9 @@ test("server-renders the complete ThetaShield research dashboard", async () => {
   assert.match(html, /Current sample excluded from/);
   assert.match(html, /The failures stayed in the record/);
   assert.match(html, /59\.70%/);
-  assert.match(html, /Circle lifecycle tests/);
+  assert.match(html, /Public Circle lifecycle/);
   assert.match(html, /Circle CCTP/);
-  assert.match(html, /Live acceptance pending/);
+  assert.match(html, /Live Circle loop proven/);
   assert.match(html, /Risk proxy—not exact LVR/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton|Reactive Network|Lasna/i);
 });

@@ -38,6 +38,7 @@ Repository: <https://github.com/RudraBhaskar9439/ThetaShield> (private during de
 
 Dashboard: <https://thetashield-uhi10.rbrudra9439.chatgpt.site> (private preview)
 
-Current boundary: unaudited, testnet-only, mock reference publisher, and no
-complete public two-chain lifecycle yet. No submission should occur until the
-owner separately approves it.
+Current boundary: unaudited, testnet-only, owner-published mock reference feed,
+and a completed public two-chain Circle acceptance lifecycle. The hook has not
+been submitted, and no submission should occur until the owner separately
+approves it.

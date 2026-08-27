@@ -16,8 +16,8 @@ Every phase is verified before it is committed and pushed to `main`.
 | Phase 8A — Circle migration architecture | Complete |
 | Phase 8B — Circle contracts and local lifecycle | Complete |
 | Phase 8C — Circle release hardening | Complete |
-| Phase 8D — Live deployment | Pending fresh simulation and cost gate |
-| Phase 9 — Dashboard and submission | Complete; private dashboard deployed, live chain cards gated on Phase 8 |
+| Phase 8D — Live deployment | Complete |
+| Phase 9 — Dashboard and submission | Complete; private dashboard published, submission still owner-gated |
 
 ## Phase 0 — Repository foundation
 
@@ -95,8 +95,8 @@ Circle-to-controller lifecycle.
 Deliver the research dashboard, diagrams, manifests, report, demo, submission
 copy, and a final clean-clone reproduction.
 
-The local dashboard, final report, demo script, draft submission, and Phase 9
-verification gate are complete. No external submission has been made. Live
-addresses and acceptance evidence remain intentionally absent while Phase 8D
-is pending. The migration decision is recorded in
+The dashboard, final report, demo script, draft submission, and Phase 9
+verification gate are complete. Phase 8D live addresses and acceptance evidence
+are recorded in [`PHASE8D_HANDOFF.md`](PHASE8D_HANDOFF.md). No external
+submission has been made. The migration decision is recorded in
 [`CIRCLE_MIGRATION.md`](CIRCLE_MIGRATION.md).

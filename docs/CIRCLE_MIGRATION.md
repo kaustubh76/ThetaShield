@@ -71,6 +71,9 @@ Sepolia/Lasna dry-run manifests are historical and must not be broadcast.
 | Phase 8A | Circle architecture and trust-boundary decision | Complete |
 | Phase 8B | Circle transport, processor, controller, hook, and local lifecycle tests | Complete |
 | Phase 8C | Circle deployment tooling, relayer, fork checks, docs, and dashboard | Complete |
-| Phase 8D | Fresh two-chain simulation, explicit cost approval, deployment, and acceptance | Pending |
+| Phase 8D | Fresh two-chain simulation, explicit cost approval, deployment, and acceptance | Complete |
 
 Hook submission remains outside this plan and must not be performed.
+
+The live addresses and complete Circle acceptance trace are recorded in
+[`PHASE8D_HANDOFF.md`](PHASE8D_HANDOFF.md) and the schema-v3 live manifest.

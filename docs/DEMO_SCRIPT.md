@@ -38,10 +38,10 @@ points. These are deterministic synthetic results, not profit claims.
 
 ## Release boundary
 
-“The real local PoolManager-to-Circle-to-processor-to-Circle-to-controller
-lifecycle passes. The public two-chain lifecycle remains incomplete until every
-receipt and later-fee proof is recorded. The contracts are unaudited, the demo
-feed is centralized, and the hook has not been submitted.”
+"The real public-testnet PoolManager-to-Circle-to-processor-to-Circle-to-
+controller lifecycle passes, including a later swap whose PoolManager fee
+matched the controller. The contracts are unaudited, the demo feed is
+centralized, and the hook has not been submitted."
 
 Optional proof:
 
