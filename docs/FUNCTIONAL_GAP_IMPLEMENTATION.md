@@ -34,7 +34,7 @@ deployment as an immutable historical acceptance trace.
 | G3 | Research/demo profiles and regression gates | Complete |
 | G4 | Stateless protocol lens | Complete |
 | G5 | Multi-source reference sampler | Complete |
-| G6 | Reactive automation contracts | Pending |
+| G6 | Reactive automation contracts | Complete |
 | G7 | Deterministic dashboard bundle | Pending |
 | G8 | Evidence-driven dashboard and lens integration | Pending |
 | G9 | Animated mechanism and LP simulator | Pending |
@@ -134,6 +134,27 @@ separate research entry points that sample and sync all three sources. Focused
 tests cover permissionless publication, liquidity rejection, normalization,
 duplicate protection, and direct three-source processor consumption. Reproduce
 with `make gap-g5-check`.
+
+## G6 Reactive automation and resilience plane
+
+`ThetaShieldAutomationRSC` subscribes to processor observation-queue events,
+authenticated automation-cycle receipts, and Reactive Network CRON. It arms
+work at the on-chain maturity timestamp, requests one bounded callback, follows
+with epoch finalization, and applies a capped retry policy when references or
+processing are not ready. It never calculates or transports a recommendation.
+
+`ThetaShieldAutomationExecutor` is the processor-chain callback target. One
+cycle samples the sealed three-pool feed, syncs the configured sources, and
+calls the existing bounded processor. Reactive callbacks authenticate the
+callback proxy and injected RVM identity. The same cycle remains permissionless
+for independent keepers, so automation failure degrades liveness rather than
+fee safety. Circle alone remains able to authenticate observations and returned
+recommendations.
+
+The official Reactive libraries and simulator are pinned. Full-lifecycle tests
+cover exact subscriptions, maturity suppression, RVM-authenticated callbacks,
+three-source settlement, epoch finalization, permissionless fallback, and
+bounded retry. Reproduce with `make gap-g6-check`.
 
 ## Release boundary
 

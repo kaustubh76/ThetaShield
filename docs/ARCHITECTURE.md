@@ -15,6 +15,14 @@ PoolManager -> ThetaShieldHook -> ThetaShieldCircleTransport
                     |                       ^
                     | finalized CCTP        | delayed reference feed
                     +-- recommendation -----+
+
+Reactive Network
+  processor events + CRON -> ThetaShieldAutomationRSC
+                                  |
+                                  | authenticated callback
+                                  v
+                    ThetaShieldAutomationExecutor
+                      -> sample -> sync -> process
 ```
 
 ## Responsibilities
@@ -31,6 +39,12 @@ PoolManager -> ThetaShieldHook -> ThetaShieldCircleTransport
 - A permissionless keeper samples the configured v4 reference pools, syncs
   their distinct readings, relays Circle attestations, and calls the processor.
   Circle does not provide scheduling.
+- `ThetaShieldAutomationRSC` observes queued work and Reactive CRON, waits for
+  maturity, triggers bounded execution, follows epoch finalization, and caps
+  retries. It is the event-driven automation and resilience plane.
+- `ThetaShieldAutomationExecutor` authenticates the Reactive callback lane and
+  exposes the same bounded sample/sync/process cycle permissionlessly for
+  keeper redundancy. It cannot install controller state directly.
 - `ThetaShieldController` accepts only finalized messages from Circle's local
   transmitter, the Ethereum domain, and the one-time-sealed processor. It then
   checks pool, sequence, lifetime, cooldown, confidence, fee, and risk bounds.
@@ -68,5 +82,7 @@ existing robust median, weighted dispersion, and agreement confidence logic.
 `DEMO_V1` retains the owner-published mock only for deterministic local and
 historical acceptance tests.
 
-The former Reactive/Lasna architecture is retired. Historical phase handoffs
-remain in the repository for auditability but are not deployable instructions.
+The former Lasna design that duplicated markout calculation and attempted a
+direct controller callback remains retired. The current Reactive integration
+automates the Circle processor without becoming a second data transport or
+recommendation authority.

@@ -2,8 +2,8 @@
 
 ## Decision
 
-The Lasna/Reactive deployment candidate is retired before deployment. The
-active Phase 8 path uses Circle CCTP V2 generic messages between Unichain
+The original Lasna/Reactive processing and direct-callback candidate was
+retired before Phase 8 deployment. The active data path uses Circle CCTP V2 generic messages between Unichain
 Sepolia and Ethereum Sepolia. No `IReactive`, RVM callback proxy, Lasna system
 contract, CRON subscription, or lREACT funding remains in the deployable path.
 
@@ -13,6 +13,10 @@ permissionless keeper relays Circle attestations, synchronizes the configured
 reference feed, and calls processing after observations mature. The contracts,
 not the keeper, enforce sender identity, domains, replay protection, maturity,
 price selection, fee bounds, and recommendation expiry.
+
+Gap G6 later restores Reactive Network in a narrower, tested role: it schedules
+the existing permissionless sampler/processor cycle and monitors retries. It is
+not a second transport and cannot construct or install recommendations.
 
 ## Target topology
 

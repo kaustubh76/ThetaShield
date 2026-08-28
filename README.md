@@ -82,13 +82,15 @@ The latency-sensitive execution plane stays on Unichain Sepolia. Delayed statist
 | `ThetaShieldCircleProcessor` | Owns bounded queues, delayed references, trailing volatility, confidence, persistence, and directional fee calculation. |
 | `PoolMedianReferenceSampler` | Permissionlessly normalizes three liquidity-qualified v4 pools into distinct sources for robust median and dispersion scoring. |
 | `ThetaShieldController` | Verifies returned Circle messages and exposes a safe fee to the hook. Missing or invalid state resolves to baseline. |
-| Permissionless keeper | Relays Circle attestations, synchronizes references, and advances bounded mature work. It is a liveness actor, not a trust root. |
+| `ThetaShieldAutomationRSC` | Watches queued observations and CRON, schedules maturity/finalization wake-ups, and caps retries on Reactive Network. |
+| `ThetaShieldAutomationExecutor` | Authenticates the RVM callback and executes one bounded sample/sync/process cycle; independent keepers can invoke the same safe cycle. |
+| Permissionless keeper | Relays Circle attestations and provides automation redundancy without becoming a trust root. |
 
-### Reactive Network: optional acceleration plane
+### Reactive Network: automation and resilience plane
 
-Reactive Network is isolated as a canary-gated secondary plane for event-driven wake-ups, monitoring, retry signals, and future redundant delivery. It can improve liveness, but it cannot block swaps or forge a Circle-authenticated recommendation.
+Reactive Network provides ThetaShield's event-driven maturity scheduler and liveness guardian. Processor events arm work, CRON wakes it only after maturity, and an authenticated callback runs the bounded three-source sampling and processing cycle. Failed or incomplete cycles enter a capped retry path.
 
-This boundary is intentional: the completed public acceptance lifecycle uses Circle end to end. Earlier Lasna callback attempts are retained as historical failure evidence, not presented as a successful deployment dependency.
+Its authority is deliberately narrow: Reactive cannot forge a Circle observation, calculate an independent recommendation, install controller state, or block a swap. Independent keepers can call the same executor, so a Reactive outage degrades automation while Circle authentication, expiry, and baseline fallback preserve fee safety. The earlier Lasna design that duplicated processing and attempted direct callbacks remains historical failure evidence; G6 replaces it with this constrained automation role.
 
 ## Live testnet deployment
 

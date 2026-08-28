@@ -11,10 +11,14 @@ configured baseline. ThetaShield is unaudited research software.
 - Uniswap v4 `PoolManager` is trusted to invoke the hook and report pool state.
 - Circle CCTP V2 `MessageTransmitterV2`, its attestation service, and supported
   domain mapping are cross-chain trust boundaries.
+- Reactive Network subscriptions, ReactVM execution, callback proxy, funding,
+  and CRON delivery are automation trust boundaries. Their authority ends at a
+  permissionless bounded work function.
 - The keeper is untrusted and permissionless: it can delay, duplicate, or omit
   work, but cannot forge a valid Circle peer or bypass sequence/timing checks.
-- Reference publishers are trusted for their readings. The included
-  single-owner mock feed is testnet-only and not production-safe.
+- Configured v4 reference pools and their liquidity are market-data trust
+  boundaries. `RESEARCH_V1` requires three liquidity-qualified sources; the
+  single-owner mock remains test/demo-only and is not production-safe.
 - The two-step controller/transport owner, RPCs, deployer device, dependencies,
   and CI are operational trust boundaries.
 
@@ -27,6 +31,8 @@ configured baseline. ThetaShield is unaudited research software.
 | Replay or reordering | Monotonic observation, reference, and recommendation sequences. |
 | Unfinalized message | Both recipients reject unfinalized delivery; sends request threshold 2000. |
 | Circle/keeper outage | Hook dispatch failure cannot revert a swap; stale recommendations expire to baseline. |
+| Reactive callback spoof | Destination verifies the callback proxy and injected RVM identity; callable work is permissionless and has no recommendation-install authority. |
+| Reactive outage or underfunding | Independent keepers can call the same executor; missed work delays updates and recommendations expire to baseline. |
 | Malformed or wrong-pool data | Versioned fixed-size messages plus pool, direction, amount, price, time, and bounds validation. |
 | Gas/storage griefing | Fixed pending slots, histories, epoch capacity, source count, and work per processor call. |
 | Oracle staleness/manipulation | Maturity/selection windows, future-time bound, monotonic source sequence, confidence weighting, and dispersion; coordinated publishers remain residual risk. |
@@ -40,8 +46,9 @@ configured baseline. ThetaShield is unaudited research software.
 - Replace the mock feed with an independently reviewed production adapter and
   publisher/heartbeat/decimal policy.
 - Obtain independent smart-contract, economic, and infrastructure audits.
-- Add monitored keeper redundancy and alerts for stuck CCTP messages, queue
-  pressure, expiring recommendations, and transport failures.
+- Deploy and fund monitored Reactive/keeper redundancy, with alerts for stuck
+  CCTP messages, queue pressure, retry exhaustion, expiring recommendations,
+  and transport failures.
 - Use hardware-backed or multisig ownership for anything valuable.
 - Revalidate Circle and Uniswap addresses immediately before every release.
 - Testnet evidence cannot establish mainnet safety or profitability.

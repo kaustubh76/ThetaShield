@@ -12,6 +12,10 @@ All paid scripts must be simulated at the current nonce and reviewed before
 - `DeployCircleProcessor.s.sol`: Ethereum Sepolia three-pool permissionless
   sampler for `RESEARCH_V1` (owner-published fixture for `DEMO_V1`) and bounded
   processor.
+- `DeployAutomationExecutor.s.sol`: processor-chain permissionless work target
+  and authenticated Reactive callback receiver.
+- `DeployAutomationRSC.s.sol`: Reactive Network maturity scheduler, CRON
+  subscriber, and capped liveness guardian for `RESEARCH_V1`.
 - `ConfigureCirclePeers.s.sol`: one-time origin hook/processor peer sealing.
 - `fetch_circle_attestation.py`: polls Circle's sandbox API for a finalized
   message and attestation; never broadcasts.
@@ -21,7 +25,8 @@ All paid scripts must be simulated at the current nonce and reviewed before
   actions for an auditable acceptance trace.
 
 Use the exact dependency order and abort rules in
-`docs/DEPLOYMENT_RUNBOOK.md`. Lasna/Reactive scripts are retired and absent.
+`docs/DEPLOYMENT_RUNBOOK.md`. Reactive provides scheduling and resilience;
+Circle remains the sole authenticated observation/recommendation rail.
 
 `THETASHIELD_PROFILE` defaults to `RESEARCH_V1`. Setting it to `DEMO_V1`
 prints a warning because that profile intentionally disables the researched

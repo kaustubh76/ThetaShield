@@ -24,7 +24,7 @@ Every phase is verified before it is committed and pushed to `main`.
 | Gap G3 — Deployment profiles and regression gates | Complete |
 | Gap G4 — Read-only protocol lens | Complete |
 | Gap G5 — Multi-source reference sampler | Complete |
-| Gap G6 — Reactive automation plane | Pending |
+| Gap G6 — Reactive automation plane | Complete |
 | Gap G7 — Deterministic dashboard bundle | Pending |
 | Gap G8 — Evidence-driven dashboard | Pending |
 | Gap G9 — Animated mechanism and LP simulator | Pending |

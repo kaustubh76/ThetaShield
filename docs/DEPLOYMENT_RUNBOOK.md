@@ -52,12 +52,18 @@ changed fingerprint or profile ID aborts the release.
    three-pool sampler and a processor requiring all three configured source
    readings. Verify every pool ID, token decimal, base orientation, and
    liquidity floor. `DEMO_V1` alone deploys the owner-published fixture.
-3. Simulate `ConfigureCirclePeers.s.sol` on Unichain. This one-time action seals
+3. Simulate `DeployAutomationExecutor.s.sol` on Ethereum Sepolia using the
+   current official callback proxy and all three source IDs.
+4. Simulate `DeployAutomationRSC.s.sol` on Reactive Network. Verify the current
+   official chain, CRON topic, system/callback infrastructure, callback gas,
+   retry policy, and initial funding. The deploying EOA must match the
+   executor's stored RVM identity.
+5. Simulate `ConfigureCirclePeers.s.sol` on Unichain. This one-time action seals
    the hook/processor peers; verify every value before signing.
-4. Sum both-chain deployment and configuration costs, preserve a safety margin,
-   and obtain a fresh explicit approval. An earlier Lasna/lREACT approval is not
-   valid for Circle.
-5. Broadcast only the reviewed transactions in the same dependency order and
+6. Sum all-chain deployment, callback funding, and configuration costs,
+   preserve a safety margin, and obtain fresh explicit approval. Earlier
+   Circle or lREACT approvals do not authorize the G10 release.
+7. Broadcast only the reviewed transactions in the same dependency order and
    record receipts before continuing.
 
 ## Acceptance lifecycle
