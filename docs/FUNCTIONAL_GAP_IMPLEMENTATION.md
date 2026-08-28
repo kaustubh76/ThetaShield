@@ -35,7 +35,7 @@ deployment as an immutable historical acceptance trace.
 | G4 | Stateless protocol lens | Complete |
 | G5 | Multi-source reference sampler | Complete |
 | G6 | Reactive automation contracts | Complete |
-| G7 | Deterministic dashboard bundle | Pending |
+| G7 | Deterministic dashboard bundle | Complete |
 | G8 | Evidence-driven dashboard and lens integration | Pending |
 | G9 | Animated mechanism and LP simulator | Pending |
 | G10 | V2 deployment and public acceptance | Owner-gated |
@@ -155,6 +155,21 @@ The official Reactive libraries and simulator are pinned. Full-lifecycle tests
 cover exact subscriptions, maturity suppression, RVM-authenticated callbacks,
 three-source settlement, epoch finalization, permissionless fallback, and
 bounded retry. Reproduce with `make gap-g6-check`.
+
+## G7 deterministic dashboard bundle
+
+`research/reports/dashboard_bundle.json` is the dashboard's checked evidence
+boundary. It content-addresses its source artifacts and exports the complete
+Phase 5 pooled metrics and per-scenario LP outcomes, the unchanged H1-H6
+decisions, the Phase 6.1 H4/H5 training and holdout table, and the G1
+closed-loop gates. Four deterministic scenario traces expose directional fees,
+delayed markout evidence, sigma dead bands, persistence, confidence, and
+simulated delivery events at every step.
+
+The bundle carries an explicit synthetic-evidence boundary: its transport trace
+is not presented as a Circle attestation or Reactive callback receipt. Generation
+is byte-for-byte deterministic, source hashes are verified, and stale output
+fails both `make gap-g7-check` and the repository-wide `make verify` gate.
 
 ## Release boundary
 

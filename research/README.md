@@ -80,3 +80,16 @@ positive markout loss and composes the deficit premium with directional risk
 before applying the existing fee bounds and rate limit. A deterministic
 elastic-flow mode models benign and toxic retention separately and discloses
 retained volume, false-positive/negative rates, and fee-revenue changes.
+
+## Functional gap G7 commands
+
+```sh
+make dashboard-bundle
+make gap-g7-check
+```
+
+G7 exports a single content-addressed JSON boundary for the interface. It
+contains Phase 5 policy/scenario evidence, the original H1-H6 outcomes, the
+Phase 6.1 holdout remediation, G1 closed-loop gates, and four deterministic
+mechanism traces. The trace transport events are simulator outcomes rather than
+live-chain receipts, and the bundle states that boundary directly.
