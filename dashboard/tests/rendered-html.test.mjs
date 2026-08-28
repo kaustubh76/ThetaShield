@@ -23,9 +23,8 @@ test("server-renders the complete ThetaShield research dashboard", async () => {
   const html = await response.text();
   assert.match(html, /<title>ThetaShield — Directional LP Protection<\/title>/i);
   assert.match(html, /Protect LPs from/);
-  assert.match(html, /ThetaShield cinematic protocol boot sequence/i);
-  assert.match(html, /OUTCOME-AWARE LIQUIDITY DEFENSE/i);
-  assert.match(html, /Skip intro/i);
+  assert.match(html, /ThetaShield subtle 3D introduction/i);
+  assert.match(html, /Directional LP protection/i);
   assert.match(html, /Current sample excluded from/);
   assert.match(html, /The failures stayed in the record/);
   assert.match(html, /59\.70%/);
