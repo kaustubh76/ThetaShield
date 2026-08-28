@@ -39,7 +39,8 @@ def check_png() -> None:
 def main() -> None:
     page_shell = read_required("dashboard/app/page.tsx")
     page_client = read_required("dashboard/app/dashboard-client.tsx")
-    page = f"{page_shell}\n{page_client}"
+    g9_experience = read_required("dashboard/app/g9-experience.tsx")
+    page = f"{page_shell}\n{page_client}\n{g9_experience}"
     research_data = read_required("dashboard/app/research-data.ts")
     layout = read_required("dashboard/app/layout.tsx")
     report = read_required("docs/FINAL_REPORT.md")
@@ -56,8 +57,13 @@ def main() -> None:
         "These cards are simulated—not live chain state.",
         "The failures stayed in the record",
         "Risk proxy—not exact LVR",
-        "Circle CCTP",
+        "CIRCLE CCTP",
         "Trust surface",
+        "See the delayed fee travel.",
+        "REACTIVE NETWORK",
+        "LP-benefit replay console",
+        "ObservationTransportFailed",
+        "DropReason.EpochCapacity",
         'from "./research-data"',
     ):
         require(page, phrase, "dashboard app")
@@ -67,6 +73,8 @@ def main() -> None:
         "representative_traces",
         "policy_metrics",
         "holdout_table",
+        "compact_scenario_replays",
+        "phase6_sensitivity",
         "trustBands",
     ):
         require(research_data, phrase, "dashboard/app/research-data.ts")
@@ -82,6 +90,13 @@ def main() -> None:
         raise SystemExit("dashboard bundle does not contain exactly H1-H6")
     if len(bundle.get("policy_metrics", {})) != 5 or len(bundle.get("scenario_lp_outcomes", {})) != 15:
         raise SystemExit("dashboard bundle policy/scenario coverage is incomplete")
+    if bundle.get("schema_version") != 2 or len(bundle.get("compact_scenario_replays", {})) != 15:
+        raise SystemExit("G9 compact scenario replays are incomplete")
+    sensitivity_dimensions = {
+        entry.get("dimension") for entry in bundle.get("phase6_sensitivity", {}).values()
+    }
+    if not {"dead_band_k", "persistence_n_of_k", "ewma_alpha", "maximum_fee"} <= sensitivity_dimensions:
+        raise SystemExit("G9 exact sensitivity controls are incomplete")
 
     for phrase in ("generateMetadata", "/og.png", "ThetaShield"):
         require(layout, phrase, "dashboard/app/layout.tsx")

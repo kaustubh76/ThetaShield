@@ -37,7 +37,7 @@ deployment as an immutable historical acceptance trace.
 | G6 | Reactive automation contracts | Complete |
 | G7 | Deterministic dashboard bundle | Complete |
 | G8 | Evidence-driven dashboard and lens integration | Complete |
-| G9 | Animated mechanism and LP simulator | Pending |
+| G9 | Animated mechanism and LP simulator | Complete |
 | G10 | V2 deployment and public acceptance | Owner-gated |
 
 Each phase must pass its focused checks and the relevant repository regression
@@ -191,6 +191,27 @@ chains to stateless lens aggregation through environment configuration without
 changing the page. Dashboard source checks reject the deleted hardcoded research
 arrays and the production gate exercises both server-rendered evidence and the
 lens-aware API boundary.
+
+## G9 animated mechanism and LP-benefit simulator
+
+The dashboard now animates the complete delayed control loop from the Uniswap
+v4 swap through Circle dispatch and attestation, the bounded Ethereum
+processor, Reactive Network event/cron automation, delayed reference evidence,
+signed markout, trailing dead band, epoch persistence, fee calculation, Circle
+return, controller validation, and the later directional fee. A shared failure
+selector exposes the safe result of a CCTP outage, stale reference,
+out-of-order recommendation, and full queue. The UI names the otherwise easy
+to-miss `ObservationTransportFailed`, `DropReason.Capacity`, and
+`DropReason.EpochCapacity` surfaces.
+
+The LP-benefit replay console covers all 15 Phase 5 scenarios and five policies.
+It renders compact deterministic directional-fee traces, benign-versus-toxic
+fees, precision/recall, inventory PnL at its true scale, a paired policy zoom,
+simulated transport delivery, and the G1 volume-retention result. Dead-band,
+persistence, EWMA alpha, and maximum-fee selectors map only to exact Phase 6
+one-factor cases; the interface explicitly refuses to present untested parameter
+combinations as measured evidence. The generator checks both bundle copies,
+and the dashboard regression gate verifies the full G9 surface.
 
 ## Release boundary
 

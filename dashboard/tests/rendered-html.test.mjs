@@ -28,7 +28,13 @@ test("server-renders the complete ThetaShield research dashboard", async () => {
   assert.match(html, /59\.70%/);
   assert.match(html, /FAIL · historical \/ PASS · holdout/i);
   assert.match(html, /Trust surface/i);
-  assert.match(html, /thetashield-dashboard-g7-v1/i);
+  assert.match(html, /thetashield-dashboard-g9-v2/i);
+  assert.match(html, /See the delayed fee travel/i);
+  assert.match(html, /REACTIVE NETWORK/i);
+  assert.match(html, /LP-benefit replay console/i);
+  assert.match(html, /ObservationTransportFailed/i);
+  assert.match(html, /DropReason\.EpochCapacity/i);
+  assert.match(html, /Interrogate the trade-offs/i);
   assert.match(html, /public Phase 8D deployment predates the G4 lens/i);
   assert.match(html, /Public Circle lifecycle/);
   assert.match(html, /Circle CCTP/);

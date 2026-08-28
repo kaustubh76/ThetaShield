@@ -23,6 +23,7 @@ REPRESENTATIVE_SCENARIOS = (
     "conflicting_references",
     "missing_callbacks",
 )
+COMPACT_TRACE_STRIDE = 4
 TRACE_SEED = 101
 SOURCE_PATHS = (
     "research/datasets/phase5_scenarios.json",
@@ -305,6 +306,43 @@ def _scenario_lp_outcomes(phase5: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _compact_trace(trace: dict[str, Any]) -> dict[str, Any]:
+    """Keep an exact, browser-sized fee and transport replay for every scenario."""
+    steps = trace["steps"]
+    selected = [
+        step
+        for index, step in enumerate(steps)
+        if index % COMPACT_TRACE_STRIDE == 0 or index == len(steps) - 1
+    ]
+    return {
+        "scenario": trace["scenario"],
+        "description": trace["description"],
+        "operational_mode": trace["operational_mode"],
+        "event_count": trace["event_count"],
+        "step_seconds": trace["step_seconds"],
+        "stride": COMPACT_TRACE_STRIDE,
+        "points": [
+            {
+                "step": step["step"],
+                "buy_fee_pips": step["fee_by_direction_pips"]["buy"],
+                "sell_fee_pips": step["fee_by_direction_pips"]["sell"],
+                "callbacks_applied": step["transport"]["cumulative"][
+                    "callbacks_applied"
+                ],
+                "callbacks_missing": step["transport"]["cumulative"][
+                    "callbacks_missing"
+                ],
+                "callbacks_rejected": step["transport"]["cumulative"][
+                    "callbacks_rejected"
+                ],
+            }
+            for step in selected
+        ],
+        "final_transport": trace["final_transport"],
+        "interpretation": trace["interpretation"],
+    }
+
+
 def _holdout_table(phase6: dict[str, Any], phase61: dict[str, Any]) -> list[dict[str, Any]]:
     historical = {entry["id"]: entry for entry in phase6["hypotheses"]}
     return [
@@ -333,10 +371,14 @@ def build_bundle() -> dict[str, Any]:
     gap_g1 = _load_json("research/reports/gap_g1_summary.json")
     config = ResearchConfig(**phase5["research_config"])
     gain_fee_pips = int(phase5["selected_gain_fee_pips"]["thetashield"])
+    traces = {
+        scenario_name: _control_trace(scenario_name, config, gain_fee_pips)
+        for scenario_name in sorted(SCENARIO_BY_NAME)
+    }
 
     return {
-        "schema_version": 1,
-        "bundle_id": "thetashield-dashboard-g7-v1",
+        "schema_version": 2,
+        "bundle_id": "thetashield-dashboard-g9-v2",
         "evidence_kind": "controlled_deterministic_synthetic_research",
         "interpretation_boundary": (
             "This bundle is not live-market, profitability, deployment, security-audit, "
@@ -365,6 +407,7 @@ def build_bundle() -> dict[str, Any]:
         "scenario_lp_outcomes": _scenario_lp_outcomes(phase5),
         "hypotheses": phase6["hypotheses"],
         "hypothesis_status_counts": phase6["hypothesis_status_counts"],
+        "phase6_sensitivity": phase6["by_case"],
         "holdout_table": _holdout_table(phase6, phase61),
         "selected_research_config": phase61["selected_research_config"],
         "closed_loop": {
@@ -384,8 +427,12 @@ def build_bundle() -> dict[str, Any]:
             "seed": TRACE_SEED,
         },
         "representative_traces": {
-            scenario_name: _control_trace(scenario_name, config, gain_fee_pips)
+            scenario_name: traces[scenario_name]
             for scenario_name in REPRESENTATIVE_SCENARIOS
+        },
+        "compact_scenario_replays": {
+            scenario_name: _compact_trace(trace)
+            for scenario_name, trace in traces.items()
         },
     }
 

@@ -73,6 +73,38 @@ type HoldoutRow = {
   holdout_evidence: Record<string, unknown>;
 };
 
+type SensitivityCase = {
+  case_id: string;
+  dimension: string;
+  value_label: string;
+  benign_false_positive_rate_wad: number;
+  overall_false_negative_rate_wad: number;
+  persistent_effective_detection_latency_steps: number;
+  persistent_lp_improvement_quote_wad: number;
+  directionally_correct_toxic_rate_wad: number;
+  fee_oscillation_pips: number;
+  pareto_optimal: boolean;
+};
+
+type CompactReplay = {
+  scenario: string;
+  description: string;
+  operational_mode: string;
+  event_count: number;
+  step_seconds: number;
+  stride: number;
+  points: {
+    step: number;
+    buy_fee_pips: number;
+    sell_fee_pips: number;
+    callbacks_applied: number;
+    callbacks_missing: number;
+    callbacks_rejected: number;
+  }[];
+  final_transport: RepresentativeTrace["final_transport"];
+  interpretation: string;
+};
+
 type DashboardBundle = {
   bundle_id: string;
   evidence_kind: string;
@@ -96,18 +128,47 @@ type DashboardBundle = {
     mean_fee_pips: Record<string, number>;
   };
   policy_metrics: Record<string, PolicyMetrics>;
+  scenario_lp_outcomes: Record<string, Record<string, Interval>>;
   hypotheses: Hypothesis[];
   holdout_table: HoldoutRow[];
+  phase6_sensitivity: Record<string, SensitivityCase>;
   selected_research_config: {
+    alpha_wad: number;
     base_fee_pips: number;
     confidence_cap_wad: number;
     dead_band_k_wad: number;
     markout_delay_steps: number;
+    maximum_fee_pips: number;
     maximum_reference_dispersion_wad: number;
     persistence_window: number;
     required_toxic_epochs: number;
   };
   representative_traces: Record<string, RepresentativeTrace>;
+  compact_scenario_replays: Record<string, CompactReplay>;
+  trace_configuration: {
+    research_config: {
+      alpha_wad: number;
+      dead_band_k_wad: number;
+      maximum_fee_pips: number;
+      persistence_window: number;
+      required_toxic_epochs: number;
+    };
+  };
+  closed_loop: {
+    overall_status: string;
+    interpretation: string;
+    interpretation_boundary: string;
+    elastic_fee_revenue_delta_quote_wad: number;
+    aggregates: {
+      elastic: Record<string, {
+        benign_volume_retained_rate_wad: number;
+        toxic_volume_retained_rate_wad: number;
+        volume_retained_rate_wad: number;
+        lp_fee_revenue_quote_wad: number;
+        lp_net_pnl_quote_wad: number;
+      }>;
+    };
+  };
 };
 
 const bundle = bundleJson as unknown as DashboardBundle;
@@ -349,6 +410,7 @@ export const researchScale = {
 };
 
 export const controllerConfig = {
+  alpha: bundle.selected_research_config.alpha_wad / 1e18,
   baselineFeeBps: pipsToBps(bundle.selected_research_config.base_fee_pips),
   confidenceCapPercent: bundle.selected_research_config.confidence_cap_wad / WAD_PER_PERCENT,
   deadBandK: bundle.selected_research_config.dead_band_k_wad / 1e18,
@@ -357,6 +419,139 @@ export const controllerConfig = {
     bundle.representative_traces.benign_noise.step_seconds,
   persistenceRequired: bundle.selected_research_config.required_toxic_epochs,
   persistenceWindow: bundle.selected_research_config.persistence_window,
+  maximumFeeBps: bundle.selected_research_config.maximum_fee_pips / 100,
+};
+
+function scenarioLabel(scenario: string): string {
+  return scenario
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+const sensitivityDimensions = [
+  {
+    id: "dead_band_k",
+    label: "Dead-band k",
+    defaultLabel: (bundle.trace_configuration.research_config.dead_band_k_wad / 1e18).toFixed(1),
+  },
+  {
+    id: "persistence_n_of_k",
+    label: "Persistence n/K",
+    defaultLabel: `${bundle.trace_configuration.research_config.required_toxic_epochs}-of-${bundle.trace_configuration.research_config.persistence_window}`,
+  },
+  {
+    id: "ewma_alpha",
+    label: "EWMA alpha",
+    defaultLabel: (bundle.trace_configuration.research_config.alpha_wad / 1e18).toFixed(2),
+  },
+  {
+    id: "maximum_fee",
+    label: "Fee cap",
+    defaultLabel: `${bundle.trace_configuration.research_config.maximum_fee_pips.toLocaleString()} pips`,
+  },
+] as const;
+
+function sensitivityOption(entry: SensitivityCase, label = entry.value_label) {
+  return {
+    id: entry.case_id,
+    label,
+    falsePositivePercent: entry.benign_false_positive_rate_wad / WAD_PER_PERCENT,
+    falseNegativePercent: entry.overall_false_negative_rate_wad / WAD_PER_PERCENT,
+    detectionLatency: entry.persistent_effective_detection_latency_steps,
+    lpImprovementQuote: entry.persistent_lp_improvement_quote_wad / 1e18,
+    directionalAccuracyPercent:
+      entry.directionally_correct_toxic_rate_wad / WAD_PER_PERCENT,
+    oscillationBps: entry.fee_oscillation_pips / 100,
+    paretoOptimal: entry.pareto_optimal,
+  };
+}
+
+export const simulator = {
+  policies: Object.entries(bundle.policy_metrics).map(([policy, metrics]) => ({
+    id: policy,
+    label: policyPresentation[policy].label,
+    meanFeeBps: mean(metrics, "mean_applied_fee_pips") / 100,
+    benignFeeQuote: mean(metrics, "benign_trader_fees_quote_wad") / 1e18,
+    toxicFeeQuote: mean(metrics, "toxic_trader_fees_quote_wad") / 1e18,
+    feeRevenueQuote: mean(metrics, "lp_fee_revenue_quote_wad") / 1e18,
+    inventoryPnlQuote: mean(metrics, "inventory_pnl_quote_wad") / 1e18,
+    lpNetQuote: mean(metrics, "lp_net_pnl_quote_wad") / 1e18,
+    precisionPercent: 100 - mean(metrics, "false_positive_rate_wad") / WAD_PER_PERCENT,
+    recallPercent: 100 - mean(metrics, "false_negative_rate_wad") / WAD_PER_PERCENT,
+    detectionLatency: mean(metrics, "detection_latency_steps") || null,
+  })),
+  scenarios: Object.entries(bundle.compact_scenario_replays).map(([scenario, replay]) => ({
+    id: scenario,
+    label: scenarioLabel(scenario),
+    description: replay.description,
+    operationalMode: replay.operational_mode,
+    eventCount: replay.event_count,
+    stepSeconds: replay.step_seconds,
+    stride: replay.stride,
+    points: replay.points.map((point) => ({
+      step: point.step,
+      buyFeeBps: point.buy_fee_pips / 100,
+      sellFeeBps: point.sell_fee_pips / 100,
+      callbacksApplied: point.callbacks_applied,
+      callbacksMissing: point.callbacks_missing,
+      callbacksRejected: point.callbacks_rejected,
+    })),
+    finalTransport: replay.final_transport,
+    lpOutcomes: Object.fromEntries(
+      Object.entries(bundle.scenario_lp_outcomes[scenario]).map(([policy, interval]) => [
+        policy,
+        {
+          mean: (interval.mean ?? 0) / 1e18,
+          low: (interval.ci95_low ?? 0) / 1e18,
+          high: (interval.ci95_high ?? 0) / 1e18,
+        },
+      ]),
+    ),
+  })),
+  sensitivity: sensitivityDimensions.map((dimension) => ({
+    id: dimension.id,
+    label: dimension.label,
+    options: [
+      sensitivityOption(
+        {
+          ...bundle.phase6_sensitivity.default,
+          case_id: "default",
+        },
+        `${dimension.defaultLabel} · default`,
+      ),
+      ...Object.values(bundle.phase6_sensitivity)
+        .filter((entry) => entry.dimension === dimension.id)
+        .map((entry) => sensitivityOption(entry)),
+    ],
+  })),
+  closedLoop: {
+    status: bundle.closed_loop.overall_status,
+    interpretation: bundle.closed_loop.interpretation,
+    boundary: bundle.closed_loop.interpretation_boundary,
+    feeRevenueDeltaQuote: bundle.closed_loop.elastic_fee_revenue_delta_quote_wad / 1e18,
+    coverage: Object.fromEntries(
+      Object.entries(bundle.closed_loop.aggregates.elastic).map(([policy, metrics]) => [
+        policy,
+        {
+          benignRetainedPercent:
+            metrics.benign_volume_retained_rate_wad / WAD_PER_PERCENT,
+          toxicRetainedPercent:
+            metrics.toxic_volume_retained_rate_wad / WAD_PER_PERCENT,
+          totalRetainedPercent:
+            metrics.volume_retained_rate_wad / WAD_PER_PERCENT,
+          feeRevenueQuote: metrics.lp_fee_revenue_quote_wad / 1e18,
+          lpNetQuote: metrics.lp_net_pnl_quote_wad / 1e18,
+        },
+      ]),
+    ),
+  },
+  defaults: {
+    alpha: bundle.trace_configuration.research_config.alpha_wad / 1e18,
+    deadBandK: bundle.trace_configuration.research_config.dead_band_k_wad / 1e18,
+    maximumFeeBps: bundle.trace_configuration.research_config.maximum_fee_pips / 100,
+    persistence: `${bundle.trace_configuration.research_config.required_toxic_epochs}-of-${bundle.trace_configuration.research_config.persistence_window}`,
+  },
 };
 
 export const heroScenario = scenarios.find(
@@ -415,6 +610,7 @@ export const dashboardView = {
   policyRows,
   researchScale,
   scenarios,
+  simulator,
   trustBands,
 };
 

@@ -14,6 +14,12 @@ mechanical confidence, Phase 6/6.1 evidence, system boundaries, and release stat
 - Contract and test counts come from the repository verification gate.
 - Live deployment claims are backed by the Phase 8D explorer receipts and the read-only on-chain API.
 - The adverse-selection proxy is never described as exact LVR or individual LP loss.
+- The G9 mechanism animator shares its failure selection with the LP replay
+  console, so transport outages, stale references, replay rejection, and bounded
+  queue drops remain visible instead of disappearing behind a success demo.
+- The simulator covers all 15 scenarios and five policies. Its dead-band,
+  persistence, alpha, and fee-cap selectors are exact Phase 6 one-factor cases,
+  not client-side guesses or claims about untested parameter combinations.
 
 ## Local use
 

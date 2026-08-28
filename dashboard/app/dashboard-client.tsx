@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, type CSSProperties } from "react";
+import G9Experience from "./g9-experience";
 import type { DashboardView } from "./research-data";
 
 type FeeState = { feePips: number; usedBaseline: boolean };
@@ -233,6 +234,7 @@ export default function DashboardClient({ data }: { data: DashboardView }) {
         </a>
         <nav aria-label="Primary navigation">
           <a href="#mechanism">Mechanism</a>
+          <a href="#simulator">LP simulator</a>
           <a href="#lab">Signal lab</a>
           <a href="#live-proof">Live proof</a>
           <a href="#evidence">Evidence</a>
@@ -284,31 +286,7 @@ export default function DashboardClient({ data }: { data: DashboardView }) {
         <div><span>04</span><b>Portable</b><p>Circle carries finalized observations and recommendations across chains.</p></div>
       </section>
 
-      <section className="section mechanism" id="mechanism">
-        <div className="section-heading">
-          <p className="kicker">The mechanism</p>
-          <h2>Future evidence cannot exist at execution.</h2>
-          <p>That is why the hook stays small while a bounded Ethereum-side processor handles delayed evidence.</p>
-        </div>
-        <div className="mechanism-flow">
-          {[
-            ["01", "Execute", "The v4 hook selects a directional fee and emits compact execution evidence."],
-            ["02", "Relay", "Circle CCTP authenticates the finalized observation on Ethereum Sepolia."],
-            ["03", "Filter", "Signed markout is scored against trailing volatility that excludes itself."],
-            ["04", "Persist", "Notional, confidence, and n-of-k history decide whether risk is sustained."],
-            ["05", "Return", "Circle carries a sequenced recommendation back to the origin controller."],
-          ].map(([number, title, copy]) => (
-            <article key={number}>
-              <span>{number}</span><h3>{title}</h3><p>{copy}</p>
-            </article>
-          ))}
-        </div>
-        <div className="equation-row">
-          <div><span>signed markout</span><code>m = d × (Pᵣₑ𝒻 − Pₑₓₑ𝒸) / Pₑₓₑ𝒸</code></div>
-          <div><span>soft threshold</span><code>e = sign(m) × max(|m| − kσ, 0)</code></div>
-          <div><span>activation</span><code>active = toxic epochs ≥ n of K</code></div>
-        </div>
-      </section>
+      <G9Experience controllerConfig={controllerConfig} data={data} />
 
       <section className="section lab" id="lab">
         <div className="section-heading split-heading">

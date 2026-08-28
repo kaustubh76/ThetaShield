@@ -79,6 +79,25 @@ class DashboardBundleTest(unittest.TestCase):
             0,
         )
 
+    def test_g9_replays_and_sensitivity_controls_are_complete(self) -> None:
+        replays = self.bundle["compact_scenario_replays"]
+        self.assertEqual(len(replays), 15)
+        self.assertTrue(all(len(replay["points"]) >= 50 for replay in replays.values()))
+        self.assertTrue(
+            all(
+                {"buy_fee_pips", "sell_fee_pips", "callbacks_applied"} <= set(point)
+                for replay in replays.values()
+                for point in replay["points"]
+            )
+        )
+        dimensions = {
+            entry["dimension"] for entry in self.bundle["phase6_sensitivity"].values()
+        }
+        self.assertTrue(
+            {"dead_band_k", "persistence_n_of_k", "ewma_alpha", "maximum_fee"}
+            <= dimensions
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
