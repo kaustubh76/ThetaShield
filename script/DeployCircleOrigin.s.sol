@@ -2,6 +2,7 @@
 pragma solidity 0.8.26;
 
 import {Script} from "forge-std/Script.sol";
+import {console2} from "forge-std/console2.sol";
 import {Hooks} from "@uniswap/v4-core/src/libraries/Hooks.sol";
 import {LPFeeLibrary} from "@uniswap/v4-core/src/libraries/LPFeeLibrary.sol";
 import {IHooks} from "@uniswap/v4-core/src/interfaces/IHooks.sol";
@@ -20,6 +21,7 @@ import {ThetaShieldHook} from "../src/hook/ThetaShieldHook.sol";
 import {IMessageTransmitterV2} from "../src/interfaces/IMessageTransmitterV2.sol";
 import {IThetaShieldCircleTransport} from "../src/interfaces/IThetaShieldCircleTransport.sol";
 import {IThetaShieldController} from "../src/interfaces/IThetaShieldController.sol";
+import {ThetaShieldProfiles} from "./profiles/ThetaShieldProfiles.sol";
 
 interface IRouterWithManager {
     function manager() external view returns (IPoolManager);
@@ -49,7 +51,8 @@ contract DeployCircleOrigin is Script {
         address token1,
         bytes32 poolId,
         bytes32 hookSalt,
-        bytes32 preflightFingerprint
+        bytes32 preflightFingerprint,
+        bytes32 profileId
     );
 
     function run() external {
@@ -61,6 +64,7 @@ contract DeployCircleOrigin is Script {
         address swapRouter = vm.envAddress("ORIGIN_SWAP_ROUTER");
         uint256 tokenSupply = vm.envUint("DEMO_TOKEN_SUPPLY_WEI");
         uint256 initialLiquidity = vm.envUint("DEMO_INITIAL_LIQUIDITY");
+        ThetaShieldProfiles.Profile memory profile = _selectedProfile();
         if (owner != deployer) revert InitialOwnerMustBeDeployer(owner, deployer);
         if (initialLiquidity == 0 || initialLiquidity > uint256(uint128(type(int128).max))) {
             revert ValueTooLarge("initialLiquidity", initialLiquidity);
@@ -122,7 +126,7 @@ contract DeployCircleOrigin is Script {
         });
         bytes32 poolId = PoolId.unwrap(key.toId());
         poolManager.initialize(key, SQRT_PRICE_1_1);
-        controller.configurePool(poolId, _controllerConfig());
+        controller.configurePool(poolId, profile.controller);
 
         _approve(token0, modifyLiquidityRouter);
         _approve(token1, modifyLiquidityRouter);
@@ -152,7 +156,8 @@ contract DeployCircleOrigin is Script {
             address(token1),
             poolId,
             salt,
-            fingerprint
+            fingerprint,
+            profile.id
         );
     }
 
@@ -167,16 +172,12 @@ contract DeployCircleOrigin is Script {
         if (!token.approve(spender, type(uint256).max)) revert ApprovalFailed(address(token), spender);
     }
 
-    function _controllerConfig() private pure returns (ThetaShieldController.PoolFeeConfig memory) {
-        return ThetaShieldController.PoolFeeConfig({
-            baselineFeePips: 500,
-            minimumFeePips: 500,
-            maximumFeePips: 10_000,
-            confidenceFloorBps: 5_000,
-            maximumRecommendationLifetime: 7_200,
-            minimumRecommendationInterval: 60,
-            paused: false
-        });
+    function _selectedProfile() private view returns (ThetaShieldProfiles.Profile memory profile) {
+        string memory name = vm.envOr("THETASHIELD_PROFILE", string("RESEARCH_V1"));
+        profile = ThetaShieldProfiles.resolve(name);
+        if (profile.id == ThetaShieldProfiles.demoV1().id) {
+            console2.log("WARNING: DEMO_V1 disables the researched filtering and persistence defaults");
+        }
     }
 
     function _uint32Env(string memory name) private view returns (uint32 value) {

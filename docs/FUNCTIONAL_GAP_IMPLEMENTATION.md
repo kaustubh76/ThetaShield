@@ -31,7 +31,7 @@ deployment as an immutable historical acceptance trace.
 | G0 | Verified baseline and locked decisions | Complete |
 | G1 | Coverage and flow-elasticity research | Complete |
 | G2 | Solidity coverage feedback loop | Complete |
-| G3 | Research/demo profiles and regression gates | Pending |
+| G3 | Research/demo profiles and regression gates | Complete |
 | G4 | Stateless protocol lens | Pending |
 | G5 | Multi-source reference sampler | Pending |
 | G6 | Reactive automation contracts | Pending |
@@ -81,6 +81,23 @@ by `EpochFinalized`.
 The cross-language golden vectors include the closed-loop calculation. Focused
 math, fuzz, processor-lifecycle, and Python↔Solidity parity checks run with
 `make gap-g2-check`.
+
+## G3 deployment profiles
+
+`ThetaShieldProfiles` is now the single source for both processor and origin
+configuration. `RESEARCH_V1` is the deployment default and carries the locked
+Phase 6.1 dead band, 3-of-5 persistence, smoothing, fast path, asymmetric fee
+steps, and G1/G2 coverage settings. `DEMO_V1` preserves the accelerated demo
+behavior, requires explicit opt-in, and prints a warning. Both deployment
+events emit the chosen profile ID, and new deployment manifests have a typed
+profile field.
+
+The processor scheduler is readable after deployment. `ConfigMirrorTest`
+prevents fee bounds, confidence units, recommendation lifetime, and cadence
+from drifting across chains. A real-v4 research-profile regression runs seven
+epochs: benign noise never leaves baseline, while persistent informed flow
+activates the confidence-gated fast path and 3-of-5 persistence only for the
+affected swap direction. Reproduce with `make gap-g3-check`.
 
 ## Release boundary
 

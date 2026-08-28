@@ -2,16 +2,15 @@
 pragma solidity 0.8.26;
 
 import {Script} from "forge-std/Script.sol";
+import {console2} from "forge-std/console2.sol";
 import {ThetaShieldCircleProcessor} from "../src/circle/ThetaShieldCircleProcessor.sol";
 import {DeploymentValidation} from "../src/deployment/DeploymentValidation.sol";
 import {MockNormalizedReferencePriceFeed} from "../src/feeds/MockNormalizedReferencePriceFeed.sol";
-import {FeeCurve} from "../src/libraries/FeeCurve.sol";
+import {ThetaShieldProfiles} from "./profiles/ThetaShieldProfiles.sol";
 
 /// @title DeployCircleProcessor
 /// @notice Deploys the Ethereum Sepolia reference feed and Circle processor.
 contract DeployCircleProcessor is Script {
-    bytes32 public constant DEMO_PROFILE_ID = keccak256("THETASHIELD_CIRCLE_SINGLE_SOURCE_TESTNET_DEMO_V1");
-
     error InitialOwnerMustBeDeployer(address owner, address deployer);
 
     event CircleProcessorDeploymentComplete(
@@ -26,6 +25,7 @@ contract DeployCircleProcessor is Script {
     function run() external {
         address deployer = vm.envAddress("DEPLOYER_ADDRESS");
         address owner = vm.envAddress("THETASHIELD_OWNER");
+        ThetaShieldProfiles.Profile memory profile = _selectedProfile();
         if (owner != deployer) revert InitialOwnerMustBeDeployer(owner, deployer);
 
         vm.startBroadcast(deployer);
@@ -63,11 +63,11 @@ contract DeployCircleProcessor is Script {
 
         vm.startBroadcast(deployer);
         ThetaShieldCircleProcessor processor =
-            new ThetaShieldCircleProcessor(network, _tokenConfig(), _schedulerConfig(), _feeCurveConfig(), sources);
+            new ThetaShieldCircleProcessor(network, _tokenConfig(), profile.scheduler, profile.feeCurve, sources);
         vm.stopBroadcast();
 
         emit CircleProcessorDeploymentComplete(
-            address(processor), address(feed), network.poolId, network.marketId, fingerprint, DEMO_PROFILE_ID
+            address(processor), address(feed), network.poolId, network.marketId, fingerprint, profile.id
         );
     }
 
@@ -75,54 +75,12 @@ contract DeployCircleProcessor is Script {
         return ThetaShieldCircleProcessor.TokenConfig({token0Decimals: 18, token1Decimals: 18, baseIsToken0: true});
     }
 
-    function _schedulerConfig() private pure returns (ThetaShieldCircleProcessor.SchedulerConfig memory) {
-        return ThetaShieldCircleProcessor.SchedulerConfig({
-            markoutHorizon: 60,
-            observationLifetime: 7_200,
-            referenceSelectionWindow: 3_600,
-            epochDuration: 60,
-            recommendationLifetime: 3_600,
-            callbackClockSkew: 60,
-            maximumEventFutureSkew: 30,
-            maximumPendingObservations: 8,
-            maximumProcessPerCall: 8,
-            maximumEpochObservations: 8,
-            trailingWindow: 8,
-            minimumTrailingObservations: 1,
-            targetObservationCount: 1,
-            requiredToxicEpochs: 1,
-            persistenceWindow: 1,
-            fastPathHoldEpochs: 0,
-            maximumReferenceSamplesPerSource: 4,
-            minimumReferenceSources: 1,
-            fastPathEnabled: false,
-            minimumObservationNotionalWad: 1,
-            maximumTradeNotionalWad: 100e18,
-            minimumEpochNotionalWad: 1,
-            coldStartSigmaWad: 0,
-            deadBandKWad: 0,
-            maximumDispersionWad: 0.05e18,
-            confidenceCapWad: 0.6e18,
-            toxicThresholdWad: 0.001e18,
-            alphaWad: 1e18,
-            fastPathConfidenceFloorWad: 0,
-            fastPathToxicThresholdWad: 0
-        });
-    }
-
-    function _feeCurveConfig() private pure returns (FeeCurve.Config memory) {
-        return FeeCurve.Config({
-            baseFeePips: 500,
-            minimumFeePips: 500,
-            maximumFeePips: 10_000,
-            gainFeePips: 100_000,
-            coverageGainFeePips: 50,
-            maximumIncreasePips: 2_000,
-            maximumDecreasePips: 2_000,
-            confidenceFloorWad: 0.5e18,
-            targetCoverageWad: 1.25e18,
-            minimumEstimatedLossWad: 0.001e18
-        });
+    function _selectedProfile() private view returns (ThetaShieldProfiles.Profile memory profile) {
+        string memory name = vm.envOr("THETASHIELD_PROFILE", string("RESEARCH_V1"));
+        profile = ThetaShieldProfiles.resolve(name);
+        if (profile.id == ThetaShieldProfiles.demoV1().id) {
+            console2.log("WARNING: DEMO_V1 disables the researched filtering and persistence defaults");
+        }
     }
 
     function _uint32Env(string memory name) private view returns (uint32 value) {

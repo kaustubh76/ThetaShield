@@ -108,6 +108,10 @@ contract ThetaShieldCircleProcessorTest is Test {
         assertEq(processor.latestReferenceSequence(SOURCE_ID), 1);
     }
 
+    function test_schedulerConfigurationIsReadable() external view {
+        assertEq(keccak256(abi.encode(processor.schedulerConfiguration())), keccak256(abi.encode(_schedulerConfig())));
+    }
+
     function test_permissionlessProcessingDispatchesCircleRecommendation() external {
         _completeEpoch(1, 99e16);
         assertEq(processorTransmitter.sentCount(), 1);

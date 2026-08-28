@@ -339,6 +339,10 @@ contract ThetaShieldCircleProcessor is IMessageHandlerV2 {
         return _feeCurveConfig;
     }
 
+    function schedulerConfiguration() external view returns (SchedulerConfig memory) {
+        return schedulerConfig;
+    }
+
     function pendingObservation(uint16 slot) external view returns (PendingObservation memory) {
         return _pendingSlots[slot];
     }

@@ -21,6 +21,11 @@ official address registry immediately before simulation and broadcast.
 
 ## Required checks
 
+Keep `THETASHIELD_PROFILE=RESEARCH_V1` for a release. `DEMO_V1` is an explicit
+accelerated demonstration profile and is not research-equivalent. Both chain
+simulations must emit the same profile ID; record the name and ID in the new
+deployment manifest.
+
 ```sh
 cp .env.example .env
 make verify
@@ -33,7 +38,7 @@ forge script script/CircleDeploymentPreflight.s.sol:CircleDeploymentPreflight \
 After the reference feed exists, run `runProcessor()` against
 `$PROCESSOR_RPC_URL`. A skipped fork test, wrong chain/domain, noncanonical
 transmitter, missing code, router/PoolManager mismatch, dirty source tree, or
-changed fingerprint aborts the release.
+changed fingerprint or profile ID aborts the release.
 
 ## Dependency order
 

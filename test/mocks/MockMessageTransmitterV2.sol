@@ -15,6 +15,7 @@ contract MockMessageTransmitterV2 is IMessageTransmitterV2 {
     }
 
     SentMessage private _lastMessage;
+    SentMessage[] private _sentMessages;
     uint32 public localDomain;
     uint256 public sentCount;
     bool public sendsRevert;
@@ -37,7 +38,7 @@ contract MockMessageTransmitterV2 is IMessageTransmitterV2 {
         bytes calldata messageBody
     ) external {
         if (sendsRevert) revert MockSendFailure();
-        _lastMessage = SentMessage({
+        SentMessage memory sent = SentMessage({
             sender: msg.sender,
             destinationDomain: destinationDomain,
             recipient: recipient,
@@ -45,6 +46,8 @@ contract MockMessageTransmitterV2 is IMessageTransmitterV2 {
             minFinalityThreshold: minFinalityThreshold,
             messageBody: messageBody
         });
+        _lastMessage = sent;
+        _sentMessages.push(sent);
         ++sentCount;
     }
 
@@ -54,6 +57,10 @@ contract MockMessageTransmitterV2 is IMessageTransmitterV2 {
 
     function lastMessage() external view returns (SentMessage memory message) {
         return _lastMessage;
+    }
+
+    function sentMessage(uint256 index) external view returns (SentMessage memory message) {
+        return _sentMessages[index];
     }
 
     function deliverFinalized(
