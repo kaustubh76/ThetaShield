@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState, type CSSProperties } from "react";
 import G9Experience from "./g9-experience";
+import LaunchIntro from "./launch-intro";
 import type { DashboardView } from "./research-data";
 
 type FeeState = { feePips: number; usedBaseline: boolean };
@@ -231,6 +232,7 @@ export default function DashboardClient({ data }: { data: DashboardView }) {
 
   return (
     <main>
+      <LaunchIntro />
       <header className="site-header">
         <a className="brand" href="#top" aria-label="ThetaShield home">
           <span className="brand-mark">θ</span>
