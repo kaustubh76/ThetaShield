@@ -16,10 +16,10 @@ PoolManager -> ThetaShieldHook -> ThetaShieldCircleTransport
                     | finalized CCTP        | delayed reference feed
                     +-- recommendation -----+
 
-Reactive Network
-  processor events + CRON -> ThetaShieldAutomationRSC
+Reactive Legacy Lasna
+  Ethereum processor events + official Cron10 -> ThetaShieldAutomationRSC
                                   |
-                                  | authenticated callback
+                                  | authenticated callback to Ethereum Sepolia
                                   v
                     ThetaShieldAutomationExecutor
                       -> sample -> sync -> process
@@ -39,7 +39,7 @@ Reactive Network
 - A permissionless keeper samples the configured v4 reference pools, syncs
   their distinct readings, relays Circle attestations, and calls the processor.
   Circle does not provide scheduling.
-- `ThetaShieldAutomationRSC` observes queued work and Reactive CRON, waits for
+- `ThetaShieldAutomationRSC` observes queued work and official Legacy `Cron10`, waits for
   maturity, triggers bounded execution, follows epoch finalization, and caps
   retries. It is the event-driven automation and resilience plane.
 - `ThetaShieldAutomationExecutor` authenticates the Reactive callback lane and
@@ -82,7 +82,8 @@ existing robust median, weighted dispersion, and agreement confidence logic.
 `DEMO_V1` retains the owner-published mock only for deterministic local and
 historical acceptance tests.
 
-The former Lasna design that duplicated markout calculation and attempted a
-direct controller callback remains retired. The current Reactive integration
-automates the Circle processor without becoming a second data transport or
-recommendation authority.
+The former Omni design that duplicated markout calculation and attempted a
+direct Unichain controller callback remains retired. The current Legacy Lasna
+integration calls the Ethereum processor executor, removing the failed
+chain-1301 Omni queue while automating the Circle processor without becoming a
+second data transport or recommendation authority.

@@ -3,7 +3,7 @@ pragma solidity 0.8.26;
 
 import {ReactiveTest} from "reactive-test-lib/base/ReactiveTest.sol";
 import {ReactiveConstants} from "reactive-test-lib/constants/ReactiveConstants.sol";
-import {CallbackResult, CronType, IReactive, LogRecord} from "reactive-test-lib/interfaces/IReactiveInterfaces.sol";
+import {CallbackResult, IReactive, LogRecord} from "reactive-test-lib/interfaces/IReactiveInterfaces.sol";
 import {ReactiveSimulator} from "reactive-test-lib/simulator/ReactiveSimulator.sol";
 import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
 import {PoolId} from "@uniswap/v4-core/src/types/PoolId.sol";
@@ -12,6 +12,7 @@ import {ThetaShieldCircleProcessor} from "../../src/circle/ThetaShieldCircleProc
 import {PoolMedianReferenceSampler} from "../../src/feeds/PoolMedianReferenceSampler.sol";
 import {IMessageHandlerV2} from "../../src/interfaces/IMessageHandlerV2.sol";
 import {FeeCurve} from "../../src/libraries/FeeCurve.sol";
+import {ReactiveLegacy} from "../../src/reactive/ReactiveLegacy.sol";
 import {ThetaShieldAutomationExecutor} from "../../src/reactive/ThetaShieldAutomationExecutor.sol";
 import {ThetaShieldAutomationRSC} from "../../src/reactive/ThetaShieldAutomationRSC.sol";
 import {MockMessageTransmitterV2} from "../mocks/MockMessageTransmitterV2.sol";
@@ -81,20 +82,7 @@ contract ThetaShieldAutomationTest is ReactiveTest {
             sources
         );
         executor = new ThetaShieldAutomationExecutor(address(proxy), sampler, processor, sources);
-        rsc = new ThetaShieldAutomationRSC(
-            ThetaShieldAutomationRSC.NetworkConfig({
-                monitoredChainId: PROCESSOR_CHAIN_ID,
-                destinationChainId: PROCESSOR_CHAIN_ID,
-                reactiveChainId: REACTIVE_CHAIN_ID,
-                processor: address(processor),
-                executor: address(executor),
-                cronTopic: ReactiveConstants.CRON_TOPIC_1,
-                callbackGasLimit: 5_000_000,
-                epochDuration: 10,
-                retryDelay: 1,
-                maximumRetries: 3
-            })
-        );
+        rsc = new ThetaShieldAutomationRSC(_networkConfig());
         enableVmMode(address(rsc));
     }
 
@@ -107,7 +95,7 @@ contract ThetaShieldAutomationTest is ReactiveTest {
             PROCESSOR_CHAIN_ID, address(executor), rsc.AUTOMATION_CYCLE_TOPIC(), 1, uint256(uint160(address(proxy))), 1
         );
         address[] memory cron = sys.getMatchingSubscribers(
-            REACTIVE_CHAIN_ID, address(ReactiveConstants.SERVICE_ADDR), ReactiveConstants.CRON_TOPIC_1, 0, 0, 0
+            REACTIVE_CHAIN_ID, address(ReactiveConstants.SERVICE_ADDR), ReactiveLegacy.RELEASE_CRON_TOPIC, 0, 0, 0
         );
 
         assertEq(observations.length, 1);
@@ -116,6 +104,25 @@ contract ThetaShieldAutomationTest is ReactiveTest {
         assertEq(cycles[0], address(rsc));
         assertEq(cron.length, 1);
         assertEq(cron[0], address(rsc));
+        assertEq(rsc.LEGACY_LASNA_CHAIN_ID(), ReactiveLegacy.LASNA_CHAIN_ID);
+        assertEq(rsc.LEGACY_RELEASE_CRON_TOPIC(), ReactiveLegacy.RELEASE_CRON_TOPIC);
+        assertEq(executor.reactiveCallbackProxy(), address(proxy));
+        assertEq(executor.reactiveRvmId(), address(this));
+    }
+
+    function test_rejectsSimulatorPlaceholderCronTopicThatLegacyWouldNeverEmit() external {
+        ThetaShieldAutomationRSC.NetworkConfig memory config = _networkConfig();
+        config.cronTopic = ReactiveConstants.CRON_TOPIC_10;
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ThetaShieldAutomationRSC.InvalidLegacyNetworkConfiguration.selector,
+                PROCESSOR_CHAIN_ID,
+                PROCESSOR_CHAIN_ID,
+                REACTIVE_CHAIN_ID,
+                ReactiveConstants.CRON_TOPIC_10
+            )
+        );
+        new ThetaShieldAutomationRSC(config);
     }
 
     function test_reactiveMaturityAndFinalizationCallbacksAdvanceCircleProcessor() external {
@@ -124,11 +131,11 @@ contract ThetaShieldAutomationTest is ReactiveTest {
         assertEq(rsc.dueAt(), block.timestamp + 10);
 
         vm.warp(block.timestamp + 9);
-        assertNoCallbacks(triggerCron(CronType.Cron1));
+        assertNoCallbacks(_triggerLegacyCron());
         assertEq(processor.pendingCount(), 1);
 
         vm.warp(block.timestamp + 1);
-        CallbackResult[] memory maturity = triggerCron(CronType.Cron1);
+        CallbackResult[] memory maturity = _triggerLegacyCron();
         assertCallbackCount(maturity, 1);
         assertCallbackEmitted(maturity, address(executor));
         assertCallbackSuccess(maturity, 0);
@@ -142,7 +149,7 @@ contract ThetaShieldAutomationTest is ReactiveTest {
         assertEq(rsc.dueAt(), block.timestamp + 10);
 
         vm.warp(block.timestamp + 10);
-        CallbackResult[] memory finalization = triggerCron(CronType.Cron1);
+        CallbackResult[] memory finalization = _triggerLegacyCron();
         assertCallbackCount(finalization, 1);
         assertCallbackSuccess(finalization, 0);
         assertEq(processor.recommendationSequence(), 1);
@@ -174,7 +181,7 @@ contract ThetaShieldAutomationTest is ReactiveTest {
         }
 
         vm.warp(block.timestamp + 10);
-        CallbackResult[] memory maturity = triggerCron(CronType.Cron1);
+        CallbackResult[] memory maturity = _triggerLegacyCron();
         assertCallbackSuccess(maturity, 0);
         assertEq(processor.pendingCount(), 1);
 
@@ -254,6 +261,39 @@ contract ThetaShieldAutomationTest is ReactiveTest {
             log_index: 0
         });
         ReactiveSimulator.deliverRawEvent(vm, IReactive(address(rsc)), log);
+    }
+
+    function _triggerLegacyCron() private returns (CallbackResult[] memory results) {
+        LogRecord memory log = LogRecord({
+            chain_id: REACTIVE_CHAIN_ID,
+            _contract: address(ReactiveConstants.SERVICE_ADDR),
+            topic_0: ReactiveLegacy.RELEASE_CRON_TOPIC,
+            topic_1: 0,
+            topic_2: 0,
+            topic_3: 0,
+            data: abi.encode(block.number),
+            block_number: block.number,
+            op_code: 0,
+            block_hash: 0,
+            tx_hash: 0,
+            log_index: 0
+        });
+        return ReactiveSimulator.deliverEvent(vm, log, sys, proxy, rvmId, reactiveChainId);
+    }
+
+    function _networkConfig() private view returns (ThetaShieldAutomationRSC.NetworkConfig memory) {
+        return ThetaShieldAutomationRSC.NetworkConfig({
+            monitoredChainId: PROCESSOR_CHAIN_ID,
+            destinationChainId: PROCESSOR_CHAIN_ID,
+            reactiveChainId: REACTIVE_CHAIN_ID,
+            processor: address(processor),
+            executor: address(executor),
+            cronTopic: ReactiveLegacy.RELEASE_CRON_TOPIC,
+            callbackGasLimit: 5_000_000,
+            epochDuration: 10,
+            retryDelay: 1,
+            maximumRetries: 3
+        });
     }
 
     function _poolConfigs() private view returns (PoolMedianReferenceSampler.PoolConfig[] memory configs) {

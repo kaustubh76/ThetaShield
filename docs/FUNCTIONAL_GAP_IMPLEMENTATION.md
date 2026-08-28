@@ -38,6 +38,7 @@ deployment as an immutable historical acceptance trace.
 | G7 | Deterministic dashboard bundle | Complete |
 | G8 | Evidence-driven dashboard and lens integration | Complete |
 | G9 | Animated mechanism and LP simulator | Complete |
+| G9.1 | Reactive Legacy Lasna release hardening | Complete |
 | G10 | V2 deployment and public acceptance | Owner-gated |
 
 Each phase must pass its focused checks and the relevant repository regression
@@ -156,6 +157,23 @@ cover exact subscriptions, maturity suppression, RVM-authenticated callbacks,
 three-source settlement, epoch finalization, permissionless fallback, and
 bounded retry. Reproduce with `make gap-g6-check`.
 
+## G9.1 Reactive Legacy release hardening
+
+The G10 automation route is explicitly pinned to Legacy Lasna after Reactive
+Network support advised using Legacy instead of Omni. `ReactiveLegacy` owns the
+official chain, system contract/runtime hash, Ethereum Sepolia callback proxy,
+and CRON topics. The release cadence is the official `Cron10`; the test suite no
+longer relies on the third-party simulator's placeholder CRON constants.
+
+Both deploy scripts now fail closed on a mixed Omni/Legacy environment, wrong
+chain or callback proxy, wrong system bytecode, wrong CRON topic, or zero
+initial callback funding. The executor accepts its reviewed Sepolia reserve in
+the constructor and exposes the authenticated callback proxy and ReactVM ID for
+post-deployment verification. A read-only two-network preflight, migration
+record, manifest fields, and acceptance procedure make one real Legacy callback
+receipt mandatory before the automation lane can be marked publicly proven.
+Reproduce with `make reactive-legacy-check`.
+
 ## G7 deterministic dashboard bundle
 
 `research/reports/dashboard_bundle.json` is the dashboard's checked evidence
@@ -218,4 +236,5 @@ and the dashboard regression gate verifies the full G9 surface.
 The existing Phase 8D contracts and receipts remain evidence for the original
 single-source Circle demo profile. They are not modified in place. Any contract
 whose configuration or sealed peer changes will receive a new V2 address and a
-new manifest during G10.
+new manifest during G10. G9.1 makes the Legacy deployment path executable and
+verified locally; it does not spend funds or claim a public Reactive callback.

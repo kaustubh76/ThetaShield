@@ -13,9 +13,12 @@ All paid scripts must be simulated at the current nonce and reviewed before
   sampler for `RESEARCH_V1` (owner-published fixture for `DEMO_V1`) and bounded
   processor.
 - `DeployAutomationExecutor.s.sol`: processor-chain permissionless work target
-  and authenticated Reactive callback receiver.
-- `DeployAutomationRSC.s.sol`: Reactive Network maturity scheduler, CRON
-  subscriber, and capped liveness guardian for `RESEARCH_V1`.
+  and funded authenticated Legacy callback receiver.
+- `ReactiveLegacyPreflight.s.sol`: non-broadcasting checks for the pinned
+  Legacy Lasna system bytecode, Ethereum Sepolia callback proxy, official
+  `Cron10` topic, chains, dependencies, and nonzero reviewed reserves.
+- `DeployAutomationRSC.s.sol`: Legacy Lasna maturity scheduler, official CRON
+  subscriber, and funded capped liveness guardian for `RESEARCH_V1`.
 - `ConfigureCirclePeers.s.sol`: one-time origin hook/processor peer sealing.
 - `fetch_circle_attestation.py`: polls Circle's sandbox API for a finalized
   message and attestation; never broadcasts.
@@ -27,6 +30,9 @@ All paid scripts must be simulated at the current nonce and reviewed before
 Use the exact dependency order and abort rules in
 `docs/DEPLOYMENT_RUNBOOK.md`. Reactive provides scheduling and resilience;
 Circle remains the sole authenticated observation/recommendation rail.
+The Legacy migration and pinned infrastructure are documented in
+`docs/REACTIVE_LEGACY_MIGRATION.md`. Never use the retired Omni RPC for these
+scripts.
 
 `THETASHIELD_PROFILE` defaults to `RESEARCH_V1`. Setting it to `DEMO_V1`
 prints a warning because that profile intentionally disables the researched

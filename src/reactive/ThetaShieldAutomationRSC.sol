@@ -3,12 +3,15 @@ pragma solidity 0.8.26;
 
 import {AbstractReactive} from "reactive-lib/abstract-base/AbstractReactive.sol";
 import {IReactive} from "reactive-lib/interfaces/IReactive.sol";
+import {ReactiveLegacy} from "./ReactiveLegacy.sol";
 
 /// @title ThetaShieldAutomationRSC
 /// @notice Reactive Network maturity scheduler and liveness guardian for bounded ThetaShield work.
 /// @dev Circle remains the authenticated data plane. This RSC can only request the same
 ///      permissionless executor cycle available to any keeper.
 contract ThetaShieldAutomationRSC is AbstractReactive {
+    uint256 public constant LEGACY_LASNA_CHAIN_ID = ReactiveLegacy.LASNA_CHAIN_ID;
+    uint256 public constant LEGACY_RELEASE_CRON_TOPIC = ReactiveLegacy.RELEASE_CRON_TOPIC;
     uint256 public constant OBSERVATION_QUEUED_TOPIC =
         uint256(keccak256("ObservationQueued(uint64,uint16,bool,uint128,uint128,uint64,uint64)"));
     uint256 public constant AUTOMATION_CYCLE_TOPIC = uint256(
@@ -67,6 +70,9 @@ contract ThetaShieldAutomationRSC is AbstractReactive {
     uint8 public consecutiveRetries;
 
     error InvalidNetworkConfiguration();
+    error InvalidLegacyNetworkConfiguration(
+        uint256 monitoredChainId, uint256 destinationChainId, uint256 reactiveChainId, uint256 cronTopic
+    );
     error OnlyReactiveService(address caller);
     error UnsupportedLog(uint256 chainId, address emitter, uint256 topic0);
     error InvalidObservationLog();
@@ -96,6 +102,19 @@ contract ThetaShieldAutomationRSC is AbstractReactive {
                 || networkConfig_.retryDelay == 0 || networkConfig_.maximumRetries == 0
                 || networkConfig_.maximumRetries > MAXIMUM_RETRY_LIMIT
         ) revert InvalidNetworkConfiguration();
+        if (
+            networkConfig_.monitoredChainId != ReactiveLegacy.ETHEREUM_SEPOLIA_CHAIN_ID
+                || networkConfig_.destinationChainId != ReactiveLegacy.ETHEREUM_SEPOLIA_CHAIN_ID
+                || networkConfig_.reactiveChainId != ReactiveLegacy.LASNA_CHAIN_ID
+                || networkConfig_.cronTopic != ReactiveLegacy.RELEASE_CRON_TOPIC
+        ) {
+            revert InvalidLegacyNetworkConfiguration(
+                networkConfig_.monitoredChainId,
+                networkConfig_.destinationChainId,
+                networkConfig_.reactiveChainId,
+                networkConfig_.cronTopic
+            );
+        }
         networkConfig = networkConfig_;
 
         if (!vm) _subscribe(networkConfig_);

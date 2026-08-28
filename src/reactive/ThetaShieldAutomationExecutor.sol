@@ -38,6 +38,8 @@ contract ThetaShieldAutomationExecutor is AbstractCallback {
 
     PoolMedianReferenceSampler public immutable sampler;
     ThetaShieldCircleProcessor public immutable processor;
+    address public immutable reactiveCallbackProxy;
+    address public immutable reactiveRvmId;
     bytes32[] private _sources;
     uint64 public cycleCount;
     CycleResult public lastCycle;
@@ -75,7 +77,7 @@ contract ThetaShieldAutomationExecutor is AbstractCallback {
         PoolMedianReferenceSampler sampler_,
         ThetaShieldCircleProcessor processor_,
         bytes32[] memory sources_
-    ) AbstractCallback(callbackProxy) {
+    ) payable AbstractCallback(callbackProxy) {
         if (callbackProxy == address(0) || callbackProxy.code.length == 0) {
             revert InvalidCallbackProxy();
         }
@@ -95,6 +97,8 @@ contract ThetaShieldAutomationExecutor is AbstractCallback {
 
         sampler = sampler_;
         processor = processor_;
+        reactiveCallbackProxy = callbackProxy;
+        reactiveRvmId = msg.sender;
     }
 
     function sourceCount() external view returns (uint256) {

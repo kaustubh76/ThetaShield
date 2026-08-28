@@ -9,8 +9,10 @@ for the two directions.
 
 The active cross-chain implementation uses Circle CCTP V2 generic messages
 between Unichain Sepolia and an Ethereum Sepolia processor. Circle authenticates
-transport; a permissionless keeper relays attestations and advances bounded
-work. Reactive/Lasna is retired from the deployable path.
+transport; permissionless relayers deliver attestations. The G10 candidate uses
+Reactive Legacy Lasna as the event-driven scheduler for bounded Ethereum
+processor work, with an independent keeper fallback. The failed Omni direct
+callback path remains retired.
 
 A complete live testnet deployment and Circle acceptance lifecycle is recorded
 from source revision `7dcaadad351b238a64133f053f195e11d9a2ef71`. The hook,
@@ -31,6 +33,8 @@ swap matched the controller's expected fee. The hook has not been submitted.
   recommendation → later PoolManager fee lifecycle;
 - Circle-specific preflight, deployment, attestation fetch, relay, peer sealing,
   fork checks, and bounded acceptance tools;
+- pinned Reactive Legacy infrastructure, funded deploy paths, read-only
+  preflight, authenticated scheduler/executor contracts, and lifecycle tests;
 - Python reference model, shared golden vectors, deterministic experiments,
   dashboard, threat model, and draft submission; and
 - pinned dependencies, secret checks, fuzzing, invariants, gas ceilings, and
@@ -48,6 +52,8 @@ false-positive reduction.
 
 There are 38 Python research tests. Solidity unit, fuzz, invariant, gas,
 deployment, and integration suites verify the current Circle implementation.
+The Legacy automation suite uses the official release CRON topic and rejects a
+mixed Omni/Legacy deployment configuration.
 Exact discovered/pass/skip counts should be taken from the current `make verify`
 receipt rather than copied into a submission.
 
@@ -60,11 +66,16 @@ Missing or invalid recommendations return the baseline. Circle recipients
 authenticate the local transmitter, source domain, sealed peer, and finalized
 threshold before processing. Replay, expiry, future time, cooldown, fee, risk,
 confidence, queue, history, source, and processing bounds constrain state.
+Reactive callbacks authenticate both the official destination proxy and the
+deployer-derived ReactVM identity; their executor cannot forge Circle evidence
+or install controller state.
 
 The remaining blockers for anything beyond a testnet demo are an external
 oracle adapter, independent audits, monitored redundant keepers, hardware-backed
-or multisig ownership, and incident response. The public two-chain acceptance
-trace itself is complete and linked from `docs/PHASE8D_HANDOFF.md`.
+or multisig ownership, and incident response. The public Phase 8D Circle trace
+is complete and linked from `docs/PHASE8D_HANDOFF.md`. The G10 Legacy lane is
+locally release-ready but remains deployment-gated until a public callback
+receipt is recorded in a new manifest.
 
 ## Reproduce
 
@@ -76,4 +87,4 @@ make verify
 
 See `docs/ARCHITECTURE.md`, `docs/THREAT_MODEL.md`,
 `docs/DEPLOYMENT_RUNBOOK.md`, `docs/CIRCLE_MIGRATION.md`, and
-`docs/PHASE8D_HANDOFF.md`.
+`docs/REACTIVE_LEGACY_MIGRATION.md`.

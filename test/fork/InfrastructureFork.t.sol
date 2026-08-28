@@ -3,6 +3,7 @@ pragma solidity 0.8.26;
 
 import {Test} from "forge-std/Test.sol";
 import {IMessageTransmitterV2} from "../../src/interfaces/IMessageTransmitterV2.sol";
+import {ReactiveLegacy} from "../../src/reactive/ReactiveLegacy.sol";
 
 contract InfrastructureForkTest is Test {
     function test_originCircleAndUniswapInfrastructureWhenForkIsConfigured() external {
@@ -33,6 +34,26 @@ contract InfrastructureForkTest is Test {
         assertEq(block.chainid, vm.envUint("PROCESSOR_CHAIN_ID"));
         _assertCircleDomain(
             vm.envAddress("PROCESSOR_CIRCLE_MESSAGE_TRANSMITTER"), uint32(vm.envUint("PROCESSOR_CIRCLE_DOMAIN"))
+        );
+        address callbackProxy = vm.envAddress("PROCESSOR_REACTIVE_CALLBACK_PROXY");
+        assertEq(callbackProxy, ReactiveLegacy.ETHEREUM_SEPOLIA_CALLBACK_PROXY, "wrong Legacy callback proxy");
+        _assertCode(callbackProxy, "Legacy callback proxy");
+    }
+
+    function test_reactiveLegacyInfrastructureWhenForkIsConfigured() external {
+        string memory rpcUrl = vm.envOr("REACTIVE_RPC_URL", string(""));
+        if (bytes(rpcUrl).length == 0) {
+            vm.skip(true, "REACTIVE_RPC_URL is not configured; opt-in Legacy fork check skipped");
+            return;
+        }
+
+        _selectFork(rpcUrl, "REACTIVE_FORK_BLOCK_NUMBER");
+        assertEq(block.chainid, ReactiveLegacy.LASNA_CHAIN_ID, "not Legacy Lasna");
+        _assertCode(ReactiveLegacy.SYSTEM_CONTRACT, "Legacy system contract");
+        assertEq(
+            ReactiveLegacy.SYSTEM_CONTRACT.codehash,
+            ReactiveLegacy.LASNA_SYSTEM_CODE_HASH,
+            "wrong Legacy system bytecode; check for an Omni RPC"
         );
     }
 

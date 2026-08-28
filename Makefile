@@ -1,6 +1,6 @@
 PYTHON ?= python3
 
-.PHONY: boundary-fuzz-check build clean dashboard-bundle dashboard-bundle-check dashboard-check dashboard-deps dependency-check deployment-dry-run deployment-schema-check experiment-check experiment-report fmt fmt-check fork-check gap-g1-check gap-g1-report gap-g2-check gap-g3-check gap-g4-check gap-g5-check gap-g6-check gap-g7-check gas-check golden-check invariant-check lint phase5-check phase6-check phase6-report phase61-check phase61-report phase7-check phase9-check python-check research-report research-test secret-check test verify
+.PHONY: boundary-fuzz-check build clean dashboard-bundle dashboard-bundle-check dashboard-check dashboard-deps dependency-check deployment-dry-run deployment-schema-check experiment-check experiment-report fmt fmt-check fork-check gap-g1-check gap-g1-report gap-g2-check gap-g3-check gap-g4-check gap-g5-check gap-g6-check gap-g7-check gas-check golden-check invariant-check lint phase5-check phase6-check phase6-report phase61-check phase61-report phase7-check phase9-check python-check reactive-legacy-check research-report research-test secret-check test verify
 
 build:
 	forge build --sizes
@@ -86,10 +86,13 @@ gap-g5-check:
 	forge build --sizes
 	$(PYTHON) -m json.tool deployments/manifest.schema.json >/dev/null
 
-gap-g6-check:
+reactive-legacy-check:
 	forge test --force --match-contract ThetaShieldAutomationTest -vv
+	forge test --force --match-contract ReactiveLegacyValidationTest -vv
 	forge build --sizes
 	$(MAKE) dependency-check
+
+gap-g6-check: reactive-legacy-check
 
 dashboard-bundle:
 	$(PYTHON) -m research.experiments.export_dashboard_bundle
@@ -133,4 +136,4 @@ phase9-check: dashboard-check
 test:
 	forge test --force
 
-verify: fmt-check lint build test python-check research-test dependency-check secret-check deployment-schema-check golden-check experiment-check phase5-check phase6-check phase61-check gap-g1-check dashboard-bundle-check phase9-check
+verify: fmt-check lint build test python-check research-test dependency-check secret-check deployment-schema-check golden-check experiment-check phase5-check phase6-check phase61-check gap-g1-check reactive-legacy-check dashboard-bundle-check phase9-check

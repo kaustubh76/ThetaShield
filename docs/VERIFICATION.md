@@ -49,6 +49,25 @@ the configured `MessageTransmitterV2`.
 Run the read-only scripts from `docs/DEPLOYMENT_RUNBOOK.md` before simulation.
 No broadcast is part of a verification command.
 
+## Reactive Legacy automation
+
+```sh
+make reactive-legacy-check
+```
+
+This gate uses ThetaShield's official Legacy `Cron10` topic rather than the
+simulator package's placeholder constants. It proves exact processor/executor/
+CRON subscriptions, maturity suppression, authenticated ReactVM callbacks,
+three-source bounded work, finalization, retries, and the permissionless keeper
+fallback. Deployment validation separately rejects the Omni system bytecode,
+wrong callback proxy, wrong chain, wrong CRON topic, and zero initial reserves.
+
+The two live, read-only `ReactiveLegacyPreflight` calls in the deployment
+runbook are mandatory for G10 because unit tests cannot prove that an external
+RPC still serves the pinned Legacy infrastructure. A release additionally
+requires a public destination callback receipt; a locally simulated callback
+is never presented as that evidence.
+
 ## Focused security/research gates
 
 ```sh
@@ -61,8 +80,10 @@ make research-test
 make phase5-check
 make phase6-check
 make phase61-check
+make reactive-legacy-check
 make phase9-check
 ```
 
-Historical Phase 2/3/4/7 Lasna commands in old handoffs describe the retired
-implementation and are not current release gates.
+Historical Phase 2/3/4/7 Omni/Lasna commands in old handoffs describe the
+retired implementation and are not current release gates. Use the current
+Legacy migration record and G10 runbook.

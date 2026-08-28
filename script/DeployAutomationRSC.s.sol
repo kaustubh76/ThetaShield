@@ -2,6 +2,8 @@
 pragma solidity 0.8.26;
 
 import {Script} from "forge-std/Script.sol";
+import {ReactiveLegacyValidation} from "../src/deployment/ReactiveLegacyValidation.sol";
+import {ReactiveLegacy} from "../src/reactive/ReactiveLegacy.sol";
 import {ThetaShieldAutomationRSC} from "../src/reactive/ThetaShieldAutomationRSC.sol";
 import {ThetaShieldProfiles} from "./profiles/ThetaShieldProfiles.sol";
 
@@ -39,6 +41,19 @@ contract DeployAutomationRSC is Script {
             maximumRetries: _uint8Env("REACTIVE_MAXIMUM_RETRIES")
         });
         uint256 initialFunding = vm.envUint("REACTIVE_INITIAL_FUNDING_WEI");
+        ReactiveLegacyValidation.validateReactive(
+            ReactiveLegacyValidation.ReactiveConfig({
+                expectedChainId: network.reactiveChainId,
+                processorChainId: network.monitoredChainId,
+                systemContract: ReactiveLegacy.SYSTEM_CONTRACT,
+                processor: network.processor,
+                executor: network.executor,
+                deployer: deployer,
+                cronTopic: network.cronTopic,
+                initialRscFundingWei: initialFunding
+            }),
+            block.chainid
+        );
 
         vm.startBroadcast(deployer);
         ThetaShieldAutomationRSC reactiveContract = new ThetaShieldAutomationRSC{value: initialFunding}(network);

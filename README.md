@@ -73,7 +73,7 @@ The current sample is excluded from its own volatility band. A trade therefore c
   </a>
 </p>
 
-The latency-sensitive execution plane stays on Unichain Sepolia. Delayed statistical work runs on Ethereum Sepolia. Circle CCTP V2 is the authenticated primary transport; a permissionless keeper provides scheduling and relaying without receiving authority to forge messages or recommendations.
+The latency-sensitive execution plane stays on Unichain Sepolia. Delayed statistical work runs on Ethereum Sepolia. Circle CCTP V2 is the authenticated primary transport; Reactive Legacy Lasna schedules bounded processor work, while permissionless keepers retain independent relay and automation recovery paths. Neither receives authority to forge messages or recommendations.
 
 | Component | Responsibility |
 |---|---|
@@ -88,13 +88,18 @@ The latency-sensitive execution plane stays on Unichain Sepolia. Delayed statist
 
 ### Reactive Network: automation and resilience plane
 
-Reactive Network provides ThetaShield's event-driven maturity scheduler and liveness guardian. Processor events arm work, CRON wakes it only after maturity, and an authenticated callback runs the bounded three-source sampling and processing cycle. Failed or incomplete cycles enter a capped retry path.
+Reactive Network Legacy Lasna provides ThetaShield's event-driven maturity scheduler and liveness guardian. Ethereum processor events arm work, the official Legacy `Cron10` signal wakes it only after maturity, and an authenticated callback through the official Ethereum Sepolia proxy runs the bounded three-source sampling and processing cycle. Failed or incomplete cycles enter a capped retry path.
 
-Its authority is deliberately narrow: Reactive cannot forge a Circle observation, calculate an independent recommendation, install controller state, or block a swap. Independent keepers can call the same executor, so a Reactive outage degrades automation while Circle authentication, expiry, and baseline fallback preserve fee safety. The earlier Lasna design that duplicated processing and attempted direct callbacks remains historical failure evidence; G6 replaces it with this constrained automation role.
+Its authority is deliberately narrow: Reactive cannot forge a Circle observation, calculate an independent recommendation, install controller state, or block a swap. Independent keepers can call the same executor, so a Reactive outage degrades automation while Circle authentication, expiry, and baseline fallback preserve fee safety. The former Omni design that duplicated processing and attempted a direct chain-1301 callback remains historical failure evidence; the current G10 candidate uses the supported Legacy path and calls the Ethereum processor executor instead.
 
 ## Live testnet deployment
 
 The full observation → delayed processing → recommendation → later-fee lifecycle completed across Unichain Sepolia and Ethereum Sepolia. Both Circle peers are sealed, recommendation sequence `1` was installed, and a later PoolManager swap matched the controller's expected `500`-pip (`5 bps`) fee.
+
+That immutable Phase 8D receipt trail proves the Circle lifecycle. The
+three-source V2 + Reactive Legacy candidate is locally verified and
+deployment-gated; it must not be described as publicly deployed until its
+separate G10 manifest contains the Legacy callback receipt.
 
 The [live proof dashboard](https://theta-shield.vercel.app/#live-proof) reads current state directly from both public testnets, displays the active safety state, and links the complete receipt trail. It performs read-only RPC calls and never connects a wallet or spends funds.
 
@@ -256,14 +261,15 @@ The interactive signal-lab cards are explicitly simulated. The separate **Live T
 | [Mathematical specification](docs/MATHEMATICAL_SPECIFICATION.md) | Units, formulas, rounding, confidence, and persistence |
 | [Threat model](docs/THREAT_MODEL.md) | Trust boundaries, attack surfaces, controls, and residual risks |
 | [Verification guide](docs/VERIFICATION.md) | Whole-repository and focused verification gates |
-| [Deployment runbook](docs/DEPLOYMENT_RUNBOOK.md) | Current Circle deployment and operational procedure |
+| [Deployment runbook](docs/DEPLOYMENT_RUNBOOK.md) | Current G10 Circle + Reactive Legacy deployment and acceptance procedure |
+| [Reactive Legacy migration](docs/REACTIVE_LEGACY_MIGRATION.md) | Pinned Legacy topology, infrastructure, authentication, funding, and proof gates |
 | [Circle migration](docs/CIRCLE_MIGRATION.md) | Rationale and record of the active transport migration |
 | [Phase 8D handoff](docs/PHASE8D_HANDOFF.md) | Live deployment, receipts, spend, and acceptance evidence |
 | [Final research report](docs/FINAL_REPORT.md) | Delivered implementation, findings, and release boundary |
 | [Four-minute pitch](docs/WINNING_PITCH_SCRIPT.md) | Judge-oriented project narrative |
 | [Teammate handover video](docs/TEAMMATE_HANDOVER_VIDEO.md) | Rough recording script, repository tour, access boundary, and first-day checklist |
 
-Historical Phase 3/4/7/8 Lasna documents are retained for auditability. They are not current deployment instructions.
+Historical Phase 3/4/7/8 Omni/Lasna documents are retained for auditability. They are not current deployment instructions.
 
 ## Production boundary
 
