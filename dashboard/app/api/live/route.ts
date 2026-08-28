@@ -2,8 +2,10 @@ import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-const ORIGIN_RPC = "https://sepolia.unichain.org";
-const PROCESSOR_RPC = "https://ethereum-sepolia-rpc.publicnode.com";
+const ORIGIN_RPC = process.env.ORIGIN_RPC_URL || "https://sepolia.unichain.org";
+const PROCESSOR_RPC = process.env.PROCESSOR_RPC_URL || "https://ethereum-sepolia-rpc.publicnode.com";
+const ORIGIN_LENS = process.env.THETASHIELD_ORIGIN_LENS_ADDRESS?.trim() || "";
+const PROCESSOR_LENS = process.env.THETASHIELD_PROCESSOR_LENS_ADDRESS?.trim() || "";
 
 const POOL_ID = "0xa5eae55c727913799f7fc1eadd98f4c67b5c0da5417b5fe0adfafd12e9e93ca4";
 const HOOK = "0xC53d57f4778E67B73B5535dEb2B841D56CBE40C0";
@@ -17,7 +19,11 @@ const selectors = {
   observationCount: "0x2ed9666f",
   feeForSwap: "0xc5ce25d1",
   currentRecommendation: "0xda3ec87d",
+  globallyPaused: "0x08ce3fb5",
   lastSequence: "0x4462f69c",
+  originLensState: "0x79ea5ae6",
+  poolConfig: "0x0885f732",
+  processorLensState: "0xb26921c5",
   circlePeerSealed: "0x136f296d",
   pendingCount: "0xea70b4af",
   settledObservationCount: "0x9bd6496d",
@@ -25,6 +31,11 @@ const selectors = {
   lastObservationId: "0xbf076a47",
   recommendationSequence: "0xd683a5c8",
 } as const;
+
+function addressWord(address: string): string {
+  if (!/^0x[0-9a-fA-F]{40}$/.test(address)) throw new Error(`Invalid contract address: ${address}`);
+  return address.slice(2).padStart(64, "0");
+}
 
 type JsonRpcEnvelope<T> = {
   result?: T;
@@ -37,6 +48,14 @@ function encodeBytes32Call(selector: string, value: string): string {
 
 function encodeFeeCall(zeroForOne: boolean): string {
   return `${selectors.feeForSwap}${POOL_ID.slice(2)}${(zeroForOne ? "1" : "0").padStart(64, "0")}`;
+}
+
+function encodeOriginLensCall(): string {
+  return `${selectors.originLensState}${addressWord(CONTROLLER)}${addressWord(HOOK)}${POOL_ID.slice(2)}`;
+}
+
+function encodeProcessorLensCall(): string {
+  return `${selectors.processorLensState}${addressWord(PROCESSOR)}`;
 }
 
 async function rpc<T>(url: string, method: string, params: unknown[]): Promise<T> {
@@ -113,12 +132,18 @@ function decodeRecommendation(data: string) {
   };
 }
 
+function decodePoolConfig(data: string) {
+  const decoded = words(data);
+  if (decoded.length !== 7) throw new Error("Unexpected pool configuration response");
+  return { baselineFeePips: unsigned(decoded[0]), poolPaused: unsigned(decoded[6]) !== 0 };
+}
+
 function hasCode(code: string): boolean {
   return code !== "0x" && code !== "0x0";
 }
 
 async function readOrigin() {
-  const [chainIdHex, blockHex, hookCode, controllerCode, transportCode, observationData, buyData, sellData, recommendationData, sequenceData, peerData] =
+  const [chainIdHex, blockHex, hookCode, controllerCode, transportCode, observationData, buyData, sellData, recommendationData, sequenceData, peerData, configData, globallyPausedData] =
     await Promise.all([
       rpc<string>(ORIGIN_RPC, "eth_chainId", []),
       rpc<string>(ORIGIN_RPC, "eth_blockNumber", []),
@@ -131,20 +156,69 @@ async function readOrigin() {
       call(ORIGIN_RPC, CONTROLLER, encodeBytes32Call(selectors.currentRecommendation, POOL_ID)),
       call(ORIGIN_RPC, CONTROLLER, encodeBytes32Call(selectors.lastSequence, POOL_ID)),
       call(ORIGIN_RPC, CONTROLLER, selectors.circlePeerSealed),
+      call(ORIGIN_RPC, CONTROLLER, encodeBytes32Call(selectors.poolConfig, POOL_ID)),
+      call(ORIGIN_RPC, CONTROLLER, selectors.globallyPaused),
     ]);
 
   const recommendation = decodeRecommendation(recommendationData);
+  const config = decodePoolConfig(configData);
 
   return {
     chainId: Number(BigInt(chainIdHex)),
     blockNumber: Number(BigInt(blockHex)),
     contractsHealthy: hasCode(hookCode) && hasCode(controllerCode) && hasCode(transportCode),
     circlePeerSealed: decodeBool(peerData),
+    baselineFeePips: config.baselineFeePips,
+    configured: true,
+    globallyPaused: decodeBool(globallyPausedData),
+    poolPaused: config.poolPaused,
     observationCount: decodeSingle(observationData),
     buy: decodeFee(buyData),
     sell: decodeFee(sellData),
     lastSequence: decodeSingle(sequenceData),
     recommendation,
+  };
+}
+
+async function readOriginLens() {
+  const [chainIdHex, blockHex, lensCode, hookCode, controllerCode, transportCode, snapshotData, peerData] =
+    await Promise.all([
+      rpc<string>(ORIGIN_RPC, "eth_chainId", []),
+      rpc<string>(ORIGIN_RPC, "eth_blockNumber", []),
+      rpc<string>(ORIGIN_RPC, "eth_getCode", [ORIGIN_LENS, "latest"]),
+      rpc<string>(ORIGIN_RPC, "eth_getCode", [HOOK, "latest"]),
+      rpc<string>(ORIGIN_RPC, "eth_getCode", [CONTROLLER, "latest"]),
+      rpc<string>(ORIGIN_RPC, "eth_getCode", [TRANSPORT, "latest"]),
+      call(ORIGIN_RPC, ORIGIN_LENS, encodeOriginLensCall()),
+      call(ORIGIN_RPC, CONTROLLER, selectors.circlePeerSealed),
+    ]);
+  const decoded = words(snapshotData);
+  if (decoded.length !== 14) throw new Error("Unexpected origin lens response");
+
+  return {
+    chainId: Number(BigInt(chainIdHex)),
+    blockNumber: Number(BigInt(blockHex)),
+    contractsHealthy:
+      hasCode(lensCode) && hasCode(hookCode) && hasCode(controllerCode) && hasCode(transportCode),
+    circlePeerSealed: decodeBool(peerData),
+    baselineFeePips: unsigned(decoded[12]),
+    configured: unsigned(decoded[13]) !== 0,
+    globallyPaused: unsigned(decoded[9]) !== 0,
+    poolPaused: unsigned(decoded[10]) !== 0,
+    observationCount: unsigned(decoded[11]),
+    buy: { feePips: unsigned(decoded[0]), usedBaseline: unsigned(decoded[2]) !== 0 },
+    sell: { feePips: unsigned(decoded[1]), usedBaseline: unsigned(decoded[3]) !== 0 },
+    lastSequence: unsigned(decoded[4]),
+    recommendation: {
+      zeroForOneFeePips: unsigned(decoded[0]),
+      oneForZeroFeePips: unsigned(decoded[1]),
+      zeroForOneRiskWad: "0",
+      oneForZeroRiskWad: "0",
+      confidenceBps: unsigned(decoded[8]),
+      validAfter: unsigned(decoded[5]),
+      validUntil: unsigned(decoded[6]),
+      sequence: unsigned(decoded[4]),
+    },
   };
 }
 
@@ -170,12 +244,51 @@ async function readProcessor() {
     expiredCount: decodeSingle(expiredData),
     lastObservationId: decodeSingle(lastObservationData),
     recommendationSequence: decodeSingle(sequenceData),
+    droppedCount: null,
+    referenceSourceCount: null,
+    zeroForOneCoverageRatioWad: null,
+    oneForZeroCoverageRatioWad: null,
+  };
+}
+
+async function readProcessorLens() {
+  const [chainIdHex, blockHex, lensCode, processorCode, snapshotData] = await Promise.all([
+    rpc<string>(PROCESSOR_RPC, "eth_chainId", []),
+    rpc<string>(PROCESSOR_RPC, "eth_blockNumber", []),
+    rpc<string>(PROCESSOR_RPC, "eth_getCode", [PROCESSOR_LENS, "latest"]),
+    rpc<string>(PROCESSOR_RPC, "eth_getCode", [PROCESSOR, "latest"]),
+    call(PROCESSOR_RPC, PROCESSOR_LENS, encodeProcessorLensCall()),
+  ]);
+  const decoded = words(snapshotData);
+  if (decoded.length !== 98) throw new Error("Unexpected processor lens response");
+  const zeroForOneSideOffset = 10;
+  const oneForZeroSideOffset = 34;
+
+  return {
+    chainId: Number(BigInt(chainIdHex)),
+    blockNumber: Number(BigInt(blockHex)),
+    contractHealthy: hasCode(lensCode) && hasCode(processorCode),
+    pendingCount: unsigned(decoded[0]),
+    settledCount: unsigned(decoded[3]),
+    expiredCount: unsigned(decoded[4]),
+    droppedCount: unsigned(decoded[5]),
+    lastObservationId: unsigned(decoded[2]),
+    recommendationSequence: unsigned(decoded[6]),
+    referenceSourceCount: unsigned(decoded[9]),
+    zeroForOneCoverageRatioWad: BigInt(`0x${decoded[zeroForOneSideOffset + 12]}`).toString(),
+    oneForZeroCoverageRatioWad: BigInt(`0x${decoded[oneForZeroSideOffset + 12]}`).toString(),
   };
 }
 
 export async function GET() {
   try {
-    const [origin, processor] = await Promise.all([readOrigin(), readProcessor()]);
+    if (Boolean(ORIGIN_LENS) !== Boolean(PROCESSOR_LENS)) {
+      throw new Error("Both ThetaShield lens addresses must be configured together");
+    }
+    const useLens = Boolean(ORIGIN_LENS && PROCESSOR_LENS);
+    const [origin, processor] = await Promise.all(
+      useLens ? [readOriginLens(), readProcessorLens()] : [readOrigin(), readProcessor()],
+    );
     const now = Math.floor(Date.now() / 1_000);
 
     return NextResponse.json(
@@ -183,6 +296,7 @@ export async function GET() {
         ok: true,
         generatedAt: new Date().toISOString(),
         poolId: POOL_ID,
+        readPath: useLens ? "lens" : "historical-direct",
         origin,
         processor,
         recommendationExpired: origin.recommendation.validUntil <= now,

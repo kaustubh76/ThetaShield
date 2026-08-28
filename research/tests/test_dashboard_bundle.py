@@ -7,6 +7,7 @@ import json
 import unittest
 
 from research.experiments.export_dashboard_bundle import (
+    DASHBOARD_OUTPUT_PATH,
     OUTPUT_PATH,
     REPRESENTATIVE_SCENARIOS,
     REPO_ROOT,
@@ -25,6 +26,7 @@ class DashboardBundleTest(unittest.TestCase):
         second = serialize_bundle(build_bundle())
         self.assertEqual(first, second)
         self.assertEqual(OUTPUT_PATH.read_text(encoding="utf-8"), first)
+        self.assertEqual(DASHBOARD_OUTPUT_PATH.read_text(encoding="utf-8"), first)
 
     def test_sources_are_content_addressed(self) -> None:
         for source in self.bundle["source_artifacts"]:

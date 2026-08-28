@@ -37,7 +37,10 @@ def check_png() -> None:
 
 
 def main() -> None:
-    page = read_required("dashboard/app/page.tsx")
+    page_shell = read_required("dashboard/app/page.tsx")
+    page_client = read_required("dashboard/app/dashboard-client.tsx")
+    page = f"{page_shell}\n{page_client}"
+    research_data = read_required("dashboard/app/research-data.ts")
     layout = read_required("dashboard/app/layout.tsx")
     report = read_required("docs/FINAL_REPORT.md")
     handoff = read_required("docs/PHASE9_HANDOFF.md")
@@ -52,11 +55,33 @@ def main() -> None:
         "Protect LPs from",
         "These cards are simulated—not live chain state.",
         "The failures stayed in the record",
-        "59.70%",
         "Risk proxy—not exact LVR",
         "Circle CCTP",
+        "Trust surface",
+        'from "./research-data"',
     ):
-        require(page, phrase, "dashboard/app/page.tsx")
+        require(page, phrase, "dashboard app")
+
+    for phrase in (
+        "dashboard_bundle.json",
+        "representative_traces",
+        "policy_metrics",
+        "holdout_table",
+        "trustBands",
+    ):
+        require(research_data, phrase, "dashboard/app/research-data.ts")
+
+    for stale_literal in ("const scenarios = [", "const hypotheses = [", "const policyRows = [", "buyFee:"):
+        if stale_literal in page:
+            raise SystemExit(f"dashboard app retains hardcoded research data: {stale_literal}")
+
+    bundle = json.loads(read_required("research/reports/dashboard_bundle.json"))
+    if {entry.get("id") for entry in bundle.get("hypotheses", [])} != {
+        "H1", "H2", "H3", "H4", "H5", "H6"
+    }:
+        raise SystemExit("dashboard bundle does not contain exactly H1-H6")
+    if len(bundle.get("policy_metrics", {})) != 5 or len(bundle.get("scenario_lp_outcomes", {})) != 15:
+        raise SystemExit("dashboard bundle policy/scenario coverage is incomplete")
 
     for phrase in ("generateMetadata", "/og.png", "ThetaShield"):
         require(layout, phrase, "dashboard/app/layout.tsx")
@@ -67,10 +92,10 @@ def main() -> None:
     require(handoff, "Phase 9 is complete", "docs/PHASE9_HANDOFF.md")
     require(submission, "has not been submitted", "docs/SUBMISSION.md")
 
-    phase9_surface = "\n".join((page, layout, report, handoff, submission))
+    phase9_surface = "\n".join((page, research_data, layout, report, handoff, submission))
     if "site-creator-vinext-starter" in phase9_surface:
         raise SystemExit("starter identity remains in a Phase 9 artifact")
-    if any(name in f"{page}\n{layout}" for name in ("MARKOUT", "Pyth", "Reactive Network", "LASNA")):
+    if any(name in f"{page}\n{layout}" for name in ("MARKOUT", "Pyth", "LASNA")):
         raise SystemExit("another project's identity leaked into the ThetaShield dashboard")
 
     check_png()

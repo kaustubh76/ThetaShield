@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { access } from "node:fs/promises";
+import { access, readFile } from "node:fs/promises";
 import test from "node:test";
 
 const root = new URL("../", import.meta.url);
@@ -26,6 +26,10 @@ test("server-renders the complete ThetaShield research dashboard", async () => {
   assert.match(html, /Current sample excluded from/);
   assert.match(html, /The failures stayed in the record/);
   assert.match(html, /59\.70%/);
+  assert.match(html, /FAIL · historical \/ PASS · holdout/i);
+  assert.match(html, /Trust surface/i);
+  assert.match(html, /thetashield-dashboard-g7-v1/i);
+  assert.match(html, /public Phase 8D deployment predates the G4 lens/i);
   assert.match(html, /Public Circle lifecycle/);
   assert.match(html, /Circle CCTP/);
   assert.match(html, /Live Circle loop proven/);
@@ -35,9 +39,19 @@ test("server-renders the complete ThetaShield research dashboard", async () => {
   assert.match(html, /Refresh on-chain state/i);
   assert.match(html, /LIVE RECEIPT TRAIL/i);
   assert.match(html, /Read-only proof/i);
-  assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton|Reactive Network|Lasna/i);
+  assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton|Lasna/i);
 });
 
 test("removes the disposable starter preview", async () => {
   await assert.rejects(access(new URL("app/_sites-preview", root)));
+});
+
+test("live API uses paired lens configuration with a named historical fallback", async () => {
+  const route = await readFile(new URL("app/api/live/route.ts", root), "utf8");
+  assert.match(route, /THETASHIELD_ORIGIN_LENS_ADDRESS/);
+  assert.match(route, /THETASHIELD_PROCESSOR_LENS_ADDRESS/);
+  assert.match(route, /Both ThetaShield lens addresses must be configured together/);
+  assert.match(route, /historical-direct/);
+  assert.match(route, /readOriginLens/);
+  assert.match(route, /readProcessorLens/);
 });

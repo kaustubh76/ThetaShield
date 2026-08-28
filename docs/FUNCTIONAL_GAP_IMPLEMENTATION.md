@@ -36,7 +36,7 @@ deployment as an immutable historical acceptance trace.
 | G5 | Multi-source reference sampler | Complete |
 | G6 | Reactive automation contracts | Complete |
 | G7 | Deterministic dashboard bundle | Complete |
-| G8 | Evidence-driven dashboard and lens integration | Pending |
+| G8 | Evidence-driven dashboard and lens integration | Complete |
 | G9 | Animated mechanism and LP simulator | Pending |
 | G10 | V2 deployment and public acceptance | Owner-gated |
 
@@ -170,6 +170,27 @@ The bundle carries an explicit synthetic-evidence boundary: its transport trace
 is not presented as a Circle attestation or Reactive callback receipt. Generation
 is byte-for-byte deterministic, source hashes are verified, and stale output
 fails both `make gap-g7-check` and the repository-wide `make verify` gate.
+
+## G8 evidence-driven dashboard and lens integration
+
+The dashboard imports a byte-identical, generator-checked in-root mirror of the
+G7 bundle on the server and passes only a compact view to the interactive client.
+This preserves Vercel project-root isolation without creating a second editable
+data source. Scenario cards, policy means, H1-H6 decisions,
+H4/H5 holdout figures, calibration spread, research scope, and controller
+parameters no longer live in hand-maintained UI arrays. The original H4/H5
+failures remain visible beside the disjoint holdout passes. A three-band trust
+surface separates executable local proof, controlled simulation, and the
+historical public demo boundary.
+
+The live API supports paired origin/processor `ThetaShieldLens` addresses and
+fails closed if only one is configured. Because the public Phase 8D contracts
+predate G4, the current UI explicitly labels its direct-getter fallback instead
+of claiming a lens read. An owner-approved G10 V2 deployment can switch both
+chains to stateless lens aggregation through environment configuration without
+changing the page. Dashboard source checks reject the deleted hardcoded research
+arrays and the production gate exercises both server-rendered evidence and the
+lens-aware API boundary.
 
 ## Release boundary
 

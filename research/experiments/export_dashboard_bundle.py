@@ -16,6 +16,7 @@ from research.thetashield.simulator import DeliveryCoordinator, OriginFeeState, 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 OUTPUT_PATH = REPO_ROOT / "research/reports/dashboard_bundle.json"
+DASHBOARD_OUTPUT_PATH = REPO_ROOT / "dashboard/data/dashboard_bundle.json"
 REPRESENTATIVE_SCENARIOS = (
     "benign_noise",
     "persistent_informed_buying",
@@ -66,6 +67,7 @@ class TracingThetaShieldPolicy(ThetaShieldPolicy):
                 sigma_wad,
                 self.config.dead_band_k_wad,
             ),
+            "reference_dispersion_wad": event.reference_dispersion_wad,
             "cold_start": len(trailing) < self.config.minimum_trailing_observations,
         }
         return scored
@@ -279,6 +281,7 @@ def _control_trace(
         "gain_fee_pips": gain_fee_pips,
         "operational_mode": scenario.operational_mode,
         "event_count": len(events),
+        "step_seconds": events[1].timestamp_seconds - events[0].timestamp_seconds,
         "interpretation": (
             "Deterministic research-simulator control trace; transport events are simulated "
             "delivery outcomes, not live Circle or Reactive Network receipts."
@@ -346,6 +349,18 @@ def build_bundle() -> dict[str, Any]:
             "phase5_policies": phase5["policy_count"],
             "phase5_runs": phase5["run_count"],
         },
+        "research_scale": {
+            "phase6_raw_runs": phase6["raw_run_count"],
+            "phase6_sweep_cases": phase6["sweep_case_count"],
+            "phase61_training_cases": phase61["training_case_count"],
+            "phase61_holdout_cases": phase61["frontier_case_count"],
+            "hook_gas_per_swap": phase5["hook_gas_measurement"]["hook_gas_per_swap"],
+        },
+        "calibration": {
+            "mean_fee_pips": phase5["calibration_mean_fee_pips"],
+            "dynamic_fee_spread_pips": phase5["dynamic_calibration_fee_spread_pips"],
+            "selected_gain_fee_pips": phase5["selected_gain_fee_pips"],
+        },
         "policy_metrics": phase5["by_policy"],
         "scenario_lp_outcomes": _scenario_lp_outcomes(phase5),
         "hypotheses": phase6["hypotheses"],
@@ -385,14 +400,21 @@ def main() -> None:
     args = parser.parse_args()
     expected = serialize_bundle(build_bundle())
     if args.check:
-        if not OUTPUT_PATH.exists() or OUTPUT_PATH.read_text(encoding="utf-8") != expected:
+        stale = [
+            path
+            for path in (OUTPUT_PATH, DASHBOARD_OUTPUT_PATH)
+            if not path.exists() or path.read_text(encoding="utf-8") != expected
+        ]
+        if stale:
             raise SystemExit(
                 "dashboard bundle is stale; run: python3 -m "
-                "research.experiments.export_dashboard_bundle"
+                "research.experiments.export_dashboard_bundle\n"
+                + "\n".join(str(path.relative_to(REPO_ROOT)) for path in stale)
             )
         return
-    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT_PATH.write_text(expected, encoding="utf-8")
+    for path in (OUTPUT_PATH, DASHBOARD_OUTPUT_PATH):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(expected, encoding="utf-8")
 
 
 if __name__ == "__main__":
