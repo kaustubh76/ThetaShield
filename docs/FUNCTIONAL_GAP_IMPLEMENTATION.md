@@ -32,7 +32,7 @@ deployment as an immutable historical acceptance trace.
 | G1 | Coverage and flow-elasticity research | Complete |
 | G2 | Solidity coverage feedback loop | Complete |
 | G3 | Research/demo profiles and regression gates | Complete |
-| G4 | Stateless protocol lens | Pending |
+| G4 | Stateless protocol lens | Complete |
 | G5 | Multi-source reference sampler | Pending |
 | G6 | Reactive automation contracts | Pending |
 | G7 | Deterministic dashboard bundle | Pending |
@@ -98,6 +98,24 @@ from drifting across chains. A real-v4 research-profile regression runs seven
 epochs: benign noise never leaves baseline, while persistent informed flow
 activates the confidence-gated fast path and 3-of-5 persistence only for the
 affected swap direction. Reproduce with `make gap-g3-check`.
+
+## G4 stateless protocol lens
+
+`ThetaShieldLens` provides three permissionless, structured reads without
+holding protocol state or receiving administrative authority:
+
+- the origin pool snapshot combines both directional effective fees, fallback
+  flags, recommendation sequence and validity, confidence, global/pool pauses,
+  hook observation count, and the configured baseline;
+- the processor snapshot combines queue and settlement counters, both side
+  states (including closed-loop coverage), both effective fees, source count,
+  and the complete scheduler and fee-curve configurations; and
+- the reference-source snapshot exposes source registration, replay sequence,
+  ring-buffer position, and its bounded reference history.
+
+Focused tests cover active and paused origin fees, validity countdown,
+observation count, processor configuration mirroring, cold-start coverage, and
+reference history. Reproduce with `make gap-g4-check`.
 
 ## Release boundary
 

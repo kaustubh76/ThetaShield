@@ -19,10 +19,10 @@ Every phase is verified before it is committed and pushed to `main`.
 | Phase 8D — Live deployment | Complete |
 | Phase 9 — Dashboard and submission | Complete; private dashboard published, submission still owner-gated |
 | Gap G0 — Baseline and architecture lock | Complete |
-| Gap G1 — Coverage and flow-elasticity research | In progress |
-| Gap G2 — Solidity coverage feedback | Pending |
-| Gap G3 — Deployment profiles and regression gates | Pending |
-| Gap G4 — Read-only protocol lens | Pending |
+| Gap G1 — Coverage and flow-elasticity research | Complete |
+| Gap G2 — Solidity coverage feedback | Complete |
+| Gap G3 — Deployment profiles and regression gates | Complete |
+| Gap G4 — Read-only protocol lens | Complete |
 | Gap G5 — Multi-source reference sampler | Pending |
 | Gap G6 — Reactive automation plane | Pending |
 | Gap G7 — Deterministic dashboard bundle | Pending |
