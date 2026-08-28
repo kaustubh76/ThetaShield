@@ -125,6 +125,31 @@ contract ThetaShieldAutomationTest is ReactiveTest {
         new ThetaShieldAutomationRSC(config);
     }
 
+    function test_legacyReactVmAcceptsRvmIdentityCaller() external {
+        LogRecord memory log = LogRecord({
+            chain_id: PROCESSOR_CHAIN_ID,
+            _contract: address(processor),
+            topic_0: rsc.OBSERVATION_QUEUED_TOPIC(),
+            topic_1: 42,
+            topic_2: 0,
+            topic_3: 1,
+            data: abi.encode(uint128(1e18), uint128(1e18), uint64(block.timestamp + 10), uint64(block.timestamp + 100)),
+            block_number: block.number,
+            op_code: 0,
+            block_hash: 0,
+            tx_hash: 0,
+            log_index: 0
+        });
+
+        // Legacy uses the RVM identity as msg.sender. VM isolation, not a
+        // SERVICE_ADDR sender equality check, authenticates this call.
+        IReactive(address(rsc)).react(log);
+
+        assertEq(rsc.observationSignalCount(), 1);
+        assertEq(uint8(rsc.phase()), uint8(ThetaShieldAutomationRSC.Phase.AwaitMaturity));
+        assertEq(rsc.dueAt(), block.timestamp + 10);
+    }
+
     function test_reactiveMaturityAndFinalizationCallbacksAdvanceCircleProcessor() external {
         _deliverObservationThroughReactiveLifecycle();
         assertEq(uint8(rsc.phase()), uint8(ThetaShieldAutomationRSC.Phase.AwaitMaturity));

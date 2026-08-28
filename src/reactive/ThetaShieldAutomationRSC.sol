@@ -73,7 +73,6 @@ contract ThetaShieldAutomationRSC is AbstractReactive {
     error InvalidLegacyNetworkConfiguration(
         uint256 monitoredChainId, uint256 destinationChainId, uint256 reactiveChainId, uint256 cronTopic
     );
-    error OnlyReactiveService(address caller);
     error UnsupportedLog(uint256 chainId, address emitter, uint256 topic0);
     error InvalidObservationLog();
     error InvalidAutomationLog();
@@ -122,8 +121,9 @@ contract ThetaShieldAutomationRSC is AbstractReactive {
 
     /// @inheritdoc IReactive
     function react(IReactive.LogRecord calldata log) external override vmOnly {
-        if (msg.sender != address(SERVICE_ADDR)) revert OnlyReactiveService(msg.sender);
-
+        // Legacy delivers events inside the isolated ReactVM with the RVM identity
+        // as msg.sender. `vmOnly` is the trust boundary; requiring SERVICE_ADDR here
+        // would reject every real Legacy event even though simulator calls can use it.
         NetworkConfig memory config = networkConfig;
         if (
             log.chain_id == config.monitoredChainId && log._contract == config.processor
