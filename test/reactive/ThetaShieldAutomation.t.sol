@@ -95,7 +95,12 @@ contract ThetaShieldAutomationTest is ReactiveTest {
             PROCESSOR_CHAIN_ID, address(executor), rsc.AUTOMATION_CYCLE_TOPIC(), 1, uint256(uint160(address(proxy))), 1
         );
         address[] memory cron = sys.getMatchingSubscribers(
-            REACTIVE_CHAIN_ID, address(ReactiveConstants.SERVICE_ADDR), ReactiveLegacy.RELEASE_CRON_TOPIC, 0, 0, 0
+            REACTIVE_CHAIN_ID,
+            address(ReactiveConstants.SERVICE_ADDR),
+            ReactiveLegacy.RELEASE_CRON_TOPIC,
+            block.number,
+            0,
+            0
         );
 
         assertEq(observations.length, 1);
@@ -293,7 +298,8 @@ contract ThetaShieldAutomationTest is ReactiveTest {
             chain_id: REACTIVE_CHAIN_ID,
             _contract: address(ReactiveConstants.SERVICE_ADDR),
             topic_0: ReactiveLegacy.RELEASE_CRON_TOPIC,
-            topic_1: 0,
+            // Legacy Cron events index the live RNK block number here.
+            topic_1: block.number,
             topic_2: 0,
             topic_3: 0,
             data: abi.encode(block.number),

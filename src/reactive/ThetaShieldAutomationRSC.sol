@@ -163,7 +163,17 @@ contract ThetaShieldAutomationRSC is AbstractReactive {
         service.subscribe(
             config.monitoredChainId, config.executor, AUTOMATION_CYCLE_TOPIC, REACTIVE_IGNORE, REACTIVE_IGNORE, 1
         );
-        service.subscribe(config.reactiveChainId, address(SERVICE_ADDR), config.cronTopic, 0, 0, 0);
+        // Real Legacy Cron events index the current block number in topic_1.
+        // Wildcard every non-signature topic so the subscription matches each
+        // Cron10 event instead of only the impossible topic_1 == 0 case.
+        service.subscribe(
+            config.reactiveChainId,
+            address(SERVICE_ADDR),
+            config.cronTopic,
+            REACTIVE_IGNORE,
+            REACTIVE_IGNORE,
+            REACTIVE_IGNORE
+        );
     }
 
     function _handleObservation(IReactive.LogRecord calldata log) private {
