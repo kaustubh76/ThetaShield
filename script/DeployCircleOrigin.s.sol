@@ -21,6 +21,7 @@ import {ThetaShieldHook} from "../src/hook/ThetaShieldHook.sol";
 import {IMessageTransmitterV2} from "../src/interfaces/IMessageTransmitterV2.sol";
 import {IThetaShieldCircleTransport} from "../src/interfaces/IThetaShieldCircleTransport.sol";
 import {IThetaShieldController} from "../src/interfaces/IThetaShieldController.sol";
+import {ThetaShieldLens} from "../src/lens/ThetaShieldLens.sol";
 import {ThetaShieldProfiles} from "./profiles/ThetaShieldProfiles.sol";
 
 interface IRouterWithManager {
@@ -46,6 +47,7 @@ contract DeployCircleOrigin is Script {
         address indexed transport,
         address indexed controller,
         address indexed hook,
+        address lens,
         address hookFactory,
         address token0,
         address token1,
@@ -145,12 +147,14 @@ contract DeployCircleOrigin is Script {
             }),
                 bytes("")
             );
+        ThetaShieldLens lens = new ThetaShieldLens();
         vm.stopBroadcast();
 
         emit CircleOriginDeploymentComplete(
             address(transport),
             address(controller),
             address(hook),
+            address(lens),
             address(factory),
             address(token0),
             address(token1),

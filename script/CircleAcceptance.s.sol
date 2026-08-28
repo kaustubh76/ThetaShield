@@ -12,8 +12,14 @@ import {PoolId, PoolIdLibrary} from "@uniswap/v4-core/src/types/PoolId.sol";
 import {Currency} from "@uniswap/v4-core/src/types/Currency.sol";
 import {ThetaShieldCircleProcessor} from "../src/circle/ThetaShieldCircleProcessor.sol";
 import {DeploymentValidation} from "../src/deployment/DeploymentValidation.sol";
+import {ThetaShieldTestToken} from "../src/demo/ThetaShieldTestToken.sol";
 import {MockNormalizedReferencePriceFeed} from "../src/feeds/MockNormalizedReferencePriceFeed.sol";
 import {PoolMedianReferenceSampler} from "../src/feeds/PoolMedianReferenceSampler.sol";
+import {ThetaShieldReferenceMarket} from "./profiles/ThetaShieldReferenceMarket.sol";
+
+interface IAcceptanceRouterWithManager {
+    function manager() external view returns (IPoolManager);
+}
 
 /// @title CircleAcceptance
 /// @notice Separate bounded actions so every paid transaction can be simulated and approved.
@@ -23,12 +29,19 @@ contract CircleAcceptance is Script {
     error PoolIdMismatch(bytes32 supplied, bytes32 computed);
     error InvalidSwapAmount(int256 supplied);
     error TimestampOverflow(uint256 supplied);
+    error ApprovalFailed(address token, address spender);
+    error ReferenceMarketMismatch(bytes32 supplied, bytes32 expected);
+    error ReferencePoolMismatch(uint256 index, bytes32 supplied, bytes32 expected);
+    error ReferenceRouterManagerMismatch(address supplied, address expected);
 
     event AcceptanceSwapSubmitted(bytes32 indexed poolId, bool indexed zeroForOne, int256 amountSpecified);
     event AcceptanceReferencePublished(
         bytes32 indexed marketId, bytes32 indexed sourceId, uint256 priceWad, uint256 confidenceWad, uint64 observedAt
     );
     event AcceptancePoolsSampled(address indexed sampler, uint8 publishedCount);
+    event AcceptanceReferencePoolMoved(
+        bytes32 indexed poolId, uint256 indexed sourceIndex, bool indexed zeroForOne, int256 amountSpecified
+    );
     event AcceptanceProcessorAdvanced(address indexed processor, bool recommendationDispatched);
 
     function runSwap() external {
@@ -87,6 +100,59 @@ contract CircleAcceptance is Script {
         emit AcceptancePoolsSampled(address(sampler), publishedCount);
     }
 
+    /// @notice Moves all three self-contained reference pools to create delayed testnet evidence.
+    function runMoveReferences() external {
+        address deployer = vm.envAddress("DEPLOYER_ADDRESS");
+        PoolMedianReferenceSampler sampler = PoolMedianReferenceSampler(vm.envAddress("REFERENCE_FEED"));
+        DeploymentValidation.requireCode(address(sampler));
+        if (sampler.marketId() != ThetaShieldReferenceMarket.MARKET_ID) {
+            revert ReferenceMarketMismatch(sampler.marketId(), ThetaShieldReferenceMarket.MARKET_ID);
+        }
+        IPoolManager manager = sampler.poolManager();
+        if (address(manager) != ThetaShieldReferenceMarket.ETHEREUM_SEPOLIA_POOL_MANAGER) {
+            revert ReferenceRouterManagerMismatch(
+                address(manager), ThetaShieldReferenceMarket.ETHEREUM_SEPOLIA_POOL_MANAGER
+            );
+        }
+        address swapRouter = ThetaShieldReferenceMarket.ETHEREUM_SEPOLIA_SWAP_ROUTER;
+        DeploymentValidation.requireCode(swapRouter);
+        address routerManager = address(IAcceptanceRouterWithManager(swapRouter).manager());
+        if (routerManager != address(manager)) {
+            revert ReferenceRouterManagerMismatch(routerManager, address(manager));
+        }
+
+        address token0 = vm.envAddress("REFERENCE_TOKEN0");
+        address token1 = vm.envAddress("REFERENCE_TOKEN1");
+        int256 amountSpecified = vm.envInt("REFERENCE_ACCEPTANCE_SWAP_AMOUNT");
+        if (amountSpecified >= 0) revert InvalidSwapAmount(amountSpecified);
+        bool zeroForOne = vm.envOr("REFERENCE_ACCEPTANCE_ZERO_FOR_ONE", true);
+        uint160 sqrtPriceLimit = zeroForOne ? TickMath.MIN_SQRT_PRICE + 1 : TickMath.MAX_SQRT_PRICE - 1;
+
+        vm.startBroadcast(deployer);
+        _approve(ThetaShieldTestToken(token0), swapRouter);
+        _approve(ThetaShieldTestToken(token1), swapRouter);
+        for (uint256 index; index < 3; ++index) {
+            PoolKey memory key = ThetaShieldReferenceMarket.poolKey(token0, token1, index);
+            bytes32 computedPoolId = PoolId.unwrap(key.toId());
+            PoolMedianReferenceSampler.PoolConfig memory config = sampler.poolConfig(index);
+            bytes32 configuredPoolId = PoolId.unwrap(config.poolId);
+            if (computedPoolId != configuredPoolId) {
+                revert ReferencePoolMismatch(index, configuredPoolId, computedPoolId);
+            }
+            PoolSwapTest(swapRouter)
+                .swap(
+                    key,
+                    IPoolManager.SwapParams({
+                    zeroForOne: zeroForOne, amountSpecified: amountSpecified, sqrtPriceLimitX96: sqrtPriceLimit
+                }),
+                    PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false}),
+                    bytes("")
+                );
+            emit AcceptanceReferencePoolMoved(computedPoolId, index, zeroForOne, amountSpecified);
+        }
+        vm.stopBroadcast();
+    }
+
     function runProcess() external {
         bytes32[] memory sources = new bytes32[](1);
         sources[0] = vm.envBytes32("REFERENCE_SOURCE_ID");
@@ -96,9 +162,9 @@ contract CircleAcceptance is Script {
     /// @notice Syncs all three RESEARCH_V1 sources before advancing bounded processing.
     function runProcessResearch() external {
         bytes32[] memory sources = new bytes32[](3);
-        sources[0] = vm.envBytes32("REFERENCE_SOURCE_ID_0");
-        sources[1] = vm.envBytes32("REFERENCE_SOURCE_ID_1");
-        sources[2] = vm.envBytes32("REFERENCE_SOURCE_ID_2");
+        sources[0] = ThetaShieldReferenceMarket.SOURCE_ID_0;
+        sources[1] = ThetaShieldReferenceMarket.SOURCE_ID_1;
+        sources[2] = ThetaShieldReferenceMarket.SOURCE_ID_2;
         _runProcess(sources);
     }
 
@@ -123,5 +189,9 @@ contract CircleAcceptance is Script {
             tickSpacing: 60,
             hooks: IHooks(vm.envAddress("THETASHIELD_HOOK"))
         });
+    }
+
+    function _approve(ThetaShieldTestToken token, address spender) private {
+        if (!token.approve(spender, type(uint256).max)) revert ApprovalFailed(address(token), spender);
     }
 }

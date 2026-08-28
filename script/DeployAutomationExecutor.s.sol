@@ -6,6 +6,7 @@ import {ThetaShieldCircleProcessor} from "../src/circle/ThetaShieldCircleProcess
 import {ReactiveLegacyValidation} from "../src/deployment/ReactiveLegacyValidation.sol";
 import {PoolMedianReferenceSampler} from "../src/feeds/PoolMedianReferenceSampler.sol";
 import {ThetaShieldAutomationExecutor} from "../src/reactive/ThetaShieldAutomationExecutor.sol";
+import {ThetaShieldReferenceMarket} from "./profiles/ThetaShieldReferenceMarket.sol";
 
 /// @title DeployAutomationExecutor
 /// @notice Deploys the processor-chain callback target for permissionless bounded work.
@@ -41,9 +42,9 @@ contract DeployAutomationExecutor is Script {
         );
 
         bytes32[] memory sources = new bytes32[](3);
-        sources[0] = vm.envBytes32("REFERENCE_SOURCE_ID_0");
-        sources[1] = vm.envBytes32("REFERENCE_SOURCE_ID_1");
-        sources[2] = vm.envBytes32("REFERENCE_SOURCE_ID_2");
+        sources[0] = ThetaShieldReferenceMarket.SOURCE_ID_0;
+        sources[1] = ThetaShieldReferenceMarket.SOURCE_ID_1;
+        sources[2] = ThetaShieldReferenceMarket.SOURCE_ID_2;
 
         vm.startBroadcast(deployer);
         ThetaShieldAutomationExecutor executor =

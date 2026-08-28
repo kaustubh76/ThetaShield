@@ -28,7 +28,7 @@ Every phase is verified before it is committed and pushed to `main`.
 | Gap G7 — Deterministic dashboard bundle | Complete |
 | Gap G8 — Evidence-driven dashboard | Complete |
 | Gap G9 — Animated mechanism and LP simulator | Complete |
-| Gap G10 — V2 deployment and acceptance | Owner-gated |
+| Gap G10 — V2 deployment and acceptance | Implementation complete; paid deployment and acceptance owner-gated |
 
 ## Phase 0 — Repository foundation
 

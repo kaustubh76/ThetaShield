@@ -20,6 +20,15 @@ The current testnet `MessageTransmitterV2` configured in `.env.example` is
 `0xE737e5cEBEEBa77EFE34D4aa090756590b1CE275` on both chains. Recheck Circle's
 official address registry immediately before simulation and broadcast.
 
+The `RESEARCH_V1` reference market is self-contained on Ethereum Sepolia. Its
+release profile pins Uniswap's active v4 `PoolManager`
+`0xE03A1074c86CFeDd5C142C4F04F1a1536e203543` and the matching test liquidity
+and swap routers. The processor script creates two test tokens and three
+no-hook pools at 0.05%, 0.30%, and 1.00% fee tiers, provides bounded liquidity,
+and wires their distinct pool/source IDs into the sampler. Recheck the
+[official Uniswap deployment feed](https://developers.uniswap.org/deployments.json)
+and both live router `manager()` values before release.
+
 The automation RPC is `https://lasna-rpc.rnk.dev/`, not the Omni RPC. The
 release uses the official Legacy `Cron10` topic and sends callbacks to the
 Ethereum Sepolia proxy `0xc9f36411C9897e7F959D99ffca2a0Ba7ee0D7bDA`.
@@ -69,24 +78,30 @@ topic, `Cron1` release cadence, zero reserve, or Omni RPC aborts the release.
    and costs.
 2. Put the predicted origin transport, controller, hook, and pool ID in the
    untracked environment, then simulate `DeployCircleProcessor.s.sol` on
-   Ethereum Sepolia. Under `RESEARCH_V1` it deploys the permissionless
-   three-pool sampler and a processor requiring all three configured source
-   readings. Verify every pool ID, token decimal, base orientation, and
-   liquidity floor. `DEMO_V1` alone deploys the owner-published fixture.
-3. Simulate `DeployAutomationExecutor.s.sol` on Ethereum Sepolia using the
-   pinned Legacy callback proxy, approved constructor funding, and all three
-   source IDs. Verify `reactiveCallbackProxy()` and `reactiveRvmId()` after the
-   simulated deployment.
-4. Simulate `DeployAutomationRSC.s.sol` only through the Legacy Lasna RPC.
-   Verify the pinned system bytecode, official `Cron10` topic, callback gas,
-   retry policy, and approved initial lREACT funding. The deploying EOA must
-   match the executor's stored ReactVM identity.
-5. Simulate `ConfigureCirclePeers.s.sol` on Unichain. This one-time action seals
+   Ethereum Sepolia. Under `RESEARCH_V1` this single nonce-consistent stack
+   deploys and funds the three reference pools, sampler, processor, processor
+   Lens, and funded Legacy callback executor. Verify the locked manager and
+   routers, all three emitted pool/source IDs, 18-decimal orientation,
+   liquidity floor, callback proxy, `reactiveRvmId()`, and every predicted
+   address. `DEMO_V1` alone deploys the owner-published fixture without the
+   executor.
+3. Run the Legacy read-only preflight, then prepare
+   `DeployAutomationRSC.s.sol` only through the Legacy Lasna RPC. Verify the
+   pinned system bytecode, official `Cron10` topic, callback gas, retry policy,
+   and approved initial lREACT funding. The deploying EOA must match the
+   executor's stored ReactVM identity. Lasna's subscription precompile reverts
+   under Forge's forked `eth_call` simulation path, including for already-live
+   Ethereum contracts; therefore the local full-cycle tests, live read-only
+   preflight, exact initcode review, conservative gas ceiling, and fresh spend
+   approval are the pre-broadcast gates. Do not mistake the simulation
+   limitation for a successful subscription: after broadcast, all three live
+   subscriptions must be verified with `rnk_getSubscribers` before continuing.
+4. Simulate `ConfigureCirclePeers.s.sol` on Unichain. This one-time action seals
    the hook/processor peers; verify every value before signing.
-6. Sum all-chain deployment, callback reserves, Legacy lREACT funding, and configuration costs,
+5. Sum all-chain deployment, callback reserves, Legacy lREACT funding, and configuration costs,
    preserve a safety margin, and obtain fresh explicit approval. Earlier
    Circle or lREACT approvals do not authorize the G10 release.
-7. Broadcast only the reviewed transactions in the same dependency order and
+6. Broadcast only the reviewed transactions in the same dependency order and
    record receipts before continuing.
 
 ## Acceptance lifecycle
@@ -102,17 +117,19 @@ Each paid action is separate so it can be simulated and approved:
 
 3. Set `CIRCLE_MESSAGE`, `CIRCLE_ATTESTATION`, and the destination transmitter,
    then simulate/broadcast `RelayCircleMessage.s.sol` on Ethereum Sepolia.
-4. After the configured markout horizon, run
-   a fresh Legacy automation cycle. Confirm the RSC observed
+4. To make the delayed evidence visually obvious, run the bounded
+   `CircleAcceptance.runMoveReferences()` action on Ethereum Sepolia, then wait
+   for the configured markout horizon.
+5. Run a fresh Legacy automation cycle. Confirm the RSC observed
    `ObservationQueued`, an official `Cron10` signal produced `WakeRequested`,
    the destination transaction called `executeFromReactive`, and
    `AutomationCycleCompleted.reactiveTrigger` is true. The executor samples and
    syncs all three references before bounded processing. The permissionless
    `CircleAcceptance.runSampleReferences()` and `runProcessResearch()` calls
    remain the recovery path, not the primary acceptance proof.
-5. Fetch that transaction's attestation with source domain `0` and relay it on
+6. Fetch that transaction's attestation with source domain `0` and relay it on
    Unichain using `RelayCircleMessage.s.sol`.
-6. Run a later bounded swap and prove the PoolManager event fee matches the
+7. Run a later bounded swap and prove the PoolManager event fee matches the
    controller's directional recommendation.
 
 Circle API output, Reactive subscription/callback evidence, balances, debts,

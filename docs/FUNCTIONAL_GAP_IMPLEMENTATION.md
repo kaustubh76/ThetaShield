@@ -234,7 +234,10 @@ and the dashboard regression gate verifies the full G9 surface.
 ## Release boundary
 
 The existing Phase 8D contracts and receipts remain evidence for the original
-single-source Circle demo profile. They are not modified in place. Any contract
-whose configuration or sealed peer changes will receive a new V2 address and a
-new manifest during G10. G9.1 makes the Legacy deployment path executable and
-verified locally; it does not spend funds or claim a public Reactive callback.
+single-source Circle demo profile. They are not modified in place. G10's code
+path now deploys a new origin Lens and a nonce-consistent Ethereum stack with a
+self-contained three-tier v4 reference market, sampler, processor, processor
+Lens, and Legacy callback executor. `make gap-g10-check` verifies those release
+components locally. New V2 addresses, the Legacy RSC, a fresh manifest, and the
+public acceptance trace remain paid owner-gated actions; the repository does
+not claim they exist before their receipts are recorded.
