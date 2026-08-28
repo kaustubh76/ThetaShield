@@ -144,9 +144,38 @@ contract ThetaShieldCircleProcessorTest is Test {
         assertFalse(usedBaseline);
     }
 
+    function test_epochFinalizationStoresCoverageFeedback() external {
+        _completeEpoch(1, 99e16);
+        _completeEpoch(2, 98e16);
+
+        ThetaShieldCircleProcessor.SideState memory state = processor.sideState(true);
+        assertTrue(state.latestCoverageEligible);
+        assertEq(state.latestFeeRevenueWad, 0.0005e18);
+        assertEq(state.latestEstimatedLossWad, 0.02e18);
+        assertEq(state.latestCoverageRatioWad, 0.025e18);
+        assertEq(state.latestCoverageDeficitWad, 1.225e18);
+        assertEq(state.latestCoveragePremiumPips, 61);
+        assertEq(state.epochFeeRevenueWad, 0);
+        assertEq(state.epochEstimatedLossWad, 0);
+    }
+
+    function test_zeroLossWarmEpochDoesNotCreateCoverageDeficit() external {
+        _completeEpoch(1, 1e18);
+        _completeEpoch(2, 1.01e18);
+
+        ThetaShieldCircleProcessor.SideState memory state = processor.sideState(true);
+        assertFalse(state.latestCoverageEligible);
+        assertEq(state.latestEstimatedLossWad, 0);
+        assertEq(state.latestCoverageRatioWad, 1.25e18);
+        assertEq(state.latestCoverageDeficitWad, 0);
+        assertEq(state.latestCoveragePremiumPips, 0);
+        assertEq(state.latestCalculatedFeePips, 500);
+    }
+
     function _completeEpoch(uint64 observationId, uint256 referencePriceWad) private {
-        uint64 observedAt = uint64(block.timestamp);
         _deliverObservation(_observation(observationId));
+        (uint16 slot,) = processor.observationSlot(observationId);
+        uint64 observedAt = processor.pendingObservation(slot).observedAt;
         vm.warp(uint256(observedAt) + 10);
         feed.publish(MARKET_ID, SOURCE_ID, referencePriceWad, 1e18, observedAt + 10);
         processor.syncReference(SOURCE_ID);
@@ -231,9 +260,12 @@ contract ThetaShieldCircleProcessorTest is Test {
             minimumFeePips: 500,
             maximumFeePips: 10_000,
             gainFeePips: 1_000_000,
+            coverageGainFeePips: 50,
             maximumIncreasePips: 9_500,
             maximumDecreasePips: 9_500,
-            confidenceFloorWad: 5e17
+            confidenceFloorWad: 5e17,
+            targetCoverageWad: 1.25e18,
+            minimumEstimatedLossWad: 0.001e18
         });
     }
 

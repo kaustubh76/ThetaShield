@@ -238,9 +238,12 @@ contract ThetaShieldMathTest is Test {
             minimumFeePips: 500,
             maximumFeePips: 2_000,
             gainFeePips: 1_000_000,
+            coverageGainFeePips: 50,
             maximumIncreasePips: 2_000,
             maximumDecreasePips: 500,
-            confidenceFloorWad: 0
+            confidenceFloorWad: 0,
+            targetCoverageWad: 1.25e18,
+            minimumEstimatedLossWad: 0.001e18
         });
         FeeCurve.Result memory capped = FeeCurve.calculate(10e18, 1e18, true, 1_000, cappedConfig);
         FeeCurve.Result memory decreasing = FeeCurve.calculate(-1e18, 1e18, true, 2_000, cappedConfig);
@@ -251,15 +254,55 @@ contract ThetaShieldMathTest is Test {
         assertEq(decreasing.nextFeePips, 1_500);
     }
 
+    function test_closedLoopFeeComposesCoverageBeforeSharedRateLimit() external pure {
+        FeeCurve.Result memory result = FeeCurve.calculateClosedLoop(
+            4e15,
+            0.75e18,
+            true,
+            500,
+            FeeCurve.CoverageInput({feeRevenueWad: 1e18, estimatedLossWad: 2e18, meetsMinimumEpochNotional: true}),
+            _feeConfig()
+        );
+
+        assertTrue(result.coverageEligible);
+        assertEq(result.coverageRatioWad, 0.5e18);
+        assertEq(result.coverageDeficitWad, 0.75e18);
+        assertEq(result.toxicPremiumPips, 2_000);
+        assertEq(result.coveragePremiumPips, 37);
+        assertEq(result.premiumPips, 2_037);
+        assertEq(result.targetFeePips, 2_537);
+        assertEq(result.nextFeePips, 1_500);
+    }
+
+    function test_zeroLossEpochNeverInventsCoverageDeficit() external pure {
+        FeeCurve.Result memory result = FeeCurve.calculateClosedLoop(
+            4e15,
+            0.75e18,
+            true,
+            500,
+            FeeCurve.CoverageInput({feeRevenueWad: 1e18, estimatedLossWad: 0, meetsMinimumEpochNotional: true}),
+            _feeConfig()
+        );
+
+        assertFalse(result.coverageEligible);
+        assertEq(result.coverageRatioWad, 1.25e18);
+        assertEq(result.coverageDeficitWad, 0);
+        assertEq(result.coveragePremiumPips, 0);
+        assertEq(result.premiumPips, result.toxicPremiumPips);
+    }
+
     function _feeConfig() private pure returns (FeeCurve.Config memory) {
         return FeeCurve.Config({
             baseFeePips: 500,
             minimumFeePips: 500,
             maximumFeePips: 10_000,
             gainFeePips: 500_000,
+            coverageGainFeePips: 50,
             maximumIncreasePips: 1_000,
             maximumDecreasePips: 500,
-            confidenceFloorWad: 0.5e18
+            confidenceFloorWad: 0.5e18,
+            targetCoverageWad: 1.25e18,
+            minimumEstimatedLossWad: 0.001e18
         });
     }
 }

@@ -116,9 +116,12 @@ contract DeployCircleProcessor is Script {
             minimumFeePips: 500,
             maximumFeePips: 10_000,
             gainFeePips: 100_000,
+            coverageGainFeePips: 50,
             maximumIncreasePips: 2_000,
             maximumDecreasePips: 2_000,
-            confidenceFloorWad: 0.5e18
+            confidenceFloorWad: 0.5e18,
+            targetCoverageWad: 1.25e18,
+            minimumEstimatedLossWad: 0.001e18
         });
     }
 

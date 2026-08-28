@@ -155,9 +155,12 @@ contract GoldenVectorsTest is Test {
             minimumFeePips: uint24(vm.parseJsonUint(vectors, ".fee.minimum_fee_pips")),
             maximumFeePips: uint24(vm.parseJsonUint(vectors, ".fee.maximum_fee_pips")),
             gainFeePips: uint24(vm.parseJsonUint(vectors, ".fee.gain_fee_pips")),
+            coverageGainFeePips: 50,
             maximumIncreasePips: uint24(vm.parseJsonUint(vectors, ".fee.maximum_increase_pips")),
             maximumDecreasePips: uint24(vm.parseJsonUint(vectors, ".fee.maximum_decrease_pips")),
-            confidenceFloorWad: vm.parseJsonUint(vectors, ".fee.confidence_floor_wad")
+            confidenceFloorWad: vm.parseJsonUint(vectors, ".fee.confidence_floor_wad"),
+            targetCoverageWad: 1.25e18,
+            minimumEstimatedLossWad: 0.001e18
         });
         FeeCurve.Result memory result = FeeCurve.calculate(
             vm.parseJsonInt(vectors, ".fee.signed_risk_wad"),
@@ -170,5 +173,41 @@ contract GoldenVectorsTest is Test {
         assertEq(result.premiumPips, vm.parseJsonUint(vectors, ".fee.expected_premium_pips"));
         assertEq(result.targetFeePips, vm.parseJsonUint(vectors, ".fee.expected_target_fee_pips"));
         assertEq(result.nextFeePips, vm.parseJsonUint(vectors, ".fee.expected_next_fee_pips"));
+    }
+
+    function test_coverageFeeGoldenVector() external view {
+        FeeCurve.Config memory config = FeeCurve.Config({
+            baseFeePips: uint24(vm.parseJsonUint(vectors, ".coverage_fee.base_fee_pips")),
+            minimumFeePips: uint24(vm.parseJsonUint(vectors, ".coverage_fee.minimum_fee_pips")),
+            maximumFeePips: uint24(vm.parseJsonUint(vectors, ".coverage_fee.maximum_fee_pips")),
+            gainFeePips: uint24(vm.parseJsonUint(vectors, ".coverage_fee.gain_fee_pips")),
+            coverageGainFeePips: uint24(vm.parseJsonUint(vectors, ".coverage_fee.coverage_gain_fee_pips")),
+            maximumIncreasePips: uint24(vm.parseJsonUint(vectors, ".coverage_fee.maximum_increase_pips")),
+            maximumDecreasePips: uint24(vm.parseJsonUint(vectors, ".coverage_fee.maximum_decrease_pips")),
+            confidenceFloorWad: vm.parseJsonUint(vectors, ".coverage_fee.confidence_floor_wad"),
+            targetCoverageWad: vm.parseJsonUint(vectors, ".coverage_fee.target_coverage_wad"),
+            minimumEstimatedLossWad: vm.parseJsonUint(vectors, ".coverage_fee.minimum_estimated_loss_wad")
+        });
+        FeeCurve.Result memory result = FeeCurve.calculateClosedLoop(
+            vm.parseJsonInt(vectors, ".coverage_fee.signed_risk_wad"),
+            vm.parseJsonUint(vectors, ".coverage_fee.confidence_wad"),
+            vm.parseJsonBool(vectors, ".coverage_fee.persistence_active"),
+            uint24(vm.parseJsonUint(vectors, ".coverage_fee.previous_fee_pips")),
+            FeeCurve.CoverageInput({
+                feeRevenueWad: vm.parseJsonUint(vectors, ".coverage_fee.fee_revenue_wad"),
+                estimatedLossWad: vm.parseJsonUint(vectors, ".coverage_fee.estimated_loss_wad"),
+                meetsMinimumEpochNotional: vm.parseJsonBool(vectors, ".coverage_fee.meets_minimum_epoch_notional")
+            }),
+            config
+        );
+
+        assertEq(result.coverageEligible, vm.parseJsonBool(vectors, ".coverage_fee.expected_coverage_eligible"));
+        assertEq(result.coverageRatioWad, vm.parseJsonUint(vectors, ".coverage_fee.expected_coverage_ratio_wad"));
+        assertEq(result.coverageDeficitWad, vm.parseJsonUint(vectors, ".coverage_fee.expected_coverage_deficit_wad"));
+        assertEq(result.toxicPremiumPips, vm.parseJsonUint(vectors, ".coverage_fee.expected_toxic_premium_pips"));
+        assertEq(result.coveragePremiumPips, vm.parseJsonUint(vectors, ".coverage_fee.expected_coverage_premium_pips"));
+        assertEq(result.premiumPips, vm.parseJsonUint(vectors, ".coverage_fee.expected_total_premium_pips"));
+        assertEq(result.targetFeePips, vm.parseJsonUint(vectors, ".coverage_fee.expected_target_fee_pips"));
+        assertEq(result.nextFeePips, vm.parseJsonUint(vectors, ".coverage_fee.expected_next_fee_pips"));
     }
 }

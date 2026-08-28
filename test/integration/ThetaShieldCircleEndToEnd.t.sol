@@ -199,9 +199,12 @@ contract ThetaShieldCircleEndToEndTest is Deployers {
             minimumFeePips: 500,
             maximumFeePips: 10_000,
             gainFeePips: 1_000_000,
+            coverageGainFeePips: 50,
             maximumIncreasePips: 9_500,
             maximumDecreasePips: 9_500,
-            confidenceFloorWad: 5e17
+            confidenceFloorWad: 5e17,
+            targetCoverageWad: 1.25e18,
+            minimumEstimatedLossWad: 0.001e18
         });
     }
 

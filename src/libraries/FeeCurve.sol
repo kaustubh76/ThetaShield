@@ -12,15 +12,29 @@ library FeeCurve {
         uint24 minimumFeePips;
         uint24 maximumFeePips;
         uint24 gainFeePips;
+        uint24 coverageGainFeePips;
         uint24 maximumIncreasePips;
         uint24 maximumDecreasePips;
         uint256 confidenceFloorWad;
+        uint256 targetCoverageWad;
+        uint256 minimumEstimatedLossWad;
+    }
+
+    struct CoverageInput {
+        uint256 feeRevenueWad;
+        uint256 estimatedLossWad;
+        bool meetsMinimumEpochNotional;
     }
 
     struct Result {
         uint24 premiumPips;
+        uint24 toxicPremiumPips;
+        uint24 coveragePremiumPips;
         uint24 targetFeePips;
         uint24 nextFeePips;
+        uint256 coverageRatioWad;
+        uint256 coverageDeficitWad;
+        bool coverageEligible;
     }
 
     error InvalidFeeConfiguration();
@@ -35,24 +49,63 @@ library FeeCurve {
         uint24 previousFeePips,
         Config memory config
     ) internal pure returns (Result memory result) {
+        return calculateClosedLoop(
+            signedRiskWad,
+            confidenceWad,
+            persistenceActive,
+            previousFeePips,
+            CoverageInput({feeRevenueWad: 0, estimatedLossWad: 0, meetsMinimumEpochNotional: false}),
+            config
+        );
+    }
+
+    /// @notice Calculates a bounded fee from directional risk and realized epoch coverage.
+    function calculateClosedLoop(
+        int256 signedRiskWad,
+        uint256 confidenceWad,
+        bool persistenceActive,
+        uint24 previousFeePips,
+        CoverageInput memory coverage,
+        Config memory config
+    ) internal pure returns (Result memory result) {
         _validateConfig(config);
         if (confidenceWad > ThetaShieldUnits.WAD) revert InvalidConfidence(confidenceWad);
         if (previousFeePips < config.minimumFeePips || previousFeePips > config.maximumFeePips) {
             revert PreviousFeeOutOfBounds(previousFeePips);
         }
 
-        uint256 target = config.baseFeePips;
+        result.coverageRatioWad = config.targetCoverageWad;
+        if (coverage.meetsMinimumEpochNotional && coverage.estimatedLossWad >= config.minimumEstimatedLossWad) {
+            result.coverageEligible = true;
+            result.coverageRatioWad =
+                FixedPointMath.mulDivDown(coverage.feeRevenueWad, ThetaShieldUnits.WAD, coverage.estimatedLossWad);
+            if (result.coverageRatioWad < config.targetCoverageWad) {
+                result.coverageDeficitWad = config.targetCoverageWad - result.coverageRatioWad;
+            }
+        }
+
+        uint256 premium;
         if (persistenceActive && confidenceWad >= config.confidenceFloorWad && signedRiskWad > 0) {
-            uint256 premium =
+            uint256 toxicPremium =
                 FixedPointMath.mulDivDown(FixedPointMath.abs(signedRiskWad), config.gainFeePips, ThetaShieldUnits.WAD);
+            uint256 coveragePremium = result.coverageEligible
+                ? FixedPointMath.mulDivDown(result.coverageDeficitWad, config.coverageGainFeePips, ThetaShieldUnits.WAD)
+                : 0;
             uint256 maximumPremium = uint256(config.maximumFeePips) - config.baseFeePips;
+            if (toxicPremium > maximumPremium) toxicPremium = maximumPremium;
+            if (coveragePremium > maximumPremium) coveragePremium = maximumPremium;
+            premium = toxicPremium + coveragePremium;
             if (premium > maximumPremium) premium = maximumPremium;
             // maximumPremium is at most 1e6 fee pips and fits in uint24.
             // forge-lint: disable-next-line(unsafe-typecast)
+            result.toxicPremiumPips = uint24(toxicPremium);
+            // forge-lint: disable-next-line(unsafe-typecast)
+            result.coveragePremiumPips = uint24(coveragePremium);
+            // forge-lint: disable-next-line(unsafe-typecast)
             result.premiumPips = uint24(premium);
-            target += premium;
         }
 
+        uint256 target = uint256(config.baseFeePips) + premium;
         target = FixedPointMath.clamp(target, config.minimumFeePips, config.maximumFeePips);
         // The configured maximum is at most 1e6 fee pips and fits in uint24.
         // forge-lint: disable-next-line(unsafe-typecast)
@@ -79,7 +132,10 @@ library FeeCurve {
     function _validateConfig(Config memory config) private pure {
         if (
             config.minimumFeePips > config.baseFeePips || config.baseFeePips > config.maximumFeePips
-                || config.maximumFeePips > ThetaShieldUnits.FEE_PIPS || config.confidenceFloorWad > ThetaShieldUnits.WAD
+                || config.maximumFeePips > ThetaShieldUnits.FEE_PIPS
+                || config.coverageGainFeePips > ThetaShieldUnits.FEE_PIPS
+                || config.confidenceFloorWad > ThetaShieldUnits.WAD || config.targetCoverageWad == 0
+                || config.targetCoverageWad > 10 * ThetaShieldUnits.WAD || config.minimumEstimatedLossWad == 0
         ) revert InvalidFeeConfiguration();
     }
 }

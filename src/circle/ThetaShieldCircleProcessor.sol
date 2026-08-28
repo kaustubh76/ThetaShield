@@ -136,11 +136,20 @@ contract ThetaShieldCircleProcessor is IMessageHandlerV2 {
         uint16 fastPathHoldRemaining;
         uint256 persistenceBitmap;
         uint256 smoothedMagnitudeWad;
+        uint256 epochFeeRevenueWad;
+        uint256 epochEstimatedLossWad;
+        uint256 latestFeeRevenueWad;
+        uint256 latestEstimatedLossWad;
+        uint256 latestCoverageRatioWad;
+        uint256 latestCoverageDeficitWad;
         int128 latestRiskWad;
         uint256 latestConfidenceWad;
         uint24 latestCalculatedFeePips;
+        uint24 latestToxicPremiumPips;
+        uint24 latestCoveragePremiumPips;
         bool latestPersistenceActive;
         bool latestFastPathActive;
+        bool latestCoverageEligible;
         bool epochOpen;
         bool hasFinalizedEpoch;
     }
@@ -233,7 +242,14 @@ contract ThetaShieldCircleProcessor is IMessageHandlerV2 {
         uint16 eligibleObservationCount,
         uint256 eligibleNotionalWad,
         uint256 maximumReferenceDispersionWad,
-        bool includedColdStart
+        bool includedColdStart,
+        uint256 feeRevenueWad,
+        uint256 estimatedLossWad,
+        uint256 coverageRatioWad,
+        uint256 coverageDeficitWad,
+        uint24 toxicPremiumPips,
+        uint24 coveragePremiumPips,
+        bool coverageEligible
     );
     event RecommendationScheduled(
         uint64 indexed sequence,
@@ -277,6 +293,8 @@ contract ThetaShieldCircleProcessor is IMessageHandlerV2 {
 
         _sideStates[0].latestCalculatedFeePips = feeCurveConfig_.baseFeePips;
         _sideStates[1].latestCalculatedFeePips = feeCurveConfig_.baseFeePips;
+        _sideStates[0].latestCoverageRatioWad = feeCurveConfig_.targetCoverageWad;
+        _sideStates[1].latestCoverageRatioWad = feeCurveConfig_.targetCoverageWad;
     }
 
     /// @inheritdoc IMessageHandlerV2
@@ -510,6 +528,16 @@ contract ThetaShieldCircleProcessor is IMessageHandlerV2 {
         int256 filteredMarkoutWad = DeadBandFilter.filter(markoutWad, sigmaWad, schedulerConfig.deadBandKWad);
         _storeMarkout(side, markoutWad);
 
+        uint256 feeRevenueWad =
+            FixedPointMath.mulDivDown(observation.notionalWad, observation.appliedFeePips, ThetaShieldUnits.FEE_PIPS);
+        uint256 estimatedLossWad;
+        if (markoutWad > 0) {
+            // The branch proves the signed markout is positive.
+            // forge-lint: disable-next-line(unsafe-typecast)
+            uint256 positiveMarkoutWad = uint256(markoutWad);
+            estimatedLossWad =
+                FixedPointMath.mulDivDown(observation.notionalWad, positiveMarkoutWad, ThetaShieldUnits.WAD);
+        }
         finalized = _appendEpochObservation(
             side,
             EpochObservationRecord({
@@ -517,7 +545,9 @@ contract ThetaShieldCircleProcessor is IMessageHandlerV2 {
                 notionalWad: observation.notionalWad,
                 referenceDispersionWad: referenceResult.normalizedDispersionWad,
                 coldStart: coldStart
-            })
+            }),
+            feeRevenueWad,
+            estimatedLossWad
         );
 
         ++settledObservationCount;
@@ -615,10 +645,12 @@ contract ThetaShieldCircleProcessor is IMessageHandlerV2 {
         if (state.historyCount < window) ++state.historyCount;
     }
 
-    function _appendEpochObservation(uint8 side, EpochObservationRecord memory observation)
-        private
-        returns (bool finalized)
-    {
+    function _appendEpochObservation(
+        uint8 side,
+        EpochObservationRecord memory observation,
+        uint256 feeRevenueWad,
+        uint256 estimatedLossWad
+    ) private returns (bool finalized) {
         SideState storage state = _sideStates[side];
         uint64 currentEpochId = _currentTime() / schedulerConfig.epochDuration;
 
@@ -639,6 +671,10 @@ contract ThetaShieldCircleProcessor is IMessageHandlerV2 {
         }
         _epochObservations[side][count] = observation;
         state.epochObservationCount = count + 1;
+        if (observation.notionalWad >= schedulerConfig.minimumObservationNotionalWad) {
+            state.epochFeeRevenueWad += feeRevenueWad;
+            state.epochEstimatedLossWad += estimatedLossWad;
+        }
     }
 
     function _finalizeMatureEpoch(uint8 side) private returns (bool) {
@@ -675,20 +711,34 @@ contract ThetaShieldCircleProcessor is IMessageHandlerV2 {
         bool fastPathActive = _updateFastPath(state, computation);
         state.latestFastPathActive = fastPathActive;
 
-        FeeCurve.Result memory fee = FeeCurve.calculate(
+        FeeCurve.Result memory fee = FeeCurve.calculateClosedLoop(
             smoothed.signedRiskWad,
             computation.confidenceWad,
             persistenceActive || fastPathActive,
             state.latestCalculatedFeePips,
+            FeeCurve.CoverageInput({
+                feeRevenueWad: state.epochFeeRevenueWad,
+                estimatedLossWad: state.epochEstimatedLossWad,
+                meetsMinimumEpochNotional: computation.meetsMinimumEpochNotional && !computation.includedColdStart
+            }),
             _feeCurveConfig
         );
         state.latestCalculatedFeePips = fee.nextFeePips;
+        state.latestFeeRevenueWad = state.epochFeeRevenueWad;
+        state.latestEstimatedLossWad = state.epochEstimatedLossWad;
+        state.latestCoverageRatioWad = fee.coverageRatioWad;
+        state.latestCoverageDeficitWad = fee.coverageDeficitWad;
+        state.latestToxicPremiumPips = fee.toxicPremiumPips;
+        state.latestCoveragePremiumPips = fee.coveragePremiumPips;
+        state.latestCoverageEligible = fee.coverageEligible;
 
         uint64 finalizedEpochId = state.openEpochId;
         state.lastFinalizedEpochId = finalizedEpochId;
         state.hasFinalizedEpoch = true;
         state.epochOpen = false;
         state.epochObservationCount = 0;
+        state.epochFeeRevenueWad = 0;
+        state.epochEstimatedLossWad = 0;
         for (uint16 index; index < count; ++index) {
             delete _epochObservations[side][index];
         }
@@ -741,7 +791,14 @@ contract ThetaShieldCircleProcessor is IMessageHandlerV2 {
             computation.eligibleObservationCount,
             computation.eligibleNotionalWad,
             computation.maximumReferenceDispersionWad,
-            computation.includedColdStart
+            computation.includedColdStart,
+            state.latestFeeRevenueWad,
+            state.latestEstimatedLossWad,
+            state.latestCoverageRatioWad,
+            state.latestCoverageDeficitWad,
+            state.latestToxicPremiumPips,
+            state.latestCoveragePremiumPips,
+            state.latestCoverageEligible
         );
     }
 
@@ -1014,7 +1071,9 @@ contract ThetaShieldCircleProcessor is IMessageHandlerV2 {
         if (
             feeConfig.minimumFeePips > feeConfig.baseFeePips || feeConfig.baseFeePips > feeConfig.maximumFeePips
                 || feeConfig.maximumFeePips > ThetaShieldUnits.FEE_PIPS
-                || feeConfig.confidenceFloorWad > ThetaShieldUnits.WAD
+                || feeConfig.coverageGainFeePips > ThetaShieldUnits.FEE_PIPS
+                || feeConfig.confidenceFloorWad > ThetaShieldUnits.WAD || feeConfig.targetCoverageWad == 0
+                || feeConfig.targetCoverageWad > 10 * ThetaShieldUnits.WAD || feeConfig.minimumEstimatedLossWad == 0
         ) revert InvalidSchedulerConfiguration();
 
         EpochAggregation.Observation[] memory empty = new EpochAggregation.Observation[](0);

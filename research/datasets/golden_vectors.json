@@ -13,6 +13,33 @@
     "target_observation_count": 10,
     "total_notional_wad": 100000000000000000000
   },
+  "coverage_fee": {
+    "base_fee_pips": 500,
+    "confidence_floor_wad": 500000000000000000,
+    "confidence_wad": 750000000000000000,
+    "coverage_gain_fee_pips": 50,
+    "estimated_loss_wad": 2000000000000000000,
+    "expected_coverage_deficit_wad": 750000000000000000,
+    "expected_coverage_eligible": true,
+    "expected_coverage_premium_pips": 37,
+    "expected_coverage_ratio_wad": 500000000000000000,
+    "expected_next_fee_pips": 1500,
+    "expected_target_fee_pips": 2337,
+    "expected_total_premium_pips": 1837,
+    "expected_toxic_premium_pips": 1800,
+    "fee_revenue_wad": 1000000000000000000,
+    "gain_fee_pips": 450000,
+    "maximum_decrease_pips": 500,
+    "maximum_fee_pips": 10000,
+    "maximum_increase_pips": 1000,
+    "meets_minimum_epoch_notional": true,
+    "minimum_estimated_loss_wad": 1000000000000000,
+    "minimum_fee_pips": 500,
+    "persistence_active": true,
+    "previous_fee_pips": 500,
+    "signed_risk_wad": 4000000000000000,
+    "target_coverage_wad": 1250000000000000000
+  },
   "dead_band": [
     {
       "expected_filtered_wad": 2000000000000000,
@@ -137,7 +164,7 @@
     ]
   },
   "rounding": "unsigned-down;signed-toward-zero;sqrt-down",
-  "schema_version": 1,
+  "schema_version": 2,
   "smoothing": {
     "aggregate_markout_wad": -4000000000000000,
     "alpha_wad": 250000000000000000,

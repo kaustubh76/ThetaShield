@@ -110,9 +110,12 @@ contract ThetaShieldMathPropertiesTest is Test {
             minimumFeePips: 500,
             maximumFeePips: 10_000,
             gainFeePips: 500_000,
+            coverageGainFeePips: 50,
             maximumIncreasePips: 1_000,
             maximumDecreasePips: 500,
-            confidenceFloorWad: 0.5e18
+            confidenceFloorWad: 0.5e18,
+            targetCoverageWad: 1.25e18,
+            minimumEstimatedLossWad: 0.001e18
         });
         int256 signedRiskWad = bound(int256(riskSeed), -10e18, 10e18);
         uint256 confidenceWad = bound(uint256(confidenceSeed), 0, 1e18);
@@ -127,6 +130,45 @@ contract ThetaShieldMathPropertiesTest is Test {
             assertLe(result.nextFeePips - previousFeePips, config.maximumIncreasePips);
         } else {
             assertLe(previousFeePips - result.nextFeePips, config.maximumDecreasePips);
+        }
+    }
+
+    function testFuzz_closedLoopCoverageNeverEscapesFeeBounds(
+        uint96 revenueSeed,
+        uint96 lossSeed,
+        bool meetsMinimumEpochNotional
+    ) external pure {
+        FeeCurve.Config memory config = FeeCurve.Config({
+            baseFeePips: 500,
+            minimumFeePips: 500,
+            maximumFeePips: 10_000,
+            gainFeePips: 450_000,
+            coverageGainFeePips: 50,
+            maximumIncreasePips: 1_000,
+            maximumDecreasePips: 500,
+            confidenceFloorWad: 0.5e18,
+            targetCoverageWad: 1.25e18,
+            minimumEstimatedLossWad: 0.001e18
+        });
+        FeeCurve.Result memory result = FeeCurve.calculateClosedLoop(
+            1e16,
+            0.75e18,
+            true,
+            500,
+            FeeCurve.CoverageInput({
+                feeRevenueWad: revenueSeed,
+                estimatedLossWad: lossSeed,
+                meetsMinimumEpochNotional: meetsMinimumEpochNotional
+            }),
+            config
+        );
+
+        assertGe(result.nextFeePips, config.minimumFeePips);
+        assertLe(result.nextFeePips, config.maximumFeePips);
+        assertLe(result.premiumPips, config.maximumFeePips - config.baseFeePips);
+        if (!meetsMinimumEpochNotional || lossSeed < config.minimumEstimatedLossWad) {
+            assertFalse(result.coverageEligible);
+            assertEq(result.coverageDeficitWad, 0);
         }
     }
 }

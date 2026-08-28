@@ -9,11 +9,14 @@ from typing import Any
 
 from research.thetashield.model import (
     WAD,
+    CoverageConfig,
     EpochConfig,
     EpochObservation,
     FeeConfig,
     aggregate_epoch,
+    calculate_closed_loop_fee,
     calculate_confidence,
+    calculate_coverage,
     calculate_fee,
     dead_band_filter,
     directional_markout,
@@ -122,9 +125,33 @@ def build_vectors() -> dict[str, Any]:
         previous_fee_pips=500,
         config=fee_config,
     )
+    coverage_config = CoverageConfig(
+        target_coverage_wad=125 * WAD // 100,
+        coverage_gain_fee_pips=50,
+        minimum_estimated_loss_wad=WAD // 1_000,
+    )
+    coverage_fee_config = FeeConfig(
+        base_fee_pips=500,
+        minimum_fee_pips=500,
+        maximum_fee_pips=10_000,
+        gain_fee_pips=450_000,
+        maximum_increase_pips=1_000,
+        maximum_decrease_pips=500,
+        confidence_floor_wad=5 * 10**17,
+    )
+    coverage = calculate_coverage(WAD, 2 * WAD, True, coverage_config)
+    closed_loop_fee = calculate_closed_loop_fee(
+        signed_risk_wad=4 * 10**15,
+        confidence_wad=75 * 10**16,
+        persistence_active=True,
+        previous_fee_pips=500,
+        fee_config=coverage_fee_config,
+        coverage=coverage,
+        coverage_config=coverage_config,
+    )
 
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "rounding": "unsigned-down;signed-toward-zero;sqrt-down",
         "markout": markout,
         "trailing_volatility": {
@@ -196,6 +223,33 @@ def build_vectors() -> dict[str, Any]:
             "expected_premium_pips": fee.premium_pips,
             "expected_target_fee_pips": fee.target_fee_pips,
             "expected_next_fee_pips": fee.next_fee_pips,
+        },
+        "coverage_fee": {
+            "signed_risk_wad": 4 * 10**15,
+            "confidence_wad": 75 * 10**16,
+            "persistence_active": True,
+            "previous_fee_pips": 500,
+            "base_fee_pips": coverage_fee_config.base_fee_pips,
+            "minimum_fee_pips": coverage_fee_config.minimum_fee_pips,
+            "maximum_fee_pips": coverage_fee_config.maximum_fee_pips,
+            "gain_fee_pips": coverage_fee_config.gain_fee_pips,
+            "coverage_gain_fee_pips": coverage_config.coverage_gain_fee_pips,
+            "maximum_increase_pips": coverage_fee_config.maximum_increase_pips,
+            "maximum_decrease_pips": coverage_fee_config.maximum_decrease_pips,
+            "confidence_floor_wad": coverage_fee_config.confidence_floor_wad,
+            "target_coverage_wad": coverage_config.target_coverage_wad,
+            "minimum_estimated_loss_wad": coverage_config.minimum_estimated_loss_wad,
+            "fee_revenue_wad": coverage.fee_revenue_wad,
+            "estimated_loss_wad": coverage.estimated_loss_wad,
+            "meets_minimum_epoch_notional": True,
+            "expected_coverage_eligible": coverage.eligible,
+            "expected_coverage_ratio_wad": coverage.coverage_ratio_wad,
+            "expected_coverage_deficit_wad": coverage.coverage_deficit_wad,
+            "expected_toxic_premium_pips": closed_loop_fee.toxic_premium_pips,
+            "expected_coverage_premium_pips": closed_loop_fee.coverage_premium_pips,
+            "expected_total_premium_pips": closed_loop_fee.total_premium_pips,
+            "expected_target_fee_pips": closed_loop_fee.target_fee_pips,
+            "expected_next_fee_pips": closed_loop_fee.next_fee_pips,
         },
     }
 

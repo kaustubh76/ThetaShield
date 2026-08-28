@@ -30,7 +30,7 @@ deployment as an immutable historical acceptance trace.
 |---|---|---|
 | G0 | Verified baseline and locked decisions | Complete |
 | G1 | Coverage and flow-elasticity research | Complete |
-| G2 | Solidity coverage feedback loop | Pending |
+| G2 | Solidity coverage feedback loop | Complete |
 | G3 | Research/demo profiles and regression gates | Pending |
 | G4 | Stateless protocol lens | Pending |
 | G5 | Multi-source reference sampler | Pending |
@@ -59,6 +59,28 @@ The baseline was verified on 2026-08-27 with `make verify`:
 
 The machine-readable artifact hashes and benchmark metrics are recorded in
 `research/reports/gap_g0_baseline.json`.
+
+## G1 research gate
+
+The sixth `coverage_thetashield` policy measures realized fee revenue against
+positive directional markout loss and applies deterministic fee-elastic flow.
+Its declared precision and retained-volume gates pass across 300 policy runs.
+The historical Phase 5 five-policy artifacts remain unchanged. Reproduce with
+`make gap-g1-check` and `make phase5-check`.
+
+## G2 Solidity feedback loop
+
+The Circle processor now accounts for eligible per-side epoch fee revenue and
+estimated positive markout loss. `FeeCurve.calculateClosedLoop` derives a 1.25x
+coverage target, ignores zero-loss, below-threshold, below-notional, and
+cold-start epochs, and composes the researched coverage premium with the toxic
+premium before one shared cap and rate limit. The latest accounting, ratio,
+deficit, eligibility, and premium split are readable in `SideState` and emitted
+by `EpochFinalized`.
+
+The cross-language golden vectors include the closed-loop calculation. Focused
+math, fuzz, processor-lifecycle, and Python↔Solidity parity checks run with
+`make gap-g2-check`.
 
 ## Release boundary
 

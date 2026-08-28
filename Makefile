@@ -1,6 +1,6 @@
 PYTHON ?= python3
 
-.PHONY: boundary-fuzz-check build clean dashboard-check dashboard-deps dependency-check deployment-dry-run deployment-schema-check experiment-check experiment-report fmt fmt-check fork-check gap-g1-check gap-g1-report gas-check golden-check invariant-check lint phase5-check phase6-check phase6-report phase61-check phase61-report phase7-check phase9-check python-check research-report research-test secret-check test verify
+.PHONY: boundary-fuzz-check build clean dashboard-check dashboard-deps dependency-check deployment-dry-run deployment-schema-check experiment-check experiment-report fmt fmt-check fork-check gap-g1-check gap-g1-report gap-g2-check gas-check golden-check invariant-check lint phase5-check phase6-check phase6-report phase61-check phase61-report phase7-check phase9-check python-check research-report research-test secret-check test verify
 
 build:
 	forge build --sizes
@@ -61,6 +61,13 @@ gap-g1-check:
 
 gap-g1-report:
 	$(PYTHON) -m research.experiments.gap_g1_closed_loop
+
+gap-g2-check:
+	forge test --force --match-path 'test/math/*.t.sol' -vv
+	forge test --force --match-path 'test/fuzz/*.t.sol' -vv
+	forge test --force --match-path 'test/integration/GoldenVectors.t.sol' -vv
+	forge test --force --match-path 'test/integration/ThetaShieldCircleProcessor.t.sol' -vv
+	$(PYTHON) -m research.experiments.generate_golden_vectors --check
 
 invariant-check:
 	forge test --force --match-path 'test/invariant/*.t.sol' -vv
