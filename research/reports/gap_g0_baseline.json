@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "phase": "G0",
+  "verified_at": "2026-08-27",
+  "source_revision": "e68c2aca6a31c9ae761cdf6061fa6de603fe642d",
+  "verification": {
+    "command": "make verify",
+    "solidity_passed": 94,
+    "solidity_failed": 0,
+    "solidity_environment_skipped": 2,
+    "research_passed": 38,
+    "research_failed": 0,
+    "dashboard_render_tests_passed": 2,
+    "production_dependency_vulnerabilities": 0
+  },
+  "artifact_sha256": {
+    "phase5_summary": "9ce96489d968a8c8be8e6dd6b92dde84d0a7daab0d94a0f9cdb26c72ee1c08b6",
+    "phase6_summary": "0e15382080e0f6a317bd660abb2843b8afcf00f984c486d888e1b4c715f7f33a",
+    "phase61_summary": "598397a3700192ffd1f4227dfebc82cb3a9c62a5b8dd3f38efaf1d7ae18eab8b",
+    "phase8d_live_manifest": "626178d6139b16475ea6c5af3cfc91c664901f4ef6ce201d908294749d789f1e"
+  },
+  "thetashield_phase5_pooled": {
+    "false_positive_rate_wad": 77029361498289863,
+    "false_negative_rate_wad": 696568056487174461,
+    "detection_latency_steps": 77,
+    "mean_applied_fee_pips": 628,
+    "time_above_baseline_rate_wad": 202499999999999999,
+    "fee_oscillation_pips": 2849,
+    "benign_trader_fees_quote_wad": 896626786666666666,
+    "toxic_trader_fees_quote_wad": 1334152426666666666
+  },
+  "deployment_policy": {
+    "existing_phase8d_manifest_is_immutable": true,
+    "g0_through_g9_public_spend_allowed": false,
+    "g10_requires_owner_approval": true,
+    "hook_submission_allowed": false
+  }
+}

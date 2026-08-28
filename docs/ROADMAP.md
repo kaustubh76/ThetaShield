@@ -18,6 +18,17 @@ Every phase is verified before it is committed and pushed to `main`.
 | Phase 8C — Circle release hardening | Complete |
 | Phase 8D — Live deployment | Complete |
 | Phase 9 — Dashboard and submission | Complete; private dashboard published, submission still owner-gated |
+| Gap G0 — Baseline and architecture lock | Complete |
+| Gap G1 — Coverage and flow-elasticity research | In progress |
+| Gap G2 — Solidity coverage feedback | Pending |
+| Gap G3 — Deployment profiles and regression gates | Pending |
+| Gap G4 — Read-only protocol lens | Pending |
+| Gap G5 — Multi-source reference sampler | Pending |
+| Gap G6 — Reactive automation plane | Pending |
+| Gap G7 — Deterministic dashboard bundle | Pending |
+| Gap G8 — Evidence-driven dashboard | Pending |
+| Gap G9 — Animated mechanism and LP simulator | Pending |
+| Gap G10 — V2 deployment and acceptance | Owner-gated |
 
 ## Phase 0 — Repository foundation
 
@@ -100,3 +111,6 @@ verification gate are complete. Phase 8D live addresses and acceptance evidence
 are recorded in [`PHASE8D_HANDOFF.md`](PHASE8D_HANDOFF.md). No external
 submission has been made. The migration decision is recorded in
 [`CIRCLE_MIGRATION.md`](CIRCLE_MIGRATION.md).
+
+The post-release functional programme and its locked architecture decisions are
+recorded in [`FUNCTIONAL_GAP_IMPLEMENTATION.md`](FUNCTIONAL_GAP_IMPLEMENTATION.md).
