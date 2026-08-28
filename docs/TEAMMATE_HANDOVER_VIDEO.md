@@ -16,8 +16,8 @@ Open these tabs in order:
 2. [ThetaShield dashboard](https://theta-shield.vercel.app)
 3. [Detailed Architecture 4](THETASHIELD_ARCHITECTURE4.png)
 4. [Simplified video architecture](THETASHIELD_VIDEO_ARCHITECTURE.png)
-5. [`docs/PHASE8D_HANDOFF.md`](PHASE8D_HANDOFF.md)
-6. [`deployments/unichain-sepolia-ethereum-sepolia-circle-phase8d-live.json`](../deployments/unichain-sepolia-ethereum-sepolia-circle-phase8d-live.json)
+5. [`docs/G10_LIVE_ACCEPTANCE.md`](G10_LIVE_ACCEPTANCE.md)
+6. [`deployments/unichain-sepolia-ethereum-sepolia-reactive-legacy-g10-live.json`](../deployments/unichain-sepolia-ethereum-sepolia-reactive-legacy-g10-live.json)
 7. The repository tree in an editor
 8. A terminal at the repository root
 
@@ -56,11 +56,12 @@ is that ThetaShield gives a liquidity pool directional memory. It measures what
 happened after earlier swaps and can adapt the buy-side and sell-side fees
 independently.
 
-The coding and approved public-testnet scope are complete. The Circle lifecycle
-has been proven across Unichain Sepolia and Ethereum Sepolia, the dashboard has
-a read-only live proof section, and the verification suite is passing. This is
-still unaudited testnet research. The hook has not been submitted, and nothing
-in this handover authorizes a mainnet deployment or submission.”
+The coding and approved public-testnet scope are complete. The Circle and
+Reactive Legacy lifecycle has been proven across Unichain Sepolia, Ethereum
+Sepolia, and Reactive Lasna; the dashboard has a read-only live proof section;
+and the verification suite is passing. This is still unaudited testnet
+research. The hook has not been submitted, and nothing in this handover
+authorizes a mainnet deployment or submission.”
 
 ### 0:45–2:00 — The problem ThetaShield solves
 
@@ -96,9 +97,11 @@ to send the observation through Circle CCTP V2. This dispatch is deliberately
 fail-open for transport availability. If Circle is unavailable, the evidence
 event remains, but the trader's completed swap is not reverted.
 
-A permissionless keeper relays the finalized Circle message to the processor
-on Ethereum Sepolia. Circle authenticates the transport; the keeper only
-provides scheduling and cannot forge the sender or recommendation.
+A permissionless relayer delivers the finalized Circle message to the processor
+on Ethereum Sepolia. Circle authenticates the transport; the relayer cannot
+forge the sender or recommendation. Reactive Legacy observes the accepted queue
+event, waits for maturity, and calls the bounded executor through the official
+authenticated callback proxy. Independent keepers can call the same executor.
 
 The processor waits for delayed reference evidence. It computes signed
 markout, subtracts a strictly trailing volatility band, checks notional and
@@ -118,14 +121,13 @@ alive; the fee returns to baseline.”
 
 **Point to the purple architecture lane.**
 
-“Reactive Network is ThetaShield’s automation and resilience plane. It observes
-hook evidence, reference updates, and relay health; schedules maturity-aware
-work; monitors stuck messages; and drives recovery and redundant delivery.
-Circle is the authenticated cross-chain rail verified by the current public
-testnet trace. The Reactive callback route is canary-gated because the earlier
-Lasna run emitted correctly targeted callback requests but public destination
-delivery did not complete. This boundary preserves swap safety while keeping
-Reactive central to the event-to-action control loop.”
+“Reactive Network is ThetaShield’s live automation and resilience plane. It
+observes the Circle-delivered processor queue, schedules maturity-aware work,
+issues separate maturity and finalization wakes, and drives bounded retries.
+Both final G10 callbacks were delivered publicly through the official Ethereum
+Sepolia proxy and authenticated with the deployer-derived ReactVM identity.
+Circle remains the evidence authority; Reactive provides the event-to-action
+control loop without gaining fee authority or blocking swaps.”
 
 ### 4:15–5:30 — Signal Lab
 
@@ -163,10 +165,11 @@ expired, so the controller correctly returns the baseline. That is a safety
 result, not a claim that the live fee became directional.
 
 The receipt trail proves the completed lifecycle: a real swap emitted the
-observation, Circle delivered it to Ethereum, delayed reference evidence was
-accepted and settled, sequence one was sent back and installed, and a later
-PoolManager swap used exactly the expected 500-pip fee. Every receipt opens in
-the public explorer.”
+observation, Circle delivered it to Ethereum, Reactive issued and delivered both
+authenticated delayed callbacks, three-pool reference evidence was sampled and
+settled, sequence one was sent back and installed, and a later PoolManager swap
+used exactly the expected 500-pip fee. Every receipt opens in a public
+explorer.”
 
 ### 7:15–9:20 — Repository tour
 
@@ -179,7 +182,8 @@ directional fee store. `src/circle` contains the versioned message encoding,
 origin transport, and bounded processor. `src/libraries` contains the markout,
 trailing volatility, dead-band, confidence, epoch, persistence, smoothing, and
 fee math. `src/deployment` contains CREATE2 hook address mining and deployment
-validation. `src/feeds` contains only the owner-published testnet demo feed.
+validation. `src/feeds` contains the permissionless three-pool sampler and the
+owner-published demo-only feed.
 
 The Solidity tests are under `test`, split into unit, math, integration, fuzz,
 invariant, gas, deployment, demo, and opt-in fork suites.
@@ -212,7 +216,7 @@ parameters only on training streams, and evaluated reserved holdout seeds.
 
 On the holdout, H4 reached minus 0.727 rank correlation with six Pareto points.
 H5 retained 59.70 percent toxic coverage while reducing false positives by
-20.79 percentage points. There were 3,150 sensitivity runs and 38 Python tests.
+20.79 percentage points. There were 3,150 sensitivity runs and 48 Python tests.
 
 These are controlled synthetic risk-proxy results. They are not exact LVR,
 live LP profit, or proof of market demand.”
@@ -231,7 +235,7 @@ FOUNDRY_PROFILE=ci make verify
 ```
 
 “That command checks Solidity formatting, lint, compilation, contract sizes,
-94 passing Solidity tests, 38 Python tests, golden vectors, reproducible
+124 passing environment-neutral Solidity tests, 48 Python tests, golden vectors, reproducible
 experiments, dependency locks, secret scanning, the deployment schema, the
 dashboard production build, both rendered-dashboard tests, and the production
 dependency audit.
@@ -275,8 +279,9 @@ over sharing the original wallet secret.”
 **Show:** README Production Boundary section.
 
 “What is complete is the approved testnet build: the hook, Circle transport,
-bounded processor, controller, research harness, security gates, live
-two-chain acceptance trace, dashboard, live proof, documentation, and handoff
+three-source bounded processor, controller, paired lenses, Reactive Legacy
+scheduler and executor, public three-network acceptance trace, research
+harness, security gates, dashboard, live proof, documentation, and handoff
 materials.
 
 What is not complete is production readiness. Before anything involving value,
@@ -290,9 +295,9 @@ the architecture and threat model, and reproduce the live state using only the
 dashboard and public explorers. Do not begin by redeploying or sending a paid
 transaction.
 
-That is the full project. The README is the entry point, Phase 8D is the live
-deployment receipt, the manifest is the machine-readable source of truth, and
-the threat model defines the safety boundary.”
+That is the full project. The README is the entry point, G10 Live Acceptance is
+the current deployment receipt, the G10 manifest is the machine-readable source
+of truth, and the threat model defines the safety boundary.”
 
 ## Access that must be handed over separately
 
@@ -317,7 +322,7 @@ permissions. Grant only what the teammate actually needs.
 - [ ] Run `FOUNDRY_PROFILE=ci make verify` with no populated private key.
 - [ ] Read `docs/ARCHITECTURE.md` and `docs/THREAT_MODEL.md`.
 - [ ] Open the live proof dashboard and verify the public receipt trail.
-- [ ] Compare deployed addresses with the Phase 8D manifest.
+- [ ] Compare deployed addresses with the G10 live manifest.
 - [ ] Copy `.env.example` to a local ignored `.env` only if operational work is needed.
 - [ ] Use teammate-owned RPC credentials.
 - [ ] Confirm the hook remains unsubmitted.
@@ -347,24 +352,25 @@ peers, domains, sequences, timing, and bounds.
 
 ### What is Reactive Network's role?
 
-Reactive is the automation and resilience plane: event observation,
-maturity-aware scheduling, liveness monitoring, retry signals, and the
-canary-gated redundant delivery route. Circle is the authenticated transport
-verified by the current public testnet acceptance trace.
+Reactive is the live automation and resilience plane: processor-event
+observation, maturity-aware scheduling, authenticated callbacks, and bounded
+retry signals. Circle is the authenticated evidence transport; Reactive is the
+proven event-to-action scheduler.
 
 ### Can the project be used with real funds now?
 
-No. It is unaudited, the demo reference feed is centralized, and the production
-operational controls are not complete.
+No. It is unaudited, the deployed three-pool sampler is a testnet research
+reference rather than a production oracle, and the production operational
+controls are not complete.
 
 ## Final recording checklist
 
 - [ ] The Signal Lab was called simulated.
 - [ ] The Live Testnet Proof was called read-only on-chain state.
 - [ ] The live 5 bps result was explained as cold-start/expired safe fallback.
-- [ ] Circle was described as the proven primary rail.
-- [ ] Reactive was described as the automation and resilience plane, with its
-      callback route accurately identified as canary-gated.
+- [ ] Circle was described as the authenticated evidence rail.
+- [ ] Reactive was described as the live automation and resilience plane, with
+      both public G10 callback receipts shown.
 - [ ] No private key, balance, seed phrase, `.env`, email, or token appeared.
 - [ ] No transaction was broadcast.
 - [ ] The hook was explicitly described as not submitted.

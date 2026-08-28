@@ -9,17 +9,19 @@ for the two directions.
 
 The active cross-chain implementation uses Circle CCTP V2 generic messages
 between Unichain Sepolia and an Ethereum Sepolia processor. Circle authenticates
-transport; permissionless relayers deliver attestations. The G10 candidate uses
+transport; permissionless relayers deliver attestations. The live G10 release uses
 Reactive Legacy Lasna as the event-driven scheduler for bounded Ethereum
 processor work, with an independent keeper fallback. The failed Omni direct
 callback path remains retired.
 
-A complete live testnet deployment and Circle acceptance lifecycle is recorded
-from source revision `7dcaadad351b238a64133f053f195e11d9a2ef71`. The hook,
-transport, controller, demo pool, and tokens run on Unichain Sepolia; the demo
-feed and bounded processor run on Ethereum Sepolia. Finalized observations and
-a sequenced recommendation crossed both directions, and a later PoolManager
-swap matched the controller's expected fee. The hook has not been submitted.
+A complete live testnet deployment and G10 lifecycle is recorded from source revision
+`c0a44dac111848e794989ba4b6bde62e6ffc4cf7`. The hook, transport, controller,
+and origin Lens run on Unichain Sepolia; the three-pool sampler, bounded
+processor, processor Lens, and callback executor run on Ethereum Sepolia; and
+the event-driven scheduler runs on Reactive Legacy Lasna. Finalized Circle
+messages crossed both directions, Reactive produced both authenticated delayed
+callbacks, and a later PoolManager swap matched the controller's expected fee.
+The hook has not been submitted.
 
 ## Delivered implementation
 
@@ -34,7 +36,8 @@ swap matched the controller's expected fee. The hook has not been submitted.
 - Circle-specific preflight, deployment, attestation fetch, relay, peer sealing,
   fork checks, and bounded acceptance tools;
 - pinned Reactive Legacy infrastructure, funded deploy paths, read-only
-  preflight, authenticated scheduler/executor contracts, and lifecycle tests;
+  preflight, deployed authenticated scheduler/executor contracts, public
+  callback receipts, and lifecycle tests;
 - Python reference model, shared golden vectors, deterministic experiments,
   dashboard, threat model, and draft submission; and
 - pinned dependencies, secret checks, fuzzing, invariants, gas ceilings, and
@@ -50,7 +53,7 @@ declared H4 criterion with rank correlation `-0.727` and six Pareto points, and
 passes H5 with `59.70%` retained toxic coverage plus a `20.79` percentage-point
 false-positive reduction.
 
-There are 38 Python research tests. Solidity unit, fuzz, invariant, gas,
+There are 48 Python tests. Solidity unit, fuzz, invariant, gas,
 deployment, and integration suites verify the current Circle implementation.
 The Legacy automation suite uses the official release CRON topic and rejects a
 mixed Omni/Legacy deployment configuration.
@@ -70,12 +73,12 @@ Reactive callbacks authenticate both the official destination proxy and the
 deployer-derived ReactVM identity; their executor cannot forge Circle evidence
 or install controller state.
 
-The remaining blockers for anything beyond a testnet demo are an external
+The remaining blockers for anything beyond a testnet demo are a production
 oracle adapter, independent audits, monitored redundant keepers, hardware-backed
 or multisig ownership, and incident response. The public Phase 8D Circle trace
-is complete and linked from `docs/PHASE8D_HANDOFF.md`. The G10 Legacy lane is
-locally release-ready but remains deployment-gated until a public callback
-receipt is recorded in a new manifest.
+remains historical evidence. The G10 Circle + Reactive Legacy trace is complete
+and linked from `docs/G10_LIVE_ACCEPTANCE.md`; its idle Cron credit must be
+monitored and replenished as an operational liveness requirement.
 
 ## Reproduce
 

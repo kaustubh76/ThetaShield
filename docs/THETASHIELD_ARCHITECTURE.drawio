@@ -8,7 +8,7 @@
         <mxCell id="title" value="THETASHIELD  •  DIRECTIONAL MEMORY FOR UNISWAP v4" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontColor=#F8FAFC;fontSize=24;fontStyle=1;spacingLeft=4;" vertex="1" parent="1">
           <mxGeometry x="40" y="25" width="1050" height="42" as="geometry"/>
         </mxCell>
-        <mxCell id="subtitle" value="Solid arrows = live public-testnet acceptance  •  Dashed arrows = optional canary-gated acceleration" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontColor=#94A3B8;fontSize=12;spacingLeft=4;" vertex="1" parent="1">
+        <mxCell id="subtitle" value="Solid arrows = Circle evidence authority  •  Purple arrows = live Reactive scheduling and authenticated callbacks" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontColor=#94A3B8;fontSize=12;spacingLeft=4;" vertex="1" parent="1">
           <mxGeometry x="40" y="65" width="1000" height="24" as="geometry"/>
         </mxCell>
         <mxCell id="thesis" value="MEASURE OUTCOMES → FILTER NOISE → PRICE ONLY THE HARMFUL DIRECTION" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#172554;strokeColor=#60A5FA;fontColor=#DBEAFE;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;arcSize=18;shadow=1;" vertex="1" parent="1">
@@ -51,7 +51,7 @@
         <mxCell id="ethereumTitle" value="ETHEREUM SEPOLIA  •  DELAYED INTELLIGENCE PLANE" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontColor=#6EE7B7;fontSize=14;fontStyle=1;spacingLeft=4;" vertex="1" parent="1">
           <mxGeometry x="60" y="510" width="500" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="feed" value="&lt;b&gt;REFERENCE FEED&lt;/b&gt;&lt;br&gt;delayed normalized price&lt;br&gt;&lt;font color=&quot;#94A3B8&quot;&gt;owner-published testnet demo&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#134E4A;strokeColor=#2DD4BF;fontColor=#F0FDFA;fontSize=12;align=center;verticalAlign=middle;arcSize=18;shadow=1;" vertex="1" parent="1">
+        <mxCell id="feed" value="&lt;b&gt;THREE-POOL REFERENCE SAMPLER&lt;/b&gt;&lt;br&gt;permissionless • liquidity filtered&lt;br&gt;&lt;font color=&quot;#94A3B8&quot;&gt;three Uniswap v4 fee tiers&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#134E4A;strokeColor=#2DD4BF;fontColor=#F0FDFA;fontSize=12;align=center;verticalAlign=middle;arcSize=18;shadow=1;" vertex="1" parent="1">
           <mxGeometry x="75" y="555" width="185" height="92" as="geometry"/>
         </mxCell>
         <mxCell id="processor" value="&lt;b&gt;BOUNDED PROCESSOR&lt;/b&gt;&lt;br&gt;delayed markout • trailing volatility&lt;br&gt;dead band • notional caps&lt;br&gt;confidence • persistence • direction&lt;br&gt;&lt;font color=&quot;#A7F3D0&quot;&gt;positive risk only can add premium&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#065F46;strokeColor=#34D399;strokeWidth=2;fontColor=#ECFDF5;fontSize=12;align=center;verticalAlign=middle;arcSize=18;shadow=1;" vertex="1" parent="1">
@@ -70,19 +70,19 @@
         <mxCell id="reactiveTitle" value="REACTIVE NETWORK" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontColor=#C4B5FD;fontSize=19;fontStyle=1;spacingLeft=4;" vertex="1" parent="1">
           <mxGeometry x="1085" y="130" width="300" height="34" as="geometry"/>
         </mxCell>
-        <mxCell id="reactiveStatus" value="OPTIONAL EVENT-DRIVEN ACCELERATION PLANE&lt;br&gt;&lt;font color=&quot;#C4B5FD&quot;&gt;experimental • secondary • canary-gated&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4C1D95;strokeColor=#A78BFA;fontColor=#FFFFFF;fontSize=11;fontStyle=1;align=center;verticalAlign=middle;arcSize=18;" vertex="1" parent="1">
+        <mxCell id="reactiveStatus" value="LIVE EVENT-DRIVEN AUTOMATION PLANE&lt;br&gt;&lt;font color=&quot;#C4B5FD&quot;&gt;Legacy Lasna • Cron10 • authenticated callbacks&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4C1D95;strokeColor=#A78BFA;fontColor=#FFFFFF;fontSize=11;fontStyle=1;align=center;verticalAlign=middle;arcSize=18;" vertex="1" parent="1">
           <mxGeometry x="1090" y="175" width="430" height="62" as="geometry"/>
         </mxCell>
-        <mxCell id="reactiveObserve" value="&lt;b&gt;1  OBSERVE&lt;/b&gt;&lt;br&gt;Hook observation events&lt;br&gt;Reference update events" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#312E81;strokeColor=#818CF8;fontColor=#EEF2FF;fontSize=12;align=center;verticalAlign=middle;arcSize=18;shadow=1;" vertex="1" parent="1">
+        <mxCell id="reactiveObserve" value="&lt;b&gt;1  OBSERVE&lt;/b&gt;&lt;br&gt;ObservationQueued&lt;br&gt;AutomationCycleCompleted" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#312E81;strokeColor=#818CF8;fontColor=#EEF2FF;fontSize=12;align=center;verticalAlign=middle;arcSize=18;shadow=1;" vertex="1" parent="1">
           <mxGeometry x="1100" y="275" width="185" height="88" as="geometry"/>
         </mxCell>
         <mxCell id="reactiveWake" value="&lt;b&gt;2  WAKE + MONITOR&lt;/b&gt;&lt;br&gt;maturity triggers&lt;br&gt;stuck-message detection&lt;br&gt;retry / expiry signals" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#5B21B6;strokeColor=#A78BFA;fontColor=#F5F3FF;fontSize=12;align=center;verticalAlign=middle;arcSize=18;shadow=1;" vertex="1" parent="1">
           <mxGeometry x="1305" y="265" width="195" height="108" as="geometry"/>
         </mxCell>
-        <mxCell id="reactiveCallback" value="&lt;b&gt;3  SECONDARY CALLBACK&lt;/b&gt;&lt;br&gt;redundant liveness path&lt;br&gt;&lt;font color=&quot;#DDD6FE&quot;&gt;enabled only after destination canary passes&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4C1D95;strokeColor=#C4B5FD;strokeWidth=2;fontColor=#FAF5FF;fontSize=12;align=center;verticalAlign=middle;arcSize=18;shadow=1;" vertex="1" parent="1">
+        <mxCell id="reactiveCallback" value="&lt;b&gt;3  AUTHENTICATED CALLBACK&lt;/b&gt;&lt;br&gt;official Ethereum proxy&lt;br&gt;&lt;font color=&quot;#DDD6FE&quot;&gt;ReactVM identity • public G10 proof&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4C1D95;strokeColor=#C4B5FD;strokeWidth=2;fontColor=#FAF5FF;fontSize=12;align=center;verticalAlign=middle;arcSize=18;shadow=1;" vertex="1" parent="1">
           <mxGeometry x="1195" y="410" width="235" height="100" as="geometry"/>
         </mxCell>
-        <mxCell id="reactiveBoundary" value="&lt;b&gt;WHY THE BOUNDARY MATTERS&lt;/b&gt;&lt;br&gt;Earlier Lasna emitted correctly targeted callback requests, but destination delivery did not complete.&lt;br&gt;&lt;br&gt;&lt;font color=&quot;#E9D5FF&quot;&gt;ThetaShield isolates that liveness risk: Reactive can accelerate, but cannot block swaps or forge a Circle recommendation.&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2E1065;strokeColor=#7C3AED;fontColor=#F5F3FF;fontSize=11;align=left;verticalAlign=middle;spacing=12;arcSize=16;" vertex="1" parent="1">
+        <mxCell id="reactiveBoundary" value="&lt;b&gt;WHY THE BOUNDARY MATTERS&lt;/b&gt;&lt;br&gt;Reactive schedules eligible work and retries; Circle remains the authenticated evidence rail.&lt;br&gt;&lt;br&gt;&lt;font color=&quot;#E9D5FF&quot;&gt;Automation can pause when underfunded, but cannot block swaps, forge evidence, or install a recommendation.&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2E1065;strokeColor=#7C3AED;fontColor=#F5F3FF;fontSize=11;align=left;verticalAlign=middle;spacing=12;arcSize=16;" vertex="1" parent="1">
           <mxGeometry x="1090" y="545" width="430" height="125" as="geometry"/>
         </mxCell>
 
@@ -148,7 +148,7 @@
         <mxCell id="eWakeCallback" value="event-driven action" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#A78BFA;strokeWidth=2;fontColor=#DDD6FE;fontSize=10;endArrow=block;endFill=1;dashed=1;dashPattern=6 4;" edge="1" parent="1" source="reactiveWake" target="reactiveCallback">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="eHookReactive" value="observation event" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#8B5CF6;strokeWidth=2;fontColor=#C4B5FD;fontSize=9;labelBackgroundColor=#1E1633;endArrow=open;endFill=0;dashed=1;dashPattern=6 4;" edge="1" parent="1" source="hook" target="reactiveObserve">
+        <mxCell id="eHookReactive" value="ObservationQueued" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#8B5CF6;strokeWidth=2;fontColor=#C4B5FD;fontSize=9;labelBackgroundColor=#1E1633;endArrow=open;endFill=0;dashed=1;dashPattern=6 4;" edge="1" parent="1" source="processor" target="reactiveObserve">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="720" y="155"/>
@@ -156,7 +156,7 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="eFeedReactive" value="reference event" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#8B5CF6;strokeWidth=2;fontColor=#C4B5FD;fontSize=9;labelBackgroundColor=#1E1633;endArrow=open;endFill=0;dashed=1;dashPattern=6 4;" edge="1" parent="1" source="feed" target="reactiveObserve">
+        <mxCell id="eFeedReactive" value="AutomationCycleCompleted" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#8B5CF6;strokeWidth=2;fontColor=#C4B5FD;fontSize=9;labelBackgroundColor=#1E1633;endArrow=open;endFill=0;dashed=1;dashPattern=6 4;" edge="1" parent="1" source="processor" target="reactiveObserve">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="280" y="680"/>
@@ -165,7 +165,7 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="eReactiveProcessor" value="canary-gated wake / redundant delivery" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#8B5CF6;strokeWidth=2;fontColor=#C4B5FD;fontSize=9;endArrow=open;endFill=0;dashed=1;dashPattern=6 4;" edge="1" parent="1" source="reactiveCallback" target="processor">
+        <mxCell id="eReactiveProcessor" value="authenticated wake / bounded processing" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#8B5CF6;strokeWidth=2;fontColor=#C4B5FD;fontSize=9;endArrow=open;endFill=0;dashed=1;dashPattern=6 4;" edge="1" parent="1" source="reactiveCallback" target="processor">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="1040" y="705"/>

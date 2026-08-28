@@ -11,18 +11,18 @@ as **directional memory for a Uniswap v4 pool**:
 
 The presentation must distinguish three claims:
 
-1. The live Circle control loop is deployed and proven on two public testnets.
+1. The live control loop is deployed and proven across Unichain Sepolia,
+   Ethereum Sepolia, and Reactive Legacy Lasna.
 2. The first live recommendation correctly stayed at the safe baseline because
    one sample has zero cold-start confidence.
 3. The non-baseline directional transition is proven in the lifecycle test
    suite, but has not yet been shown in a second public live cycle.
 
-Reactive Network must be presented as the strategically important event-driven
-secondary plane, not as the active transport. The current release uses Circle
-as its proven authenticated message rail. Earlier Reactive work produced the
-right callback requests but did not complete public destination delivery, so
-ThetaShield deliberately removed it from the swap-critical path. That is a
-resilience decision, not a claim that the callback succeeded.
+Reactive Network is the active event-driven automation and resilience plane.
+Circle remains the authenticated evidence and recommendation rail. Reactive
+observes Circle-delivered processor state, schedules the maturity and
+finalization wakes, and calls the bounded Ethereum executor; it never becomes
+fee authority or a swap dependency.
 
 ## Four-minute script
 
@@ -67,8 +67,10 @@ transport failure can never revert the trader’s completed swap.”
 **Show:** Circle and Ethereum processor lanes; animate only the numbered flow.
 
 “Circle carries the finalized observation from Unichain Sepolia to the
-processor on Ethereum Sepolia. A permissionless keeper relays the attestation,
-synchronizes the reference feed, and advances mature work.
+processor on Ethereum Sepolia. Reactive Legacy Lasna sees the queued
+observation, waits for the delayed evidence boundary, and sends an authenticated
+callback to the bounded executor. A permissionless keeper remains available as
+the independent fallback.
 
 After the markout horizon, the processor compares the later reference price
 with the execution price. A move in the trader’s direction is adverse evidence
@@ -96,40 +98,42 @@ expired data returns the pool to baseline.”
 **Show:** the live acceptance receipts, then the fee-proof transaction.
 
 “This is deployed evidence, not a mocked architecture. A real Uniswap v4 swap
-created an observation on Unichain. Circle delivered it to Ethereum. The
-processor settled delayed evidence and sent recommendation sequence one back.
-The Unichain controller installed it, and a later PoolManager swap used exactly
-the controller’s expected 500-pip fee.
+created an observation on Unichain. Circle delivered it to Ethereum. Reactive
+armed the work, issued separate maturity and finalization wakes, and both
+authenticated callbacks succeeded publicly. The processor sent recommendation
+sequence one back through Circle. The Unichain controller installed it, and a
+later PoolManager swap used exactly the controller’s expected 500-pip fee.
 
 That first recommendation remained at five basis points because one completed
 sample deliberately has zero shared confidence. The system’s first live safety
 decision was refusing to overreact. The local end-to-end lifecycle separately
 proves the second-sample transition to a non-baseline directional fee.”
 
-### 3:05–3:35 — Why Reactive Network still matters
+### 3:05–3:35 — Why Reactive Network is integral
 
 **Show:** only the separate purple Reactive Network section.
 
-“Reactive Network remains strategically important as the event-driven
-acceleration and secondary-liveness plane. It can watch observation and
-reference events, wake mature work without a centralized cron server, detect
-stuck messages, and provide a redundant callback route.
+“Reactive Network is ThetaShield’s event-driven automation and resilience
+plane. It watches the authenticated processor queue, wakes work only after the
+markout horizon, returns for epoch finalization, and retries bounded incomplete
+cycles without a centralized cron server.
 
-Our earlier Lasna deployment emitted correctly targeted callback requests, but
-public destination delivery did not complete. We did not hide that boundary or
-place trader execution behind it. We isolated Reactive behind a destination
-canary: once delivery is proven healthy, it can accelerate the same bounded
-processor without changing custody, fee math, or Circle’s proven primary path.
+The proof is public: the final Legacy RSC emitted both wake requests, and the
+official Ethereum callback proxy delivered both authenticated calls to our
+executor. The executor sampled three independent v4 pools and advanced the same
+permissionless processor a fallback keeper can call.
 
-Circle secures delivery today. Reactive is the natural event-driven automation
-layer for the resilient multi-rail version.”
+Circle decides which evidence is authentic. Reactive decides when eligible work
+should run. That separation gives ThetaShield automation without giving the
+scheduler custody, fee authority, or the ability to block a trader.”
 
 ### 3:35–4:00 — Evidence and close
 
 **Show:** three proof points, then return to the hero statement.
 
-“ThetaShield has 94 passing Solidity tests, 38 Python tests, fuzz and invariant
-coverage, and a public two-chain acceptance trace. On the declared holdout, the
+“ThetaShield has 124 passing environment-neutral Solidity tests, 48 Python
+tests, fuzz and invariant coverage, and a public three-network acceptance
+trace. On the declared holdout, the
 policy retained 59.70 percent toxic coverage while reducing false positives by
 20.79 percentage points. That is a controlled synthetic study, not live LP
 profit.
@@ -156,23 +160,23 @@ The architecture screen gets at most 30 seconds before the dedicated Reactive
 section. Never tour every contract or read addresses aloud. Put transaction
 links and addresses on screen for verification, not narration.
 
-## Reactive Network section — claim boundary
+## Reactive Network section — live G10 proof
 
 ### Say
 
-- “Reactive is the optional event-driven acceleration and redundant liveness
-  plane.”
-- “It can observe, wake, monitor, and retry without becoming a trusted keeper.”
-- “The destination callback is canary-gated and cannot affect swaps until its
-  public delivery succeeds.”
-- “Reactive failure cannot block swaps or forge a Circle-authenticated
-  recommendation.”
+- “Reactive is ThetaShield’s event-driven automation and resilience plane.”
+- “It observes Circle-delivered processor events, waits for the delayed
+  evidence boundary, and issues the maturity and finalization wakes.”
+- “Both G10 wakes produced public, authenticated Ethereum Sepolia callbacks;
+  the executor sampled three reference pools and advanced bounded processing.”
+- “Reactive supplies liveness while Circle preserves message authority, so a
+  scheduler failure cannot block swaps or forge a recommendation.”
 
 ### Do not say
 
-- Reactive is the current primary transport.
-- Reactive completed the Phase 8D acceptance lifecycle.
-- The public destination callback succeeded.
+- Reactive is the authenticated cross-chain evidence transport.
+- Reactive calculates fees or installs controller state.
+- The RSC remains active forever without lREACT credit monitoring.
 - Circle schedules delayed work automatically.
 - The deployed testnet reference feed is a production oracle.
 

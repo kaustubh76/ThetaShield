@@ -1,5 +1,10 @@
 # Phase 9 Handoff — Dashboard and Submission Package
 
+> **Post-Phase-9 update:** the public dashboard now defaults to the paired G10
+> lenses and links the complete Circle + Reactive Legacy acceptance trail. See
+> [G10 Live Acceptance](G10_LIVE_ACCEPTANCE.md). The original Phase 9 text below
+> is retained as its historical handoff.
+
 ## Delivered
 
 - A responsive interactive research dashboard in `dashboard/`.

@@ -1,5 +1,11 @@
 # Reactive Legacy Lasna Migration
 
+> **Implemented and accepted.** The final Legacy RSC
+> `0x56E5590ef1fdA9fcA32ab2EEbF1B57845c29900a` produced both authenticated
+> Ethereum Sepolia callbacks in the public G10 lifecycle. See
+> [G10 Live Acceptance](G10_LIVE_ACCEPTANCE.md) for receipts and operating
+> funding notes.
+
 ## Decision
 
 ThetaShield's G10 automation release targets **Reactive Legacy Lasna**, not

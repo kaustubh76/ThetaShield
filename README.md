@@ -90,16 +90,16 @@ The latency-sensitive execution plane stays on Unichain Sepolia. Delayed statist
 
 Reactive Network Legacy Lasna provides ThetaShield's event-driven maturity scheduler and liveness guardian. Ethereum processor events arm work, the official Legacy `Cron10` signal wakes it only after maturity, and an authenticated callback through the official Ethereum Sepolia proxy runs the bounded three-source sampling and processing cycle. Failed or incomplete cycles enter a capped retry path.
 
-Its authority is deliberately narrow: Reactive cannot forge a Circle observation, calculate an independent recommendation, install controller state, or block a swap. Independent keepers can call the same executor, so a Reactive outage degrades automation while Circle authentication, expiry, and baseline fallback preserve fee safety. The former Omni design that duplicated processing and attempted a direct chain-1301 callback remains historical failure evidence; the current G10 candidate uses the supported Legacy path and calls the Ethereum processor executor instead.
+Its authority is deliberately narrow: Reactive cannot forge a Circle observation, calculate an independent recommendation, install controller state, or block a swap. Independent keepers can call the same executor, so a Reactive outage degrades automation while Circle authentication, expiry, and baseline fallback preserve fee safety. The former Omni design that duplicated processing and attempted a direct chain-1301 callback remains historical failure evidence; the live G10 release uses the supported Legacy path and calls the Ethereum processor executor instead.
 
 ## Live testnet deployment
 
-The full observation → delayed processing → recommendation → later-fee lifecycle completed across Unichain Sepolia and Ethereum Sepolia. Both Circle peers are sealed, recommendation sequence `1` was installed, and a later PoolManager swap matched the controller's expected `500`-pip (`5 bps`) fee.
-
-That immutable Phase 8D receipt trail proves the Circle lifecycle. The
-three-source V2 + Reactive Legacy candidate is locally verified and
-deployment-gated; it must not be described as publicly deployed until its
-separate G10 manifest contains the Legacy callback receipt.
+The G10 `RESEARCH_V1` lifecycle is live across Unichain Sepolia, Ethereum
+Sepolia, and Reactive Legacy Lasna. A real swap emitted observation `5`; Circle
+delivered it to the processor; Reactive armed the delayed work, issued the
+maturity and finalization wakes, and produced two authenticated Ethereum
+callbacks; Circle returned recommendation sequence `1`; and a later PoolManager
+swap recorded the controller's expected `500`-pip (`5 bps`) fee.
 
 The [live proof dashboard](https://theta-shield.vercel.app/#live-proof) reads current state directly from both public testnets, displays the active safety state, and links the complete receipt trail. It performs read-only RPC calls and never connects a wallet or spends funds.
 
@@ -107,31 +107,37 @@ The [live proof dashboard](https://theta-shield.vercel.app/#live-proof) reads cu
 
 | Role | Network | Address |
 |---|---|---|
-| Hook | Unichain Sepolia | [`0xC53d…40C0`](https://unichain-sepolia.blockscout.com/address/0xC53d57f4778E67B73B5535dEb2B841D56CBE40C0) |
-| Controller | Unichain Sepolia | [`0x6db4…D791`](https://unichain-sepolia.blockscout.com/address/0x6db44e172C7E1bae468A6e1e3683f34D7f3fD791) |
-| Circle transport | Unichain Sepolia | [`0x24da…e568`](https://unichain-sepolia.blockscout.com/address/0x24daf359bA811c9dd6903649b968eC6D76C3e568) |
-| Hook factory | Unichain Sepolia | [`0xd01D…74C6`](https://unichain-sepolia.blockscout.com/address/0xd01D5C3bBdf7D23cAA3bC3bB90AdEd6209Db74C6) |
-| Circle processor | Ethereum Sepolia | [`0x1097…d744`](https://eth-sepolia.blockscout.com/address/0x10970CC15d1DF81bA6c8968F87036b21c694d744) |
-| Demo reference feed | Ethereum Sepolia | [`0x7138…1BAc`](https://eth-sepolia.blockscout.com/address/0x7138a53A06527bb68f74D4DcA31c46acAb8c1BAc) |
+| Hook | Unichain Sepolia | [`0xD4b9…00C0`](https://unichain-sepolia.blockscout.com/address/0xD4b944d3b50003d0DBa0201De2828663903900C0) |
+| Controller | Unichain Sepolia | [`0x20C1…9C6`](https://unichain-sepolia.blockscout.com/address/0x20C178712A124F5B1e86206280c6672082C5C9C6) |
+| Circle transport | Unichain Sepolia | [`0x0C36…a55C`](https://unichain-sepolia.blockscout.com/address/0x0C36E4a7a83Bf916B10f467b95296f2E19Dca55C) |
+| Origin Lens | Unichain Sepolia | [`0x393c…e3A0`](https://unichain-sepolia.blockscout.com/address/0x393cBc35F3303Cbb2e83657fC2DDAd03b65Ce3A0) |
+| Three-pool sampler | Ethereum Sepolia | [`0x9be4…7310`](https://eth-sepolia.blockscout.com/address/0x9be441e3abe6d6919a1d2e54992b841ca29a7310) |
+| Circle processor | Ethereum Sepolia | [`0x6484…8654`](https://eth-sepolia.blockscout.com/address/0x64846969b386444BFa1a2905DB6Dad319b578654) |
+| Automation executor | Ethereum Sepolia | [`0x9453…20C4`](https://eth-sepolia.blockscout.com/address/0x94535d4EC8c013f6D669ae72aB2683aC7eE820C4) |
+| Automation RSC | Reactive Lasna | [`0x56E5…900a`](https://lasna.reactscan.net/address/0x56E5590ef1fdA9fcA32ab2EEbF1B57845c29900a) |
 
-**Pool ID:** `0xa5eae55c727913799f7fc1eadd98f4c67b5c0da5417b5fe0adfafd12e9e93ca4`
+**Pool ID:** `0x7395eeea4b661939d12196748d988ba1ed168e5d1b9c73094f372edf41bab9a5`
 
 ### Public acceptance receipts
 
 | Step | Network | Receipt | Proven result |
 |---:|---|---|---|
-| 1 | Unichain Sepolia | [Observation swap](https://unichain-sepolia.blockscout.com/tx/0xb81b1e11daa419162a172b84636ba8d0398c7da9e7fe90b59224e2535e33f5d6) | Hook observation `2` emitted. |
-| 2 | Ethereum Sepolia | [Observation relay](https://eth-sepolia.blockscout.com/tx/0x52c7f55ff3c85a31cbf1990cce3f0d5290133304302d45533fd449e2f26583f9) | Finalized Circle message received. |
-| 3 | Ethereum Sepolia | [Reference publication](https://eth-sepolia.blockscout.com/tx/0xc2aef5c9bbd8dae427d4c51df2bbb8de2fcd60d0078bbcd5201add45ae04efd8) | Delayed `0.99e18` reference accepted. |
-| 4 | Ethereum Sepolia | [Reference synchronization](https://eth-sepolia.blockscout.com/tx/0xcc9f2065a76e6b32060d6b40ddf502336137878ccbeb3729f8f5d438a7e76f2d) | Source sequence accepted. |
-| 5 | Ethereum Sepolia | [Observation settlement](https://eth-sepolia.blockscout.com/tx/0x7f13d36606793df918907e8a68b9fe792440880eb748f05240a2bf3c6f68889b) | Settled count advanced. |
-| 6 | Ethereum Sepolia | [Epoch finalization](https://eth-sepolia.blockscout.com/tx/0x7d58946a80cc2fb604feb784c547fdfc2055b940aa3101af5e3cb3d5e2c7cfb0) | Recommendation sequence `1` sent. |
-| 7 | Unichain Sepolia | [Recommendation relay](https://unichain-sepolia.blockscout.com/tx/0xb39029264e3828380c23f5ca97c279371bcf5c518def0f1b95f1db6b3f6aeb19) | Sequence `1` installed by the controller. |
-| 8 | Unichain Sepolia | [Later fee-proof swap](https://unichain-sepolia.blockscout.com/tx/0x79ff916f7f2cb6501cc2eaf032955355dac9f9bad85c51a4fe11f14ed0637853) | Expected and PoolManager-observed fees both `500` pips. |
+| 1 | Unichain Sepolia | [Observation swap](https://unichain-sepolia.blockscout.com/tx/0x7bc130d5dc7c031f253c6418540c16d3b7143aa2e24dd99a7c092fbea0f55bd7) | Hook observation `5` emitted. |
+| 2 | Ethereum Sepolia | [Circle observation relay](https://eth-sepolia.blockscout.com/tx/0xb348e4ba02762635b18b3299158f4523b15b8fadd0fb8af72dde0275f4d0a5bc) | Finalized Circle message queued. |
+| 3 | Reactive Lasna | [Maturity wake](https://lasna.reactscan.net/tx/0xf5577cc1819d6f1519cbf3734c3d289980df3e29361f21e66c4f93ff1f41567e) | RSC requested authenticated processing. |
+| 4 | Ethereum Sepolia | [Processing callback](https://eth-sepolia.blockscout.com/tx/0xbe1b53942518324fdf9494c857b8a9b9a4b42a6f4455780fe6d1d952a7ec31d3) | Three references sampled; eligible observations settled. |
+| 5 | Reactive Lasna | [Finalization wake](https://lasna.reactscan.net/tx/0x56f432c88ea8342c758e523c0b8300bb13b968e5d6b13e2ece4d7748c3a267de) | RSC requested bounded epoch finalization. |
+| 6 | Ethereum Sepolia | [Finalization callback](https://eth-sepolia.blockscout.com/tx/0x8ad2731242f40d7d42b3b13ab3bc56c8a6adf8e66a7a06e37867b127bffe9ffc) | Recommendation sequence `1` sent through Circle. |
+| 7 | Unichain Sepolia | [Recommendation relay](https://unichain-sepolia.blockscout.com/tx/0x14928a93c760ca5c04a9343d24b3622da8dbdcc2044120186b984714e1ff35a9) | Sequence `1` installed by the controller. |
+| 8 | Unichain Sepolia | [Later fee-proof swap](https://unichain-sepolia.blockscout.com/tx/0x678ab18735f94703508d184c5585fcc2689df260b64362c8c9e598cb41dde724) | Hook and PoolManager both recorded `500` pips. |
 
 The first completed sample is intentionally cold-start data: zero shared confidence keeps both directions at the safe baseline while sequence and replay protection are still exercised. Local lifecycle tests cover the transition to a non-baseline directional fee once sufficient evidence exists.
 
-For the machine-readable deployment record, exact gas, approved/actual spend, Circle message hashes, and failure history, see the [live manifest](deployments/unichain-sepolia-ethereum-sepolia-circle-phase8d-live.json) and [Phase 8D handoff](docs/PHASE8D_HANDOFF.md).
+For the machine-readable deployment record, exact approved/actual spend, Circle
+message hashes, and Reactive callback evidence, see the [G10 live
+manifest](deployments/unichain-sepolia-ethereum-sepolia-reactive-legacy-g10-live.json)
+and [G10 acceptance handoff](docs/G10_LIVE_ACCEPTANCE.md). The Phase 8D manifest
+remains immutable historical evidence.
 
 ## What makes the design different
 
@@ -262,7 +268,8 @@ The interactive signal-lab cards are explicitly simulated. The separate **Live T
 | [Threat model](docs/THREAT_MODEL.md) | Trust boundaries, attack surfaces, controls, and residual risks |
 | [Verification guide](docs/VERIFICATION.md) | Whole-repository and focused verification gates |
 | [Deployment runbook](docs/DEPLOYMENT_RUNBOOK.md) | Current G10 Circle + Reactive Legacy deployment and acceptance procedure |
-| [G10 deployment readiness](docs/G10_DEPLOYMENT_READINESS.md) | Verified simulations, predicted addresses, costs, and the remaining owner gate |
+| [G10 live acceptance](docs/G10_LIVE_ACCEPTANCE.md) | Deployed addresses, Circle/Reactive receipts, fee proof, spend, and operating boundary |
+| [G10 deployment readiness](docs/G10_DEPLOYMENT_READINESS.md) | Historical pre-broadcast simulations, predicted addresses, and approved ceilings |
 | [Reactive Legacy migration](docs/REACTIVE_LEGACY_MIGRATION.md) | Pinned Legacy topology, infrastructure, authentication, funding, and proof gates |
 | [Circle migration](docs/CIRCLE_MIGRATION.md) | Rationale and record of the active transport migration |
 | [Phase 8D handoff](docs/PHASE8D_HANDOFF.md) | Live deployment, receipts, spend, and acceptance evidence |

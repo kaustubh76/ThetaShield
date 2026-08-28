@@ -1,5 +1,11 @@
 # G10 Deployment Readiness
 
+> **Superseded by live acceptance.** The predicted origin and processor
+> addresses below were deployed as simulated. The corrected final Reactive RSC
+> is `0x56E5590ef1fdA9fcA32ab2EEbF1B57845c29900a`, and the complete public
+> acceptance trail is recorded in [G10 Live Acceptance](G10_LIVE_ACCEPTANCE.md).
+> The remaining text is retained as the pre-broadcast approval snapshot.
+
 ## Status
 
 Implementation revision `62164d4` is verified and pushed. No transaction in

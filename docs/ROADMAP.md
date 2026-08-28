@@ -28,7 +28,7 @@ Every phase is verified before it is committed and pushed to `main`.
 | Gap G7 — Deterministic dashboard bundle | Complete |
 | Gap G8 — Evidence-driven dashboard | Complete |
 | Gap G9 — Animated mechanism and LP simulator | Complete |
-| Gap G10 — V2 deployment and acceptance | Implementation complete; paid deployment and acceptance owner-gated |
+| Gap G10 — V2 deployment and acceptance | Complete; public Circle + Reactive Legacy acceptance proven |
 
 ## Phase 0 — Repository foundation
 
@@ -114,3 +114,5 @@ submission has been made. The migration decision is recorded in
 
 The post-release functional programme and its locked architecture decisions are
 recorded in [`FUNCTIONAL_GAP_IMPLEMENTATION.md`](FUNCTIONAL_GAP_IMPLEMENTATION.md).
+The completed G10 deployment and public receipts are recorded in
+[`G10_LIVE_ACCEPTANCE.md`](G10_LIVE_ACCEPTANCE.md).

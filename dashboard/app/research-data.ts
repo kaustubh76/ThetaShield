@@ -587,8 +587,8 @@ export const trustBands = [
     title: "Public-chain acceptance boundary",
     items: [
       "Circle observation and recommendation receipts",
-      "Single-source demo profile currently deployed",
-      "Research sampler, lens, and Reactive plane await G10",
+      "Three-source RESEARCH_V1 profile live on G10",
+      "Paired lenses and two Reactive Legacy callbacks proven",
       "Unaudited testnet prototype",
     ],
   },

@@ -35,24 +35,26 @@ test("server-renders the complete ThetaShield research dashboard", async () => {
   assert.match(html, /ObservationTransportFailed/i);
   assert.match(html, /DropReason\.EpochCapacity/i);
   assert.match(html, /Interrogate the trade-offs/i);
-  assert.match(html, /public Phase 8D deployment predates the G4 lens/i);
+  assert.match(html, /Direct audited getters are used only when the paired G10 lenses are explicitly disabled/i);
   assert.match(html, /Public Circle lifecycle/);
+  assert.match(html, /Reactive maturity wake/);
+  assert.match(html, /Eight public transactions/i);
   assert.match(html, /Circle CCTP/);
-  assert.match(html, /Live Circle loop proven/);
+  assert.match(html, /Live Circle \+ Reactive loop proven/);
   assert.match(html, /Risk proxy—not exact LVR/);
   assert.match(html, /Live testnet proof/i);
   assert.match(html, /Read directly from deployed contracts/i);
   assert.match(html, /Refresh on-chain state/i);
   assert.match(html, /LIVE RECEIPT TRAIL/i);
   assert.match(html, /Read-only proof/i);
-  assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton|Lasna/i);
+  assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton/i);
 });
 
 test("removes the disposable starter preview", async () => {
   await assert.rejects(access(new URL("app/_sites-preview", root)));
 });
 
-test("live API uses paired lens configuration with a named historical fallback", async () => {
+test("live API defaults to the paired G10 lenses with a named direct fallback", async () => {
   const route = await readFile(new URL("app/api/live/route.ts", root), "utf8");
   assert.match(route, /THETASHIELD_ORIGIN_LENS_ADDRESS/);
   assert.match(route, /THETASHIELD_PROCESSOR_LENS_ADDRESS/);
@@ -60,4 +62,6 @@ test("live API uses paired lens configuration with a named historical fallback",
   assert.match(route, /historical-direct/);
   assert.match(route, /readOriginLens/);
   assert.match(route, /readProcessorLens/);
+  assert.match(route, /0x393cBc35F3303Cbb2e83657fC2DDAd03b65Ce3A0/);
+  assert.match(route, /0xf1EE0503F968E9E828eEBf258594bEF8C40d97a9/);
 });

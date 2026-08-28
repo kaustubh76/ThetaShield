@@ -1,0 +1,258 @@
+{
+  "schema_version": 3,
+  "mode": "live",
+  "source_revision": "c0a44dac111848e794989ba4b6bde62e6ffc4cf7",
+  "created_at": "2026-08-28T03:02:09.616Z",
+  "profile": {
+    "name": "RESEARCH_V1",
+    "id": "0x849fd0a176b761033fce9b61b40d7d20c52ec4be12616d0f1216df3a2f85707c"
+  },
+  "reference_sampler": {
+    "mode": "pool-median",
+    "feed_address": "0x9be441e3abe6d6919a1d2e54992b841ca29a7310",
+    "market_id": "0x56c48850281d506ec35fd133ed0ea59e62ee69ee1231b757f2045efd33404fe3",
+    "sources": [
+      {
+        "source_id": "0xc747bb9e807253c4ccaf8aadb189ab0c711fabb226ae069054f3dfe67d239a56",
+        "pool_id": "0xc0c7b0a5f8f084bb8179386357ca77daa59b859c8bfe340f6403a7bd2e7636e3",
+        "minimum_liquidity": "100000000000000000"
+      },
+      {
+        "source_id": "0xcd75737e198163982bf205f8ee2fd2c22cc253c1995b51d23b8ae20c4d63a4ef",
+        "pool_id": "0x25fb7679a210efbf1a6632f20f48cd852c526ba828e8f948d0b83a54cfe88237",
+        "minimum_liquidity": "100000000000000000"
+      },
+      {
+        "source_id": "0x2e44aa136bb8c35838d2797737aa0168f25fff8127fb150960a0439094ebbba3",
+        "pool_id": "0x670a352d7bbb56c804f1e0925a11cefca46424eab865a05d80b6169aafd812f7",
+        "minimum_liquidity": "100000000000000000"
+      }
+    ]
+  },
+  "reactive_automation": {
+    "mode": "legacy-lasna",
+    "network_name": "Reactive Lasna",
+    "chain_id": 5318007,
+    "rpc_secret_name": "REACTIVE_RPC_URL",
+    "system_contract": "0x0000000000000000000000000000000000fffFfF",
+    "system_code_hash": "0x29fce405ff34f9c7a0bb44f9e6241ca21807dc47ac9b8c4f6bdd2eb748a67465",
+    "cron_name": "Cron10",
+    "cron_topic": "0x04463f7c1651e6b9774d7f85c85bb94654e3c46ca79b0c16fb16d4183307b687",
+    "destination_chain_id": 11155111,
+    "callback_proxy": "0xc9f36411C9897e7F959D99ffca2a0Ba7ee0D7bDA",
+    "deployer_rvm_id": "0xd1DcAAFf9356d5a42f2eE6F90179C4509386a83f",
+    "executor_address": "0x94535d4EC8c013f6D669ae72aB2683aC7eE820C4",
+    "rsc_address": "0x56E5590ef1fdA9fcA32ab2EEbF1B57845c29900a",
+    "executor_transaction_hash": "0x5b9df90165d29eb2234500eb3ae2bf27d95c23d436623e3f220462285237aa7e",
+    "rsc_transaction_hash": "0xf7cbb5bbea56ca1e79e3632a8871b0e7a7cd43c58cb7a0cc27f9f94dd355e719",
+    "callback_transaction_hash": "0xbe1b53942518324fdf9494c857b8a9b9a4b42a6f4455780fe6d1d952a7ec31d3",
+    "status": "callback-proven"
+  },
+  "networks": [
+    {
+      "role": "origin",
+      "name": "Unichain Sepolia",
+      "chain_id": 1301,
+      "circle_domain": 10,
+      "message_transmitter": "0xE737e5cEBEEBa77EFE34D4aa090756590b1CE275",
+      "rpc_secret_name": "ORIGIN_RPC_URL"
+    },
+    {
+      "role": "processor",
+      "name": "Ethereum Sepolia",
+      "chain_id": 11155111,
+      "circle_domain": 0,
+      "message_transmitter": "0xE737e5cEBEEBa77EFE34D4aa090756590b1CE275",
+      "rpc_secret_name": "PROCESSOR_RPC_URL"
+    }
+  ],
+  "components": [
+    {
+      "name": "ThetaShieldCircleTransport",
+      "network_role": "origin",
+      "address": "0x0C36E4a7a83Bf916B10f467b95296f2E19Dca55C",
+      "transaction_hash": "0x5a4a76784441b0c249dbddbb45196613b87a05c6ba6ab3aae06b3ebf9ac7c19b",
+      "block_number": 60989563,
+      "explorer_url": "https://unichain-sepolia.blockscout.com/address/0x0C36E4a7a83Bf916B10f467b95296f2E19Dca55C",
+      "verified": false
+    },
+    {
+      "name": "ThetaShieldController",
+      "network_role": "origin",
+      "address": "0x20C178712A124F5B1e86206280c6672082C5C9C6",
+      "transaction_hash": "0x4feb29b2a33f72a78fd2691720e34276e953bbab4dba69e5abb641b9fa40d95b",
+      "block_number": 60989580,
+      "explorer_url": "https://unichain-sepolia.blockscout.com/address/0x20C178712A124F5B1e86206280c6672082C5C9C6",
+      "verified": false
+    },
+    {
+      "name": "ThetaShieldTestToken0",
+      "network_role": "origin",
+      "address": "0x27e56c080E57409e87412164dA6CfAE3D3874575",
+      "transaction_hash": "0x5970de8167f9482bf7b1ac603dfdd35284fb97ebebcbd753de0c2fb139b58660",
+      "block_number": 60989588,
+      "explorer_url": "https://unichain-sepolia.blockscout.com/address/0x27e56c080E57409e87412164dA6CfAE3D3874575",
+      "verified": false
+    },
+    {
+      "name": "ThetaShieldTestToken1",
+      "network_role": "origin",
+      "address": "0xfF591dEaa341355Db9feB5ED5183666c4B6E79Bd",
+      "transaction_hash": "0xaaf1c4c5ce9ee0b26fbecf9521d63a97035c872b091d79d94cb7bc8bd688ab8b",
+      "block_number": 60989595,
+      "explorer_url": "https://unichain-sepolia.blockscout.com/address/0xfF591dEaa341355Db9feB5ED5183666c4B6E79Bd",
+      "verified": false
+    },
+    {
+      "name": "ThetaShieldHookFactory",
+      "network_role": "origin",
+      "address": "0x6ffDE7c06eaccdE648901F0ED7395581c994a641",
+      "transaction_hash": "0x7830268e0954545a3c7df7e2b3efb43c426423c8fde1562af354a1533ac3b48a",
+      "block_number": 60989601,
+      "explorer_url": "https://unichain-sepolia.blockscout.com/address/0x6ffDE7c06eaccdE648901F0ED7395581c994a641",
+      "verified": false
+    },
+    {
+      "name": "ThetaShieldHook",
+      "network_role": "origin",
+      "address": "0xD4b944d3b50003d0DBa0201De2828663903900C0",
+      "transaction_hash": "0xf1e39062a2ef70075ca195caf2785da97b82046b67dde1234b7e489332544b36",
+      "block_number": 60989608,
+      "explorer_url": "https://unichain-sepolia.blockscout.com/address/0xD4b944d3b50003d0DBa0201De2828663903900C0",
+      "verified": false
+    },
+    {
+      "name": "ThetaShieldLens",
+      "network_role": "origin",
+      "address": "0x393cBc35F3303Cbb2e83657fC2DDAd03b65Ce3A0",
+      "transaction_hash": "0x9027d25c53886a14042fa5cd400e7c3c6b0ed3df7fca589c55300a054467cc79",
+      "block_number": 60989671,
+      "explorer_url": "https://unichain-sepolia.blockscout.com/address/0x393cBc35F3303Cbb2e83657fC2DDAd03b65Ce3A0",
+      "verified": false
+    },
+    {
+      "name": "ThetaShieldReferenceToken0",
+      "network_role": "processor",
+      "address": "0x05dd085BE4a4EA85B49290b4b334a1CA47CED0d2",
+      "transaction_hash": "0xc8f6f1d40eb752aa48efd924c7571b04a4ead2f8318fdae10439ad931ee5fe58",
+      "block_number": 11578576,
+      "explorer_url": "https://eth-sepolia.blockscout.com/address/0x05dd085BE4a4EA85B49290b4b334a1CA47CED0d2",
+      "verified": false
+    },
+    {
+      "name": "ThetaShieldReferenceToken1",
+      "network_role": "processor",
+      "address": "0xc6048437c2bB296caf25b004fb33DF356712d845",
+      "transaction_hash": "0x2c97991324127956a24e855b134d9cfff09b1eb8f5477c37442100fd915fb452",
+      "block_number": 11578579,
+      "explorer_url": "https://eth-sepolia.blockscout.com/address/0xc6048437c2bB296caf25b004fb33DF356712d845",
+      "verified": false
+    },
+    {
+      "name": "PoolMedianReferenceSampler",
+      "network_role": "processor",
+      "address": "0x9be441e3abe6d6919a1d2e54992b841ca29a7310",
+      "transaction_hash": "0x74cf2d7b226fbe01dee33ef13afa9e3827405943bda0293083f12982f50f4e31",
+      "block_number": 11578598,
+      "explorer_url": "https://eth-sepolia.blockscout.com/address/0x9be441e3abe6d6919a1d2e54992b841ca29a7310",
+      "verified": false
+    },
+    {
+      "name": "ThetaShieldCircleProcessor",
+      "network_role": "processor",
+      "address": "0x64846969b386444BFa1a2905DB6Dad319b578654",
+      "transaction_hash": "0xf39ef763907718fdb73aff9af2e96a185eeb1cda8bf9c798da1949bd2a8ec258",
+      "block_number": 11578602,
+      "explorer_url": "https://eth-sepolia.blockscout.com/address/0x64846969b386444BFa1a2905DB6Dad319b578654",
+      "verified": false
+    },
+    {
+      "name": "ThetaShieldProcessorLens",
+      "network_role": "processor",
+      "address": "0xf1EE0503F968E9E828eEBf258594bEF8C40d97a9",
+      "transaction_hash": "0x766002afc5dd9024dfe272d08fba7b4b133f61c5f15a8209e6b1625d25c92e2f",
+      "block_number": 11578603,
+      "explorer_url": "https://eth-sepolia.blockscout.com/address/0xf1EE0503F968E9E828eEBf258594bEF8C40d97a9",
+      "verified": false
+    },
+    {
+      "name": "ThetaShieldAutomationExecutor",
+      "network_role": "processor",
+      "address": "0x94535d4EC8c013f6D669ae72aB2683aC7eE820C4",
+      "transaction_hash": "0x5b9df90165d29eb2234500eb3ae2bf27d95c23d436623e3f220462285237aa7e",
+      "block_number": 11578605,
+      "explorer_url": "https://eth-sepolia.blockscout.com/address/0x94535d4EC8c013f6D669ae72aB2683aC7eE820C4",
+      "verified": false
+    },
+    {
+      "name": "ThetaShieldAutomationRSC",
+      "network_role": "reactive",
+      "address": "0x56E5590ef1fdA9fcA32ab2EEbF1B57845c29900a",
+      "transaction_hash": "0xf7cbb5bbea56ca1e79e3632a8871b0e7a7cd43c58cb7a0cc27f9f94dd355e719",
+      "block_number": 4757572,
+      "explorer_url": "https://lasna.reactscan.net/address/0x56E5590ef1fdA9fcA32ab2EEbF1B57845c29900a",
+      "verified": false
+    }
+  ],
+  "circle_messages": [
+    {
+      "kind": "observation",
+      "source_domain": 10,
+      "destination_domain": 0,
+      "send_transaction_hash": "0x7bc130d5dc7c031f253c6418540c16d3b7143aa2e24dd99a7c092fbea0f55bd7",
+      "relay_transaction_hash": "0xb348e4ba02762635b18b3299158f4523b15b8fadd0fb8af72dde0275f4d0a5bc",
+      "message_hash": "0x123861671efd20929034602462262d4a738dc0d0c628b774539a778ae6b92335",
+      "status": "complete"
+    },
+    {
+      "kind": "recommendation",
+      "source_domain": 0,
+      "destination_domain": 10,
+      "send_transaction_hash": "0x8ad2731242f40d7d42b3b13ab3bc56c8a6adf8e66a7a06e37867b127bffe9ffc",
+      "relay_transaction_hash": "0x14928a93c760ca5c04a9343d24b3622da8dbdcc2044120186b984714e1ff35a9",
+      "message_hash": "0x99b785c220d03f79559ded6f3d520c3424626f3ae3839b0d2841b335361c7ea6",
+      "status": "complete"
+    }
+  ],
+  "acceptance": {
+    "preflight_fingerprints": [],
+    "initial_swap_transaction_hash": "0x7bc130d5dc7c031f253c6418540c16d3b7143aa2e24dd99a7c092fbea0f55bd7",
+    "reference_transaction_hash": "0xbe1b53942518324fdf9494c857b8a9b9a4b42a6f4455780fe6d1d952a7ec31d3",
+    "processor_transaction_hash": "0x8ad2731242f40d7d42b3b13ab3bc56c8a6adf8e66a7a06e37867b127bffe9ffc",
+    "later_swap_transaction_hash": "0x678ab18735f94703508d184c5585fcc2689df260b64362c8c9e598cb41dde724",
+    "reactive_callback_transaction_hash": "0xbe1b53942518324fdf9494c857b8a9b9a4b42a6f4455780fe6d1d952a7ec31d3",
+    "reactive_cycle_id": 1,
+    "expected_fee_pips": 500,
+    "observed_fee_pips": 500,
+    "passed": true
+  },
+  "cost": [
+    {
+      "network_role": "origin",
+      "currency": "Unichain Sepolia ETH",
+      "gas_limit": 25000000,
+      "fee_cap_wei": "2000000",
+      "estimated_maximum": "0.000050000",
+      "actual": "0.000016584369098132",
+      "approved_by_owner": true
+    },
+    {
+      "network_role": "processor",
+      "currency": "Ethereum Sepolia ETH",
+      "gas_limit": 12005266,
+      "fee_cap_wei": "2500000000",
+      "estimated_maximum": "0.030013166",
+      "actual": "0.022154682210546031",
+      "approved_by_owner": true
+    },
+    {
+      "network_role": "reactive",
+      "currency": "lREACT",
+      "gas_limit": 2900000,
+      "fee_cap_wei": "112000000000",
+      "estimated_maximum": "2.024800",
+      "actual": "2.001689376",
+      "approved_by_owner": true
+    }
+  ]
+}

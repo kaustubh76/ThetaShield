@@ -202,13 +202,11 @@ surface separates executable local proof, controlled simulation, and the
 historical public demo boundary.
 
 The live API supports paired origin/processor `ThetaShieldLens` addresses and
-fails closed if only one is configured. Because the public Phase 8D contracts
-predate G4, the current UI explicitly labels its direct-getter fallback instead
-of claiming a lens read. An owner-approved G10 V2 deployment can switch both
-chains to stateless lens aggregation through environment configuration without
-changing the page. Dashboard source checks reject the deleted hardcoded research
-arrays and the production gate exercises both server-rendered evidence and the
-lens-aware API boundary.
+fails closed if only one is configured. The public dashboard now defaults to
+the deployed G10 lenses on both chains; the named direct-getter path remains an
+explicit fallback. Dashboard source checks reject the deleted hardcoded
+research arrays and the production gate exercises both server-rendered evidence
+and the lens-aware API boundary.
 
 ## G9 animated mechanism and LP-benefit simulator
 
@@ -233,11 +231,11 @@ and the dashboard regression gate verifies the full G9 surface.
 
 ## Release boundary
 
-The existing Phase 8D contracts and receipts remain evidence for the original
-single-source Circle demo profile. They are not modified in place. G10's code
-path now deploys a new origin Lens and a nonce-consistent Ethereum stack with a
-self-contained three-tier v4 reference market, sampler, processor, processor
-Lens, and Legacy callback executor. `make gap-g10-check` verifies those release
-components locally. New V2 addresses, the Legacy RSC, a fresh manifest, and the
-public acceptance trace remain paid owner-gated actions; the repository does
-not claim they exist before their receipts are recorded.
+The existing Phase 8D contracts and receipts remain immutable evidence for the
+original single-source Circle demo profile. G10 is now deployed with a new
+origin Lens and a nonce-consistent Ethereum stack containing the self-contained
+three-tier v4 reference market, sampler, processor, processor Lens, and Legacy
+callback executor. The corrected Legacy RSC produced both authenticated
+callbacks, Circle returned recommendation sequence `1`, and a later hook swap
+recorded the expected fee. The machine-readable record and every public receipt
+are preserved in the G10 live manifest and acceptance handoff.

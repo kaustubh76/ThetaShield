@@ -11,11 +11,13 @@ confidence to protect LPs from sustained adverse selection without reacting to
 ordinary volatility.
 
 The hook runs on Unichain Sepolia. It sends compact observations through Circle
-CCTP V2 to a bounded Ethereum Sepolia processor. A permissionless keeper relays
-finalized attestations and advances delayed work. The processor sends a
-sequenced recommendation back through Circle, where the controller verifies the
-transmitter, source domain, sealed processor peer, sequence, validity,
-confidence, fee, and risk bounds. Missing or stale data returns the baseline.
+CCTP V2 to a bounded Ethereum Sepolia processor. Reactive Legacy Lasna observes
+the finalized processor queue, waits for maturity, and issues authenticated
+callbacks that sample three v4 reference pools and advance bounded work. The
+processor sends a sequenced recommendation back through Circle, where the
+controller verifies the transmitter, source domain, sealed processor peer,
+sequence, validity, confidence, fee, and risk bounds. Missing or stale data
+returns the baseline.
 
 Technically distinctive properties:
 
@@ -23,11 +25,12 @@ Technically distinctive properties:
 - the current observation cannot widen the volatility band scoring itself;
 - favorable/adverse sign is preserved instead of reduced to volatility;
 - bounded `n-of-k` persistence and an explicitly gated fast path;
-- Circle-authenticated transport with a permissionless, non-trusted keeper;
+- Circle-authenticated transport with Reactive event-driven scheduling and a
+  permissionless keeper fallback;
 - swap continuity when observation transport is unavailable; and
 - visible original H4/H5 failures plus disjoint train/holdout remediation.
 
-Evidence includes the Solidity lifecycle suite, 38 Python research tests, 3,150
+Evidence includes the Solidity lifecycle suite, 48 Python tests, 3,150
 sensitivity runs, stateful invariants, boundary fuzzing, gas ceilings, golden
 vectors, and reproducible research artifacts. H4 reaches `-0.727` holdout rank
 correlation; H5 retains `59.70%` toxic coverage with a `20.79` percentage-point
@@ -38,7 +41,8 @@ Repository: <https://github.com/RudraBhaskar9439/ThetaShield> (private during de
 
 Dashboard: <https://theta-shield.vercel.app> (public production deployment)
 
-Current boundary: unaudited, testnet-only, owner-published mock reference feed,
-and a completed public two-chain Circle acceptance lifecycle. The hook has not
-been submitted, and no submission should occur until the owner separately
-approves it.
+Current boundary: unaudited and testnet-only, with a permissionless
+liquidity-filtered three-pool reference sampler and a completed public
+Unichain → Circle → Ethereum → Reactive → Circle → Unichain acceptance
+lifecycle. The hook has not been submitted, and no submission should occur
+until the owner separately approves it.

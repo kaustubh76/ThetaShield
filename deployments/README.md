@@ -1,5 +1,13 @@
 # Deployments
 
+The current G10 `RESEARCH_V1` deployment and its complete Circle + Reactive
+Legacy acceptance trace are recorded in
+`unichain-sepolia-ethereum-sepolia-reactive-legacy-g10-live.json`. It
+contains the three-pool reference sampler, paired lenses, authenticated Legacy
+callbacks, returned Circle recommendation, later fee-proof swap, and the
+approved-versus-actual spend record for revision
+`c0a44dac111848e794989ba4b6bde62e6ffc4cf7`.
+
 The Phase 8D Circle deployment and complete two-chain acceptance trace are
 recorded in
 `unichain-sepolia-ethereum-sepolia-circle-phase8d-live.json`. It covers the
@@ -7,9 +15,10 @@ live Unichain Sepolia hook/controller/transport and Ethereum Sepolia demo
 feed/processor deployed from revision
 `7dcaadad351b238a64133f053f195e11d9a2ef71`.
 
-The files in `archive/` are historical non-broadcast Omni/Lasna dry runs and
-must not be used. New Circle + Reactive Legacy dry-runs and live records use
-schema version 3.
+The Phase 8D file remains historical single-source evidence. The files in
+`archive/` are historical non-broadcast Omni/Lasna dry runs and must not be
+used. New Circle + Reactive Legacy dry-runs and live records use schema version
+3.
 
 `manifest.schema.json` records source revision, Circle domains, components,
 observation/recommendation relay transactions, later-fee evidence, the pinned

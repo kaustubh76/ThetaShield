@@ -51,22 +51,26 @@ type LiveProof = {
 const explorers = {
   unichain: "https://unichain-sepolia.blockscout.com",
   ethereum: "https://eth-sepolia.blockscout.com",
+  reactive: "https://lasna.reactscan.net",
 };
 
 const liveAddresses = [
-  ["Hook", "0xC53d57f4778E67B73B5535dEb2B841D56CBE40C0", explorers.unichain],
-  ["Controller", "0x6db44e172C7E1bae468A6e1e3683f34D7f3fD791", explorers.unichain],
-  ["Circle transport", "0x24daf359bA811c9dd6903649b968eC6D76C3e568", explorers.unichain],
-  ["Processor", "0x10970CC15d1DF81bA6c8968F87036b21c694d744", explorers.ethereum],
+  ["Hook", "0xD4b944d3b50003d0DBa0201De2828663903900C0", explorers.unichain],
+  ["Controller", "0x20C178712A124F5B1e86206280c6672082C5C9C6", explorers.unichain],
+  ["Circle transport", "0x0C36E4a7a83Bf916B10f467b95296f2E19Dca55C", explorers.unichain],
+  ["Processor", "0x64846969b386444BFa1a2905DB6Dad319b578654", explorers.ethereum],
+  ["Reactive RSC", "0x56E5590ef1fdA9fcA32ab2EEbF1B57845c29900a", explorers.reactive],
 ] as const;
 
 const liveReceipts = [
-  ["01", "Swap observed", "Unichain Sepolia", "0xb81b1e11daa419162a172b84636ba8d0398c7da9e7fe90b59224e2535e33f5d6", explorers.unichain],
-  ["02", "Observation received", "Ethereum Sepolia", "0x52c7f55ff3c85a31cbf1990cce3f0d5290133304302d45533fd449e2f26583f9", explorers.ethereum],
-  ["03", "Reference synchronized", "Ethereum Sepolia", "0xcc9f2065a76e6b32060d6b40ddf502336137878ccbeb3729f8f5d438a7e76f2d", explorers.ethereum],
-  ["04", "Observation settled", "Ethereum Sepolia", "0x7f13d36606793df918907e8a68b9fe792440880eb748f05240a2bf3c6f68889b", explorers.ethereum],
-  ["05", "Recommendation sent", "Ethereum Sepolia", "0x7d58946a80cc2fb604feb784c547fdfc2055b940aa3101af5e3cb3d5e2c7cfb0", explorers.ethereum],
-  ["06", "Recommendation installed", "Unichain Sepolia", "0xb39029264e3828380c23f5ca97c279371bcf5c518def0f1b95f1db6b3f6aeb19", explorers.unichain],
+  ["01", "Swap observed", "Unichain Sepolia", "0x7bc130d5dc7c031f253c6418540c16d3b7143aa2e24dd99a7c092fbea0f55bd7", explorers.unichain],
+  ["02", "Circle observation received", "Ethereum Sepolia", "0xb348e4ba02762635b18b3299158f4523b15b8fadd0fb8af72dde0275f4d0a5bc", explorers.ethereum],
+  ["03", "Reactive maturity wake", "Reactive Lasna", "0xf5577cc1819d6f1519cbf3734c3d289980df3e29361f21e66c4f93ff1f41567e", explorers.reactive],
+  ["04", "Authenticated processing callback", "Ethereum Sepolia", "0xbe1b53942518324fdf9494c857b8a9b9a4b42a6f4455780fe6d1d952a7ec31d3", explorers.ethereum],
+  ["05", "Reactive finalization wake", "Reactive Lasna", "0x56f432c88ea8342c758e523c0b8300bb13b968e5d6b13e2ece4d7748c3a267de", explorers.reactive],
+  ["06", "Recommendation sent", "Ethereum Sepolia", "0x8ad2731242f40d7d42b3b13ab3bc56c8a6adf8e66a7a06e37867b127bffe9ffc", explorers.ethereum],
+  ["07", "Recommendation installed", "Unichain Sepolia", "0x14928a93c760ca5c04a9343d24b3622da8dbdcc2044120186b984714e1ff35a9", explorers.unichain],
+  ["08", "Hook fee proven", "Unichain Sepolia", "0x678ab18735f94703508d184c5585fcc2689df260b64362c8c9e598cb41dde724", explorers.unichain],
 ] as const;
 
 function shortHex(value: string, left = 8, right = 6) {
@@ -188,7 +192,7 @@ function LiveProofPanel() {
         {proof ? <span>confidence {proof.origin.recommendation.confidenceBps / 100}% · valid until {formatChainTime(proof.origin.recommendation.validUntil)}</span> : null}
       </div>
 
-      <div className="receipt-heading"><span>LIVE RECEIPT TRAIL</span><b>Six public transactions · open any receipt</b></div>
+      <div className="receipt-heading"><span>LIVE RECEIPT TRAIL</span><b>Eight public transactions · open any receipt</b></div>
       <div className="receipt-rail">
         {liveReceipts.map(([number, title, chain, hash, explorer]) => (
           <a className="receipt-step" href={`${explorer}/tx/${hash}`} key={hash} rel="noreferrer" target="_blank">
@@ -205,7 +209,7 @@ function LiveProofPanel() {
         ))}
       </div>
       <p className="proof-disclosure">Read-only proof. Refreshing performs public RPC reads; it never connects a wallet, signs a message, or spends testnet funds.</p>
-      <p className="proof-disclosure">{proof?.readPath === "lens" ? "V2 state is aggregated through the stateless ThetaShieldLens." : "The public Phase 8D deployment predates the G4 lens. This panel uses audited direct getters until the separately approved G10 deployment."}</p>
+      <p className="proof-disclosure">{proof?.readPath === "lens" ? "G10 state is aggregated through the deployed stateless ThetaShield lenses." : "Direct audited getters are used only when the paired G10 lenses are explicitly disabled."}</p>
     </>
   );
 }
@@ -442,13 +446,13 @@ export default function DashboardClient({ data }: { data: DashboardView }) {
       <section className="release-section">
         <div>
           <p className="kicker">Current release boundary</p>
-          <h2>Live Circle loop proven.<br />Testnet-only.</h2>
+          <h2>Live Circle + Reactive loop proven.<br />Testnet-only.</h2>
         </div>
         <div className="release-list">
           <p><i className="done" /><span><b>Public Circle lifecycle</b> · Unichain → Ethereum → Unichain, later-fee proof</span></p>
           <p><i className="done" /><span><b>Research regression suite</b> · golden vectors and reproducible artifacts</span></p>
           <p><i className="done" /><span><b>Security gates</b> · dependency lock, secret scan, gas ceilings</span></p>
-          <p><i className="done" /><span><b>Phase 8D acceptance</b> · installed recommendation and later-fee receipt trail preserved</span></p>
+          <p><i className="done" /><span><b>G10 live acceptance</b> · Circle return, Reactive Legacy callbacks, and later-fee receipt trail preserved</span></p>
         </div>
       </section>
 
