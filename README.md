@@ -28,7 +28,7 @@
 </p>
 
 > [!IMPORTANT]
-> ThetaShield is unaudited research software deployed only on public testnets. The reference feed is an owner-published demo feed, not a production oracle. The risk metric is a controlled adverse-selection proxy—not exact LVR, individual LP loss, or a profitability claim. The hook has **not** been submitted.
+> ThetaShield is unaudited research software deployed only on public testnets. The historical Phase 8D proof uses an owner-published demo feed; the `RESEARCH_V1` release path uses a permissionless, liquidity-filtered three-pool sampler. Neither is a production oracle. The risk metric is a controlled adverse-selection proxy—not exact LVR, individual LP loss, or a profitability claim. The hook has **not** been submitted.
 
 ## The problem
 
@@ -50,7 +50,7 @@ When evidence is missing, stale, paused, or low-confidence, the system returns t
 
 1. **Execute on Unichain.** A real Uniswap v4 hook reads the current directional fee, applies it to the swap, and emits compact execution evidence.
 2. **Send finalized evidence.** The origin transport sends the observation through Circle CCTP V2. Transport failure never reverts the trader's completed swap.
-3. **Wait for the outcome.** A bounded processor on Ethereum Sepolia waits for delayed reference evidence instead of pretending future information exists at execution time.
+3. **Wait for the outcome.** A bounded processor on Ethereum Sepolia waits for delayed, liquidity-filtered evidence from three configured v4 pools instead of pretending future information exists at execution time.
 4. **Filter and persist.** The processor computes signed markout against strictly trailing volatility, applies confidence and notional bounds, and tests an `n-of-k` persistence window.
 5. **Return a recommendation.** Circle carries a sequenced, expiring directional recommendation back to the origin controller.
 6. **Verify before use.** The controller authenticates the Circle transmitter, domain, sealed peer, sequence, time window, confidence, fee, and risk bounds before exposing the fee to the hook.
@@ -80,6 +80,7 @@ The latency-sensitive execution plane stays on Unichain Sepolia. Delayed statist
 | `ThetaShieldHook` | Selects the directional fee, records the swap observation, and fails open only for observation transport availability. |
 | `ThetaShieldCircleTransport` | Accepts observations from the sealed hook and sends finalized Circle messages to the sealed processor peer. |
 | `ThetaShieldCircleProcessor` | Owns bounded queues, delayed references, trailing volatility, confidence, persistence, and directional fee calculation. |
+| `PoolMedianReferenceSampler` | Permissionlessly normalizes three liquidity-qualified v4 pools into distinct sources for robust median and dispersion scoring. |
 | `ThetaShieldController` | Verifies returned Circle messages and exposes a safe fee to the hook. Missing or invalid state resolves to baseline. |
 | Permissionless keeper | Relays Circle attestations, synchronizes references, and advances bounded mature work. It is a liveness actor, not a trust root. |
 

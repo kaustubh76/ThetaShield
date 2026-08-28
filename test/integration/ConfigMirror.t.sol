@@ -21,6 +21,8 @@ contract ConfigMirrorTest is Test {
         assertTrue(profile.scheduler.fastPathEnabled);
         assertEq(profile.scheduler.fastPathConfidenceFloorWad, 0.5e18);
         assertEq(profile.scheduler.fastPathToxicThresholdWad, 0.00075e18);
+        assertEq(profile.scheduler.minimumReferenceSources, 3);
+        assertEq(profile.scheduler.confidenceCapWad, 1e18);
         assertEq(profile.feeCurve.maximumIncreasePips, 500);
         assertEq(profile.feeCurve.maximumDecreasePips, 100);
         assertEq(profile.feeCurve.gainFeePips, 450_000);

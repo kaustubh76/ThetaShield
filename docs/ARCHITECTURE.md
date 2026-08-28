@@ -28,8 +28,9 @@ PoolManager -> ThetaShieldHook -> ThetaShieldCircleTransport
   local transmitter, the Unichain domain, and the configured transport. It owns
   the fixed-size queue, reference history, epoch logic, persistence, confidence,
   and directional fee calculation.
-- A permissionless keeper relays Circle attestations, syncs the reference feed,
-  and calls the processor. Circle does not provide scheduling.
+- A permissionless keeper samples the configured v4 reference pools, syncs
+  their distinct readings, relays Circle attestations, and calls the processor.
+  Circle does not provide scheduling.
 - `ThetaShieldController` accepts only finalized messages from Circle's local
   transmitter, the Ethereum domain, and the one-time-sealed processor. It then
   checks pool, sequence, lifetime, cooldown, confidence, fee, and risk bounds.
@@ -58,12 +59,14 @@ trailing history, persistence, and fast-path hold are constructor-bounded.
 Reference selection uses delayed readings inside the observation's maturity
 window. Strictly trailing volatility excludes the sample being scored.
 
-## Research boundary
+## Reference evidence
 
-The included mock reference feed is owner-published for deterministic testnet
-acceptance. The independent Python model, golden vectors, synthetic scenarios,
-H1–H6 analysis, and dashboard remain unchanged by the transport migration.
-They are controlled research evidence, not live profitability evidence.
+`RESEARCH_V1` uses `PoolMedianReferenceSampler`: a permissionless adapter over
+three configured Uniswap v4 pools. Each pool must meet its own active-liquidity
+floor and becomes a distinct normalized source. The processor then applies its
+existing robust median, weighted dispersion, and agreement confidence logic.
+`DEMO_V1` retains the owner-published mock only for deterministic local and
+historical acceptance tests.
 
 The former Reactive/Lasna architecture is retired. Historical phase handoffs
 remain in the repository for auditability but are not deployable instructions.

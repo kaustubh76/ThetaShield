@@ -1,6 +1,6 @@
 PYTHON ?= python3
 
-.PHONY: boundary-fuzz-check build clean dashboard-check dashboard-deps dependency-check deployment-dry-run deployment-schema-check experiment-check experiment-report fmt fmt-check fork-check gap-g1-check gap-g1-report gap-g2-check gap-g3-check gap-g4-check gas-check golden-check invariant-check lint phase5-check phase6-check phase6-report phase61-check phase61-report phase7-check phase9-check python-check research-report research-test secret-check test verify
+.PHONY: boundary-fuzz-check build clean dashboard-check dashboard-deps dependency-check deployment-dry-run deployment-schema-check experiment-check experiment-report fmt fmt-check fork-check gap-g1-check gap-g1-report gap-g2-check gap-g3-check gap-g4-check gap-g5-check gas-check golden-check invariant-check lint phase5-check phase6-check phase6-report phase61-check phase61-report phase7-check phase9-check python-check research-report research-test secret-check test verify
 
 build:
 	forge build --sizes
@@ -78,6 +78,13 @@ gap-g3-check:
 gap-g4-check:
 	forge test --force --match-contract ThetaShieldLensTest -vv
 	forge build --sizes
+
+gap-g5-check:
+	forge test --force --match-contract PoolMedianReferenceSamplerTest -vv
+	forge test --force --match-contract ConfigMirrorTest -vv
+	forge test --force --match-contract ThetaShieldResearchProfileTest -vv
+	forge build --sizes
+	$(PYTHON) -m json.tool deployments/manifest.schema.json >/dev/null
 
 invariant-check:
 	forge test --force --match-path 'test/invariant/*.t.sol' -vv

@@ -48,8 +48,10 @@ changed fingerprint or profile ID aborts the release.
    and costs.
 2. Put the predicted origin transport, controller, hook, and pool ID in the
    untracked environment, then simulate `DeployCircleProcessor.s.sol` on
-   Ethereum Sepolia. It deploys the owner-published demo feed and bounded Circle
-   processor.
+   Ethereum Sepolia. Under `RESEARCH_V1` it deploys the permissionless
+   three-pool sampler and a processor requiring all three configured source
+   readings. Verify every pool ID, token decimal, base orientation, and
+   liquidity floor. `DEMO_V1` alone deploys the owner-published fixture.
 3. Simulate `ConfigureCirclePeers.s.sol` on Unichain. This one-time action seals
    the hook/processor peers; verify every value before signing.
 4. Sum both-chain deployment and configuration costs, preserve a safety margin,
@@ -71,9 +73,10 @@ Each paid action is separate so it can be simulated and approved:
 
 3. Set `CIRCLE_MESSAGE`, `CIRCLE_ATTESTATION`, and the destination transmitter,
    then simulate/broadcast `RelayCircleMessage.s.sol` on Ethereum Sepolia.
-4. After the configured markout horizon, run `CircleAcceptance.runReference()`
-   and then `runProcess()` on Ethereum Sepolia. The processor sends a
-   recommendation if mature work finalizes.
+4. After the configured markout horizon, run
+   `CircleAcceptance.runSampleReferences()` and then `runProcessResearch()` on
+   Ethereum Sepolia. Confirm all three `ReferencePricePublished` events before
+   processing. The processor sends a recommendation if mature work finalizes.
 5. Fetch that transaction's attestation with source domain `0` and relay it on
    Unichain using `RelayCircleMessage.s.sol`.
 6. Run a later bounded swap and prove the PoolManager event fee matches the

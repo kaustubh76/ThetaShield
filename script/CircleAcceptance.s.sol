@@ -13,6 +13,7 @@ import {Currency} from "@uniswap/v4-core/src/types/Currency.sol";
 import {ThetaShieldCircleProcessor} from "../src/circle/ThetaShieldCircleProcessor.sol";
 import {DeploymentValidation} from "../src/deployment/DeploymentValidation.sol";
 import {MockNormalizedReferencePriceFeed} from "../src/feeds/MockNormalizedReferencePriceFeed.sol";
+import {PoolMedianReferenceSampler} from "../src/feeds/PoolMedianReferenceSampler.sol";
 
 /// @title CircleAcceptance
 /// @notice Separate bounded actions so every paid transaction can be simulated and approved.
@@ -27,6 +28,7 @@ contract CircleAcceptance is Script {
     event AcceptanceReferencePublished(
         bytes32 indexed marketId, bytes32 indexed sourceId, uint256 priceWad, uint256 confidenceWad, uint64 observedAt
     );
+    event AcceptancePoolsSampled(address indexed sampler, uint8 publishedCount);
     event AcceptanceProcessorAdvanced(address indexed processor, bool recommendationDispatched);
 
     function runSwap() external {
@@ -74,13 +76,40 @@ contract CircleAcceptance is Script {
         emit AcceptanceReferencePublished(marketId, sourceId, priceWad, confidenceWad, observedAt);
     }
 
+    /// @notice Permissionlessly samples the configured RESEARCH_V1 v4 reference pools.
+    function runSampleReferences() external {
+        address deployer = vm.envAddress("DEPLOYER_ADDRESS");
+        PoolMedianReferenceSampler sampler = PoolMedianReferenceSampler(vm.envAddress("REFERENCE_FEED"));
+        DeploymentValidation.requireCode(address(sampler));
+        vm.startBroadcast(deployer);
+        uint8 publishedCount = sampler.sample();
+        vm.stopBroadcast();
+        emit AcceptancePoolsSampled(address(sampler), publishedCount);
+    }
+
     function runProcess() external {
+        bytes32[] memory sources = new bytes32[](1);
+        sources[0] = vm.envBytes32("REFERENCE_SOURCE_ID");
+        _runProcess(sources);
+    }
+
+    /// @notice Syncs all three RESEARCH_V1 sources before advancing bounded processing.
+    function runProcessResearch() external {
+        bytes32[] memory sources = new bytes32[](3);
+        sources[0] = vm.envBytes32("REFERENCE_SOURCE_ID_0");
+        sources[1] = vm.envBytes32("REFERENCE_SOURCE_ID_1");
+        sources[2] = vm.envBytes32("REFERENCE_SOURCE_ID_2");
+        _runProcess(sources);
+    }
+
+    function _runProcess(bytes32[] memory sources) private {
         address deployer = vm.envAddress("DEPLOYER_ADDRESS");
         ThetaShieldCircleProcessor processor = ThetaShieldCircleProcessor(vm.envAddress("THETASHIELD_CIRCLE_PROCESSOR"));
         DeploymentValidation.requireCode(address(processor));
-        bytes32 sourceId = vm.envBytes32("REFERENCE_SOURCE_ID");
         vm.startBroadcast(deployer);
-        processor.syncReference(sourceId);
+        for (uint256 index; index < sources.length; ++index) {
+            processor.syncReference(sources[index]);
+        }
         bool recommendationDispatched = processor.process();
         vm.stopBroadcast();
         emit AcceptanceProcessorAdvanced(address(processor), recommendationDispatched);

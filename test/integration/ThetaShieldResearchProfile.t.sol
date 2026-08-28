@@ -25,7 +25,9 @@ contract ThetaShieldResearchProfileTest is Deployers {
     uint32 private constant ORIGIN_DOMAIN = 10;
     uint32 private constant PROCESSOR_DOMAIN = 0;
     bytes32 private constant MARKET_ID = keccak256("TS/QUOTE");
-    bytes32 private constant SOURCE_ID = keccak256("research-reference");
+    bytes32 private constant SOURCE_ID_0 = keccak256("research-reference-0");
+    bytes32 private constant SOURCE_ID_1 = keccak256("research-reference-1");
+    bytes32 private constant SOURCE_ID_2 = keccak256("research-reference-2");
     bytes32 private constant POOL_SWAP_TOPIC =
         keccak256("Swap(bytes32,address,int128,int128,uint160,uint128,int24,uint24)");
     uint256 private constant OBSERVATIONS_PER_EPOCH = 4;
@@ -73,8 +75,7 @@ contract ThetaShieldResearchProfileTest is Deployers {
         poolId = PoolId.unwrap(typedPoolId);
 
         feed = new MockNormalizedReferencePriceFeed(address(this));
-        bytes32[] memory sources = new bytes32[](1);
-        sources[0] = SOURCE_ID;
+        bytes32[] memory sources = _referenceSources();
         processor = new ThetaShieldCircleProcessor(
             ThetaShieldCircleProcessor.NetworkConfig({
                 messageTransmitter: address(processorTransmitter),
@@ -168,8 +169,11 @@ contract ThetaShieldResearchProfileTest is Deployers {
                 ? FixedPointMath.mulDivDown(executionPriceWad, 9_995, 10_000)
                 : FixedPointMath.mulDivDown(executionPriceWad, offsetBps, 10_000);
         }
-        feed.publish(MARKET_ID, SOURCE_ID, referencePriceWad, 1e18, matureAt);
-        processor.syncReference(SOURCE_ID);
+        bytes32[] memory sources = _referenceSources();
+        for (uint256 index; index < sources.length; ++index) {
+            feed.publish(MARKET_ID, sources[index], referencePriceWad, 1e18, matureAt);
+            processor.syncReference(sources[index]);
+        }
         assertFalse(processor.process());
 
         vm.warp(
@@ -200,6 +204,13 @@ contract ThetaShieldResearchProfileTest is Deployers {
     function _absolute(int128 value) private pure returns (uint256) {
         int256 widened = value;
         return uint256(widened < 0 ? -widened : widened);
+    }
+
+    function _referenceSources() private pure returns (bytes32[] memory sources) {
+        sources = new bytes32[](3);
+        sources[0] = SOURCE_ID_0;
+        sources[1] = SOURCE_ID_1;
+        sources[2] = SOURCE_ID_2;
     }
 
     function _addressToBytes32(address account) private pure returns (bytes32) {

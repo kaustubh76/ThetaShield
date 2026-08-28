@@ -33,7 +33,7 @@ deployment as an immutable historical acceptance trace.
 | G2 | Solidity coverage feedback loop | Complete |
 | G3 | Research/demo profiles and regression gates | Complete |
 | G4 | Stateless protocol lens | Complete |
-| G5 | Multi-source reference sampler | Pending |
+| G5 | Multi-source reference sampler | Complete |
 | G6 | Reactive automation contracts | Pending |
 | G7 | Deterministic dashboard bundle | Pending |
 | G8 | Evidence-driven dashboard and lens integration | Pending |
@@ -116,6 +116,24 @@ holding protocol state or receiving administrative authority:
 Focused tests cover active and paused origin fees, validity countdown,
 observation count, processor configuration mirroring, cold-start coverage, and
 reference history. Reproduce with `make gap-g4-check`.
+
+## G5 multi-source reference sampler
+
+`PoolMedianReferenceSampler` is a permissionless, ownerless adapter over a
+bounded set of Uniswap v4 pool IDs. Every sampling call reads `sqrtPriceX96` and
+active liquidity through `StateLibrary`, rejects pools below their individual
+liquidity floors, normalizes quote-per-base prices across token decimals and
+orientation, and publishes a distinct monotonic reading per source. The Circle
+processor remains unchanged: its existing per-source histories, robust median,
+dispersion rejection, and confidence calculation consume the readings.
+
+`RESEARCH_V1` now requires three sources and permits full confidence only after
+multi-source agreement. Its deployment path creates a three-pool sampler;
+`DEMO_V1` alone retains the owner-published mock. The acceptance script has
+separate research entry points that sample and sync all three sources. Focused
+tests cover permissionless publication, liquidity rejection, normalization,
+duplicate protection, and direct three-source processor consumption. Reproduce
+with `make gap-g5-check`.
 
 ## Release boundary
 
