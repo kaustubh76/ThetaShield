@@ -5,12 +5,15 @@ import unittest
 from research.thetashield.model import (
     WAD,
     ConfidenceComponents,
+    CoverageConfig,
     EpochConfig,
     EpochObservation,
     FeeConfig,
     aggregate_epoch,
+    calculate_closed_loop_fee,
     calculate_confidence,
     calculate_fee,
+    calculate_coverage,
     dead_band_filter,
     directional_markout,
     push_persistence,
@@ -117,6 +120,33 @@ class ConfidenceAndFeeTest(unittest.TestCase):
         self.assertEqual((active.premium_pips, active.target_fee_pips, active.next_fee_pips), (2000, 2500, 1500))
         self.assertEqual(favorable.target_fee_pips, 500)
         self.assertEqual(inactive.target_fee_pips, 500)
+
+    def test_zero_loss_epoch_never_invents_coverage_deficit(self) -> None:
+        config = CoverageConfig(125 * WAD // 100, 500, WAD // 1_000)
+        result = calculate_coverage(2 * WAD, 0, True, config)
+        self.assertFalse(result.eligible)
+        self.assertEqual(result.coverage_ratio_wad, config.target_coverage_wad)
+        self.assertEqual(result.coverage_deficit_wad, 0)
+
+    def test_closed_loop_fee_composes_coverage_before_rate_limit(self) -> None:
+        fee_config = FeeConfig(500, 500, 10_000, 500_000, 1_000, 500, WAD // 2)
+        coverage_config = CoverageConfig(125 * WAD // 100, 500, WAD // 1_000)
+        coverage = calculate_coverage(WAD, 2 * WAD, True, coverage_config)
+        result = calculate_closed_loop_fee(
+            4 * 10**15,
+            75 * WAD // 100,
+            True,
+            500,
+            fee_config,
+            coverage,
+            coverage_config,
+        )
+        self.assertEqual(coverage.coverage_ratio_wad, WAD // 2)
+        self.assertEqual(coverage.coverage_deficit_wad, 75 * WAD // 100)
+        self.assertEqual(result.toxic_premium_pips, 2_000)
+        self.assertEqual(result.coverage_premium_pips, 375)
+        self.assertEqual(result.target_fee_pips, 2_875)
+        self.assertEqual(result.next_fee_pips, 1_500)
 
 
 if __name__ == "__main__":

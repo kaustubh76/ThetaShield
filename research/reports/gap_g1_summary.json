@@ -1,0 +1,112 @@
+{
+  "aggregates": {
+    "elastic": {
+      "coverage_thetashield": {
+        "benign_volume_retained_rate_wad": 989854355824358213,
+        "coverage_deficit_epochs": 16,
+        "coverage_eligible_epochs": 19,
+        "executed_notional_quote_wad": 3512871866666666666666,
+        "false_negative_rate_wad": 701172713239811105,
+        "false_positive_rate_wad": 68758824114597420,
+        "latest_coverage_ratio_wad": 1530213049524824886,
+        "lp_fee_revenue_quote_wad": 2202126746666666666,
+        "lp_net_pnl_quote_wad": -721966999188737471780,
+        "mean_applied_fee_pips": 625,
+        "realized_adverse_markout_quote_wad": 10718624084877059331,
+        "requested_notional_quote_wad": 3538258533333333333333,
+        "retained_event_count": 238,
+        "toxic_volume_retained_rate_wad": 994498404261239129,
+        "volume_lost_quote_wad": 25386666666666666666,
+        "volume_retained_rate_wad": 992932607303884599
+      },
+      "thetashield": {
+        "benign_volume_retained_rate_wad": 989803667314074602,
+        "coverage_deficit_epochs": 0,
+        "coverage_eligible_epochs": 0,
+        "executed_notional_quote_wad": 3512218533333333333333,
+        "false_negative_rate_wad": 701378827854189940,
+        "false_positive_rate_wad": 68887063372724501,
+        "latest_coverage_ratio_wad": null,
+        "lp_fee_revenue_quote_wad": 2213158280000000000,
+        "lp_net_pnl_quote_wad": -721948222742889923721,
+        "mean_applied_fee_pips": 628,
+        "realized_adverse_markout_quote_wad": 10715398773511472885,
+        "requested_notional_quote_wad": 3538258533333333333333,
+        "retained_event_count": 238,
+        "toxic_volume_retained_rate_wad": 994193716439898416,
+        "volume_lost_quote_wad": 26040000000000000000,
+        "volume_retained_rate_wad": 992742772681727677
+      }
+    },
+    "inelastic": {
+      "coverage_thetashield": {
+        "benign_volume_retained_rate_wad": 1000000000000000000,
+        "coverage_deficit_epochs": 16,
+        "coverage_eligible_epochs": 20,
+        "executed_notional_quote_wad": 3538258533333333333333,
+        "false_negative_rate_wad": 696568056487174461,
+        "false_positive_rate_wad": 77029361498289863,
+        "latest_coverage_ratio_wad": 1510518059072048064,
+        "lp_fee_revenue_quote_wad": 2218347106666666666,
+        "lp_net_pnl_quote_wad": -728793305178921501638,
+        "mean_applied_fee_pips": 624,
+        "realized_adverse_markout_quote_wad": 10787726751968085995,
+        "requested_notional_quote_wad": 3538258533333333333333,
+        "retained_event_count": 240,
+        "toxic_volume_retained_rate_wad": 1000000000000000000,
+        "volume_lost_quote_wad": 0,
+        "volume_retained_rate_wad": 1000000000000000000
+      },
+      "thetashield": {
+        "benign_volume_retained_rate_wad": 1000000000000000000,
+        "coverage_deficit_epochs": 0,
+        "coverage_eligible_epochs": 0,
+        "executed_notional_quote_wad": 3538258533333333333333,
+        "false_negative_rate_wad": 696568056487174461,
+        "false_positive_rate_wad": 77029361498289863,
+        "latest_coverage_ratio_wad": null,
+        "lp_fee_revenue_quote_wad": 2230779213333333333,
+        "lp_net_pnl_quote_wad": -728780873072254834972,
+        "mean_applied_fee_pips": 628,
+        "realized_adverse_markout_quote_wad": 10787726751968085995,
+        "requested_notional_quote_wad": 3538258533333333333333,
+        "retained_event_count": 240,
+        "toxic_volume_retained_rate_wad": 1000000000000000000,
+        "volume_lost_quote_wad": 0,
+        "volume_retained_rate_wad": 1000000000000000000
+      }
+    }
+  },
+  "elastic_fee_revenue_delta_quote_wad": -11031533333333334,
+  "experiment": "gap_g1_closed_loop",
+  "gates": {
+    "benign_flow_noninferiority": {
+      "rule": "elastic benign retained-volume rate >= historical ThetaShield",
+      "status": "pass"
+    },
+    "feedback_is_exercised": {
+      "rule": "coverage policy must observe both eligible and deficit epochs",
+      "status": "pass"
+    },
+    "precision_preserved": {
+      "rule": "coverage policy inelastic mean FPR <= historical ThetaShield mean FPR",
+      "status": "pass"
+    },
+    "total_flow_noninferiority": {
+      "rule": "elastic total retained-volume rate >= historical ThetaShield",
+      "status": "pass"
+    }
+  },
+  "hook_gas_measurement": {
+    "after_swap_warm_gas": 166781,
+    "before_swap_gas": 33192,
+    "hook_gas_per_swap": 199973
+  },
+  "interpretation": "The selected controller shifts part of the toxic-risk gain into bounded coverage feedback. It preserves the declared precision and retained-flow gates, but does not improve mean fee revenue in this deterministic synthetic experiment.",
+  "interpretation_boundary": "Controlled deterministic synthetic evidence only; this is not live-market, profitability, deployment, or security-audit evidence.",
+  "overall_status": "pass",
+  "run_count": 300,
+  "scenario_count": 15,
+  "schema_version": 1,
+  "seed_count": 5
+}

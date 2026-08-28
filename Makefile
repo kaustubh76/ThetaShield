@@ -1,6 +1,6 @@
 PYTHON ?= python3
 
-.PHONY: boundary-fuzz-check build clean dashboard-check dashboard-deps dependency-check deployment-dry-run deployment-schema-check experiment-check experiment-report fmt fmt-check fork-check gas-check golden-check invariant-check lint phase5-check phase6-check phase6-report phase61-check phase61-report phase7-check phase9-check python-check research-report research-test secret-check test verify
+.PHONY: boundary-fuzz-check build clean dashboard-check dashboard-deps dependency-check deployment-dry-run deployment-schema-check experiment-check experiment-report fmt fmt-check fork-check gap-g1-check gap-g1-report gas-check golden-check invariant-check lint phase5-check phase6-check phase6-report phase61-check phase61-report phase7-check phase9-check python-check research-report research-test secret-check test verify
 
 build:
 	forge build --sizes
@@ -56,6 +56,12 @@ phase61-check:
 phase61-report:
 	$(PYTHON) -m research.experiments.phase61_remediation
 
+gap-g1-check:
+	$(PYTHON) -m research.experiments.gap_g1_closed_loop --check
+
+gap-g1-report:
+	$(PYTHON) -m research.experiments.gap_g1_closed_loop
+
 invariant-check:
 	forge test --force --match-path 'test/invariant/*.t.sol' -vv
 
@@ -89,4 +95,4 @@ phase9-check: dashboard-check
 test:
 	forge test --force
 
-verify: fmt-check lint build test python-check research-test dependency-check secret-check deployment-schema-check golden-check experiment-check phase5-check phase6-check phase61-check phase9-check
+verify: fmt-check lint build test python-check research-test dependency-check secret-check deployment-schema-check golden-check experiment-check phase5-check phase6-check phase61-check gap-g1-check phase9-check

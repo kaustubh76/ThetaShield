@@ -65,3 +65,18 @@ remediation. Ninety candidates are selected using training streams only. A
 40-case detection frontier and the locked candidate are then evaluated on five
 disjoint holdout seeds. The generated holdout result passes H4 and H5 under the
 unchanged final criteria; it remains controlled synthetic evidence.
+
+## Functional gap G1 commands
+
+```sh
+make gap-g1-report
+make gap-g1-check
+make phase5-check
+```
+
+G1 adds a sixth, coverage-aware research policy without changing the immutable
+five-policy Phase 5 evidence. It measures fee coverage against estimated
+positive markout loss and composes the deficit premium with directional risk
+before applying the existing fee bounds and rate limit. A deterministic
+elastic-flow mode models benign and toxic retention separately and discloses
+retained volume, false-positive/negative rates, and fee-revenue changes.

@@ -1,4 +1,4 @@
-"""Five fairly bounded fee policies evaluated by the Phase 5 harness."""
+"""Bounded fee policies used by the historical and closed-loop research harnesses."""
 
 from __future__ import annotations
 
@@ -6,12 +6,17 @@ from dataclasses import dataclass
 
 from research.thetashield.model import (
     DEFAULT_SINGLE_SOURCE_CAP_WAD,
+    FEE_PIPS,
     WAD,
+    CoverageConfig,
+    CoverageResult,
     EpochConfig,
     EpochObservation,
     FeeConfig,
     aggregate_epoch,
+    calculate_closed_loop_fee,
     calculate_confidence,
+    calculate_coverage,
     calculate_fee,
     dead_band_filter,
     directional_markout,
@@ -28,6 +33,10 @@ POLICY_NAMES = (
     "dead_band_no_persistence",
     "thetashield",
 )
+EXTENDED_POLICY_NAMES = (*POLICY_NAMES, "coverage_thetashield")
+TARGET_COVERAGE_WAD = 125 * WAD // 100
+COVERAGE_GAIN_FEE_PIPS = 50
+MINIMUM_ESTIMATED_LOSS_WAD = WAD // 1_000
 
 
 @dataclass(frozen=True)
@@ -69,6 +78,17 @@ class ScoredObservation:
     notional_wad: int
     reference_dispersion_wad: int
     cold_start: bool
+    applied_fee_pips: int
+
+
+@dataclass(frozen=True)
+class CompletedEpoch:
+    aggregate_markout_wad: int
+    confidence_wad: int
+    included_cold_start: bool
+    fee_revenue_wad: int
+    estimated_loss_wad: int
+    meets_minimum_epoch_notional: bool
 
 
 class FeePolicy:
@@ -78,6 +98,7 @@ class FeePolicy:
         self.config = config
         self.gain_fee_pips = gain_fee_pips
         self.calculated_fees = {-1: config.base_fee_pips, 1: config.base_fee_pips}
+        self.coverage_history: list[CoverageResult] = []
 
     def observe(self, event: TradeEvent) -> bool:
         raise NotImplementedError
@@ -187,9 +208,10 @@ class DeadBandPolicyBase(FeePolicy):
             notional_wad=event.notional_wad,
             reference_dispersion_wad=event.reference_dispersion_wad,
             cold_start=cold_start,
+            applied_fee_pips=event.applied_fee_pips or self.config.base_fee_pips,
         )
 
-    def _append(self, direction: int, observation: ScoredObservation) -> tuple[int, int, bool] | None:
+    def _append(self, direction: int, observation: ScoredObservation) -> CompletedEpoch | None:
         records = self._epochs[direction]
         records.append(observation)
         if len(records) < self.config.epoch_observation_count:
@@ -228,8 +250,23 @@ class DeadBandPolicyBase(FeePolicy):
                 self.config.maximum_reference_dispersion_wad,
                 self.config.confidence_cap_wad,
             ).confidence_wad
+        fee_revenue_wad = sum(
+            record.notional_wad * record.applied_fee_pips // FEE_PIPS
+            for record in eligible
+        )
+        estimated_loss_wad = sum(
+            record.notional_wad * max(record.raw_markout_wad, 0) // WAD
+            for record in eligible
+        )
         records.clear()
-        return aggregate.aggregate_markout_wad, confidence_wad, included_cold_start
+        return CompletedEpoch(
+            aggregate_markout_wad=aggregate.aggregate_markout_wad,
+            confidence_wad=confidence_wad,
+            included_cold_start=included_cold_start,
+            fee_revenue_wad=fee_revenue_wad,
+            estimated_loss_wad=estimated_loss_wad,
+            meets_minimum_epoch_notional=aggregate.meets_minimum_epoch_notional,
+        )
 
 
 class DeadBandNoPersistencePolicy(DeadBandPolicyBase):
@@ -239,9 +276,9 @@ class DeadBandNoPersistencePolicy(DeadBandPolicyBase):
         completed = self._append(event.direction, self._score(event))
         if completed is None:
             return False
-        aggregate_wad, confidence_wad, included_cold_start = completed
-        signed_risk_wad = aggregate_wad * confidence_wad // WAD
-        if included_cold_start:
+        confidence_wad = completed.confidence_wad
+        signed_risk_wad = completed.aggregate_markout_wad * confidence_wad // WAD
+        if completed.included_cold_start:
             signed_risk_wad = 0
             confidence_wad = 0
         self._set_directional_fee(event.direction, signed_risk_wad, confidence_wad, True)
@@ -261,15 +298,15 @@ class ThetaShieldPolicy(DeadBandPolicyBase):
         completed = self._append(event.direction, self._score(event))
         if completed is None:
             return False
-        aggregate_wad, confidence_wad, included_cold_start = completed
+        confidence_wad = completed.confidence_wad
         risk = smooth_directional_risk(
-            aggregate_wad,
+            completed.aggregate_markout_wad,
             self._magnitude[event.direction],
             self.config.alpha_wad,
             confidence_wad,
         )
         self._magnitude[event.direction] = risk.magnitude_wad
-        toxic = not included_cold_start and risk.signed_risk_wad > self.config.toxic_threshold_wad
+        toxic = not completed.included_cold_start and risk.signed_risk_wad > self.config.toxic_threshold_wad
         bitmap, active = push_persistence(
             self._persistence[event.direction],
             toxic,
@@ -277,10 +314,10 @@ class ThetaShieldPolicy(DeadBandPolicyBase):
             self.config.persistence_window,
         )
         self._persistence[event.direction] = bitmap
-        instant_risk_wad = aggregate_wad * confidence_wad // WAD
+        instant_risk_wad = completed.aggregate_markout_wad * confidence_wad // WAD
         fast_path_triggered = (
             self.config.fast_path_enabled
-            and not included_cold_start
+            and not completed.included_cold_start
             and confidence_wad >= self.config.fast_path_confidence_floor_wad
             and instant_risk_wad > self.config.fast_path_toxic_threshold_wad
         )
@@ -292,7 +329,7 @@ class ThetaShieldPolicy(DeadBandPolicyBase):
             self._fast_path_hold[event.direction] -= 1
         else:
             fast_path_active = False
-        if included_cold_start:
+        if completed.included_cold_start:
             confidence_wad = 0
         self._set_directional_fee(
             event.direction,
@@ -303,6 +340,81 @@ class ThetaShieldPolicy(DeadBandPolicyBase):
         return True
 
 
+class CoverageThetaShieldPolicy(ThetaShieldPolicy):
+    """ThetaShield with a persistence-gated coverage-deficit feedback premium."""
+
+    name = "coverage_thetashield"
+
+    def _coverage_config(self) -> CoverageConfig:
+        return CoverageConfig(
+            target_coverage_wad=TARGET_COVERAGE_WAD,
+            coverage_gain_fee_pips=COVERAGE_GAIN_FEE_PIPS,
+            minimum_estimated_loss_wad=MINIMUM_ESTIMATED_LOSS_WAD,
+        )
+
+    def observe(self, event: TradeEvent) -> bool:
+        completed = self._append(event.direction, self._score(event))
+        if completed is None:
+            return False
+        confidence_wad = completed.confidence_wad
+        risk = smooth_directional_risk(
+            completed.aggregate_markout_wad,
+            self._magnitude[event.direction],
+            self.config.alpha_wad,
+            confidence_wad,
+        )
+        self._magnitude[event.direction] = risk.magnitude_wad
+        toxic = (
+            not completed.included_cold_start
+            and completed.meets_minimum_epoch_notional
+            and risk.signed_risk_wad > self.config.toxic_threshold_wad
+        )
+        bitmap, persistence_active = push_persistence(
+            self._persistence[event.direction],
+            toxic,
+            self.config.required_toxic_epochs,
+            self.config.persistence_window,
+        )
+        self._persistence[event.direction] = bitmap
+
+        instant_risk_wad = completed.aggregate_markout_wad * confidence_wad // WAD
+        fast_path_triggered = (
+            self.config.fast_path_enabled
+            and not completed.included_cold_start
+            and confidence_wad >= self.config.fast_path_confidence_floor_wad
+            and instant_risk_wad > self.config.fast_path_toxic_threshold_wad
+        )
+        if fast_path_triggered:
+            fast_path_active = True
+            self._fast_path_hold[event.direction] = self.config.fast_path_hold_epochs
+        elif self._fast_path_hold[event.direction] > 0:
+            fast_path_active = True
+            self._fast_path_hold[event.direction] -= 1
+        else:
+            fast_path_active = False
+
+        coverage = calculate_coverage(
+            completed.fee_revenue_wad,
+            completed.estimated_loss_wad,
+            completed.meets_minimum_epoch_notional and not completed.included_cold_start,
+            self._coverage_config(),
+        )
+        self.coverage_history.append(coverage)
+        if completed.included_cold_start:
+            confidence_wad = 0
+        fee = calculate_closed_loop_fee(
+            signed_risk_wad=risk.signed_risk_wad,
+            confidence_wad=confidence_wad,
+            persistence_active=persistence_active or fast_path_active,
+            previous_fee_pips=self.calculated_fees[event.direction],
+            fee_config=self._fee_config(),
+            coverage=coverage,
+            coverage_config=self._coverage_config(),
+        )
+        self.calculated_fees[event.direction] = fee.next_fee_pips
+        return True
+
+
 def build_policy(name: str, config: ResearchConfig, gain_fee_pips: int) -> FeePolicy:
     policy_types = {
         "fixed_fee": FixedFeePolicy,
@@ -310,6 +422,7 @@ def build_policy(name: str, config: ResearchConfig, gain_fee_pips: int) -> FeePo
         "raw_positive_markout": RawPositiveMarkoutPolicy,
         "dead_band_no_persistence": DeadBandNoPersistencePolicy,
         "thetashield": ThetaShieldPolicy,
+        "coverage_thetashield": CoverageThetaShieldPolicy,
     }
     try:
         return policy_types[name](config, gain_fee_pips)

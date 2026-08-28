@@ -6,7 +6,12 @@ from research.experiments.phase5_baselines import RESULT_COLUMNS, render_policy_
 from research.thetashield.model import WAD
 from research.thetashield.policies import POLICY_NAMES, ResearchConfig
 from research.thetashield.scenarios import EVENT_COUNT, SCENARIOS, generate_scenario, scenario_manifest
-from research.thetashield.simulator import correlation_wad, simulate_policy
+from research.thetashield.simulator import (
+    FlowElasticityConfig,
+    correlation_wad,
+    retention_probability_wad,
+    simulate_policy,
+)
 
 
 class Phase5ScenarioTest(unittest.TestCase):
@@ -84,6 +89,30 @@ class Phase5PolicyTest(unittest.TestCase):
         series = result["applied_fee_series"]
         self.assertIsInstance(series, list)
         self.assertEqual(correlation_wad(series, series), WAD)
+
+    def test_elastic_flow_is_deterministic_and_less_sensitive_for_toxic_flow(self) -> None:
+        elasticity = FlowElasticityConfig()
+        benign_probability = retention_probability_wad(
+            1_500,
+            self.config.base_fee_pips,
+            elasticity.benign_beta_wad,
+        )
+        toxic_probability = retention_probability_wad(
+            1_500,
+            self.config.base_fee_pips,
+            elasticity.toxic_beta_wad,
+        )
+        self.assertLess(benign_probability, toxic_probability)
+        events = generate_scenario("persistent_informed_buying", 101)
+        first = simulate_policy(
+            "coverage_thetashield", events, self.config, 500_000, "normal", 80_097, elasticity
+        )
+        second = simulate_policy(
+            "coverage_thetashield", events, self.config, 500_000, "normal", 80_097, elasticity
+        )
+        self.assertEqual(first, second)
+        self.assertGreater(int(first["coverage_eligible_epochs"]), 0)
+        self.assertLessEqual(int(first["executed_notional_quote_wad"]), int(first["requested_notional_quote_wad"]))
 
 
 class Phase5ExperimentTest(unittest.TestCase):

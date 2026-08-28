@@ -311,3 +311,110 @@ def calculate_fee(
         next_fee_pips = max(target_fee_pips, previous_fee_pips - config.maximum_decrease_pips)
         next_fee_pips = min(max(next_fee_pips, config.minimum_fee_pips), config.maximum_fee_pips)
     return FeeResult(premium_pips, target_fee_pips, next_fee_pips)
+
+
+@dataclass(frozen=True)
+class CoverageConfig:
+    target_coverage_wad: int
+    coverage_gain_fee_pips: int
+    minimum_estimated_loss_wad: int
+
+
+@dataclass(frozen=True)
+class CoverageResult:
+    fee_revenue_wad: int
+    estimated_loss_wad: int
+    coverage_ratio_wad: int
+    coverage_deficit_wad: int
+    eligible: bool
+
+
+@dataclass(frozen=True)
+class ClosedLoopFeeResult:
+    toxic_premium_pips: int
+    coverage_premium_pips: int
+    total_premium_pips: int
+    target_fee_pips: int
+    next_fee_pips: int
+
+
+def calculate_coverage(
+    fee_revenue_wad: int,
+    estimated_loss_wad: int,
+    meets_minimum_epoch_notional: bool,
+    config: CoverageConfig,
+) -> CoverageResult:
+    """Return a bounded coverage signal without inventing a deficit for zero-loss epochs."""
+    if fee_revenue_wad < 0 or estimated_loss_wad < 0:
+        raise ValueError("coverage accounting cannot be negative")
+    if config.target_coverage_wad <= 0 or config.coverage_gain_fee_pips < 0:
+        raise ValueError("invalid coverage configuration")
+    if config.minimum_estimated_loss_wad <= 0:
+        raise ValueError("minimum estimated loss must be positive")
+
+    eligible = meets_minimum_epoch_notional and estimated_loss_wad >= config.minimum_estimated_loss_wad
+    if not eligible:
+        return CoverageResult(
+            fee_revenue_wad=fee_revenue_wad,
+            estimated_loss_wad=estimated_loss_wad,
+            coverage_ratio_wad=config.target_coverage_wad,
+            coverage_deficit_wad=0,
+            eligible=False,
+        )
+
+    ratio_wad = fee_revenue_wad * WAD // estimated_loss_wad
+    deficit_wad = max(config.target_coverage_wad - ratio_wad, 0)
+    return CoverageResult(
+        fee_revenue_wad=fee_revenue_wad,
+        estimated_loss_wad=estimated_loss_wad,
+        coverage_ratio_wad=ratio_wad,
+        coverage_deficit_wad=deficit_wad,
+        eligible=True,
+    )
+
+
+def calculate_closed_loop_fee(
+    signed_risk_wad: int,
+    confidence_wad: int,
+    persistence_active: bool,
+    previous_fee_pips: int,
+    fee_config: FeeConfig,
+    coverage: CoverageResult,
+    coverage_config: CoverageConfig,
+) -> ClosedLoopFeeResult:
+    """Compose toxic-flow and coverage-deficit premiums before one shared rate limit."""
+    if not fee_config.minimum_fee_pips <= fee_config.base_fee_pips <= fee_config.maximum_fee_pips <= FEE_PIPS:
+        raise ValueError("invalid fee bounds")
+    _validate_wad_weight(fee_config.confidence_floor_wad, "confidence floor")
+    _validate_wad_weight(confidence_wad, "confidence")
+    if not fee_config.minimum_fee_pips <= previous_fee_pips <= fee_config.maximum_fee_pips:
+        raise ValueError("previous fee is outside configured bounds")
+
+    toxic_premium_pips = 0
+    coverage_premium_pips = 0
+    active = persistence_active and confidence_wad >= fee_config.confidence_floor_wad and signed_risk_wad > 0
+    if active:
+        toxic_premium_pips = signed_risk_wad * fee_config.gain_fee_pips // WAD
+        if coverage.eligible:
+            coverage_premium_pips = (
+                coverage.coverage_deficit_wad * coverage_config.coverage_gain_fee_pips // WAD
+            )
+
+    maximum_premium = fee_config.maximum_fee_pips - fee_config.base_fee_pips
+    total_premium_pips = min(toxic_premium_pips + coverage_premium_pips, maximum_premium)
+    target_fee_pips = min(
+        max(fee_config.base_fee_pips + total_premium_pips, fee_config.minimum_fee_pips),
+        fee_config.maximum_fee_pips,
+    )
+    if target_fee_pips > previous_fee_pips:
+        next_fee_pips = min(target_fee_pips, previous_fee_pips + fee_config.maximum_increase_pips)
+    else:
+        next_fee_pips = max(target_fee_pips, previous_fee_pips - fee_config.maximum_decrease_pips)
+        next_fee_pips = min(max(next_fee_pips, fee_config.minimum_fee_pips), fee_config.maximum_fee_pips)
+    return ClosedLoopFeeResult(
+        toxic_premium_pips=min(toxic_premium_pips, maximum_premium),
+        coverage_premium_pips=min(coverage_premium_pips, maximum_premium),
+        total_premium_pips=total_premium_pips,
+        target_fee_pips=target_fee_pips,
+        next_fee_pips=next_fee_pips,
+    )

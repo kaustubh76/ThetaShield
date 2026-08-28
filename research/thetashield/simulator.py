@@ -2,13 +2,63 @@
 
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass, replace
+from decimal import Decimal, localcontext
 from math import isqrt
 from statistics import mean
 
 from research.thetashield.model import FEE_PIPS, WAD, directional_markout
 from research.thetashield.policies import ResearchConfig, build_policy
 from research.thetashield.scenarios import TradeEvent
+
+
+@dataclass(frozen=True)
+class FlowElasticityConfig:
+    """Fee sensitivity for deterministic counterfactual flow retention."""
+
+    benign_beta_wad: int = 300 * WAD
+    toxic_beta_wad: int = 40 * WAD
+
+
+def retention_probability_wad(
+    fee_pips: int,
+    base_fee_pips: int,
+    beta_wad: int,
+) -> int:
+    """Return exp(-beta * fee premium) in WAD without binary floating point."""
+    if not 0 <= base_fee_pips <= fee_pips <= FEE_PIPS:
+        raise ValueError("invalid fee for elasticity model")
+    if beta_wad < 0:
+        raise ValueError("elasticity beta cannot be negative")
+    premium_pips = fee_pips - base_fee_pips
+    if premium_pips == 0 or beta_wad == 0:
+        return WAD
+    with localcontext() as context:
+        context.prec = 60
+        exponent = -(Decimal(beta_wad) / Decimal(WAD)) * (
+            Decimal(premium_pips) / Decimal(FEE_PIPS)
+        )
+        probability = exponent.exp()
+        return max(0, min(WAD, int(probability * Decimal(WAD))))
+
+
+def deterministic_flow_draw_wad(event: TradeEvent) -> int:
+    """Return a policy-independent reproducible draw in [0, WAD)."""
+    payload = ":".join(
+        str(value)
+        for value in (
+            event.index,
+            event.timestamp_seconds,
+            event.direction,
+            event.notional_wad,
+            event.execution_price_wad,
+            event.reference_price_wad,
+            int(event.is_toxic),
+        )
+    ).encode("ascii")
+    digest = hashlib.sha256(payload).digest()
+    return int.from_bytes(digest[:16], "big") * WAD // (1 << 128)
 
 
 @dataclass(frozen=True)
@@ -106,6 +156,7 @@ def simulate_policy(
     gain_fee_pips: int,
     operational_mode: str,
     hook_gas_per_swap: int,
+    elasticity: FlowElasticityConfig | None = None,
 ) -> dict[str, int | str | None | list[int]]:
     if not events:
         raise ValueError("simulation requires at least one event")
@@ -142,6 +193,13 @@ def simulate_policy(
     previous_side_fees = {-1: config.base_fee_pips, 1: config.base_fee_pips}
     fee_oscillation_pips = 0
     applied_fee_series: list[int] = []
+    requested_notional_wad = 0
+    executed_notional_wad = 0
+    benign_requested_notional_wad = 0
+    benign_executed_notional_wad = 0
+    toxic_requested_notional_wad = 0
+    toxic_executed_notional_wad = 0
+    retained_event_count = 0
 
     observation_delay_steps = config.markout_delay_steps + config.markout_horizon_steps - 1
     flush_steps = observation_delay_steps + config.callback_delay_steps + config.epoch_observation_count + 2
@@ -177,6 +235,23 @@ def simulate_policy(
         event = events[step]
         fee_pips = current_side_fees[event.direction]
         other_fee_pips = current_side_fees[-event.direction]
+        requested_notional_wad += event.notional_wad
+        if event.is_toxic:
+            toxic_requested_notional_wad += event.notional_wad
+        else:
+            benign_requested_notional_wad += event.notional_wad
+        if elasticity is not None:
+            beta_wad = elasticity.toxic_beta_wad if event.is_toxic else elasticity.benign_beta_wad
+            probability_wad = retention_probability_wad(fee_pips, config.base_fee_pips, beta_wad)
+            if deterministic_flow_draw_wad(event) >= probability_wad:
+                continue
+
+        retained_event_count += 1
+        executed_notional_wad += event.notional_wad
+        if event.is_toxic:
+            toxic_executed_notional_wad += event.notional_wad
+        else:
+            benign_executed_notional_wad += event.notional_wad
         applied_fee_series.append(fee_pips)
         premium = fee_pips > config.base_fee_pips
         premium_event_count += int(premium)
@@ -217,8 +292,12 @@ def simulate_policy(
                 first_detection_step[direction] = step - toxic_step
 
         if policy_name != "fixed_fee":
+            observation = replace(
+                _event_at_horizon(events, event, config.markout_horizon_steps),
+                applied_fee_pips=fee_pips,
+            )
             observations_due.setdefault(step + observation_delay_steps, []).append(
-                _event_at_horizon(events, event, config.markout_horizon_steps)
+                observation
             )
 
     delivery.finish(len(events) + flush_steps)
@@ -237,7 +316,11 @@ def simulate_policy(
         "policy": policy_name,
         "event_count": len(events),
         "gain_fee_pips": gain_fee_pips,
-        "mean_applied_fee_pips": sum(applied_fee_series) // len(applied_fee_series),
+        "mean_applied_fee_pips": (
+            sum(applied_fee_series) // len(applied_fee_series)
+            if applied_fee_series
+            else config.base_fee_pips
+        ),
         "lp_fee_revenue_quote_wad": fee_revenue_wad,
         "inventory_pnl_quote_wad": inventory_pnl_wad,
         "lp_net_pnl_quote_wad": lp_net_pnl_wad,
@@ -267,6 +350,31 @@ def simulate_policy(
         "missing_callbacks": delivery.stats.missing_callbacks,
         "rejected_callbacks": delivery.stats.rejected_callbacks,
         "expired_reference_count": expired_reference_count,
+        "requested_notional_quote_wad": requested_notional_wad,
+        "executed_notional_quote_wad": executed_notional_wad,
+        "volume_lost_quote_wad": requested_notional_wad - executed_notional_wad,
+        "volume_retained_rate_wad": (
+            executed_notional_wad * WAD // requested_notional_wad if requested_notional_wad else WAD
+        ),
+        "benign_volume_retained_rate_wad": (
+            benign_executed_notional_wad * WAD // benign_requested_notional_wad
+            if benign_requested_notional_wad
+            else WAD
+        ),
+        "toxic_volume_retained_rate_wad": (
+            toxic_executed_notional_wad * WAD // toxic_requested_notional_wad
+            if toxic_requested_notional_wad
+            else WAD
+        ),
+        "retained_event_count": retained_event_count,
+        "coverage_eligible_epochs": sum(int(entry.eligible) for entry in policy.coverage_history),
+        "coverage_deficit_epochs": sum(
+            int(entry.eligible and entry.coverage_deficit_wad > 0)
+            for entry in policy.coverage_history
+        ),
+        "latest_coverage_ratio_wad": (
+            policy.coverage_history[-1].coverage_ratio_wad if policy.coverage_history else None
+        ),
         "applied_fee_series": applied_fee_series,
     }
 

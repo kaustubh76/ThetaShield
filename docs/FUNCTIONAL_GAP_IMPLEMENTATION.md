@@ -29,7 +29,7 @@ deployment as an immutable historical acceptance trace.
 | Phase | Deliverable | Status |
 |---|---|---|
 | G0 | Verified baseline and locked decisions | Complete |
-| G1 | Coverage and flow-elasticity research | Pending |
+| G1 | Coverage and flow-elasticity research | Complete |
 | G2 | Solidity coverage feedback loop | Pending |
 | G3 | Research/demo profiles and regression gates | Pending |
 | G4 | Stateless protocol lens | Pending |

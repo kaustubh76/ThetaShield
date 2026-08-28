@@ -1,0 +1,85 @@
+{
+  "decision_protocol_id": "thetashield-gap-g1-v1",
+  "elasticity_config": {
+    "benign_beta_wad": 300000000000000000000,
+    "toxic_beta_wad": 40000000000000000000
+  },
+  "gates": {
+    "benign_flow_noninferiority": "elastic benign retained-volume rate >= historical ThetaShield",
+    "feedback_is_exercised": "coverage policy must observe both eligible and deficit epochs",
+    "precision_preserved": "coverage policy inelastic mean FPR <= historical ThetaShield mean FPR",
+    "total_flow_noninferiority": "elastic total retained-volume rate >= historical ThetaShield"
+  },
+  "historical_phase5_artifacts_mutated": false,
+  "modes": [
+    "inelastic",
+    "elastic"
+  ],
+  "policies": {
+    "coverage_thetashield": {
+      "coverage_gain_fee_pips": 50,
+      "minimum_estimated_loss_wad": 1000000000000000,
+      "target_coverage_wad": 1250000000000000000,
+      "toxic_gain_fee_pips": 450000
+    },
+    "thetashield": {
+      "toxic_gain_fee_pips": 500000
+    }
+  },
+  "research_config": {
+    "alpha_wad": 250000000000000000,
+    "base_fee_pips": 500,
+    "callback_delay_steps": 1,
+    "confidence_cap_wad": 600000000000000000,
+    "confidence_floor_wad": 500000000000000000,
+    "dead_band_k_wad": 1500000000000000000,
+    "epoch_observation_count": 8,
+    "fast_path_confidence_floor_wad": 550000000000000000,
+    "fast_path_enabled": false,
+    "fast_path_hold_epochs": 0,
+    "fast_path_toxic_threshold_wad": 2000000000000000,
+    "markout_delay_steps": 2,
+    "markout_horizon_steps": 1,
+    "maximum_decrease_pips": 500,
+    "maximum_fee_pips": 10000,
+    "maximum_increase_pips": 1000,
+    "maximum_reference_dispersion_wad": 20000000000000000,
+    "maximum_trade_notional_wad": 100000000000000000000,
+    "minimum_epoch_notional_wad": 8000000000000000000,
+    "minimum_fee_pips": 500,
+    "minimum_observation_notional_wad": 1000000000000000000,
+    "minimum_trailing_observations": 32,
+    "persistence_window": 5,
+    "recommendation_ttl_steps": 12,
+    "required_toxic_epochs": 3,
+    "target_observation_count": 8,
+    "toxic_threshold_wad": 750000000000000,
+    "trailing_window": 32
+  },
+  "scenarios": [
+    "benign_noise",
+    "persistent_informed_buying",
+    "persistent_informed_selling",
+    "alternating_toxicity",
+    "high_volatility_uninformed",
+    "toxic_volatility_burst",
+    "neutral_inside_attack",
+    "microtrade_spam",
+    "oversized_observation",
+    "conflicting_references",
+    "stale_references",
+    "missing_callbacks",
+    "replayed_callbacks",
+    "out_of_order_callbacks",
+    "fee_oscillation"
+  ],
+  "schema_version": 1,
+  "seeds": [
+    101,
+    211,
+    307,
+    401,
+    503
+  ],
+  "selection_note": "Coverage gain 50 and toxic gain 450000 were selected as a conservative closed-loop composition that exercises coverage feedback without increasing aggregate inelastic FPR."
+}

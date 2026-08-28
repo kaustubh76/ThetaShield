@@ -24,9 +24,10 @@ class TradeEvent:
     reference_dispersion_wad: int
     reference_available: bool
     is_toxic: bool
+    applied_fee_pips: int | None = None
 
     def to_dict(self) -> dict[str, int | bool]:
-        return asdict(self)
+        return {key: value for key, value in asdict(self).items() if value is not None}
 
 
 @dataclass(frozen=True)
