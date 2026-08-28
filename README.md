@@ -262,6 +262,7 @@ The interactive signal-lab cards are explicitly simulated. The separate **Live T
 | [Threat model](docs/THREAT_MODEL.md) | Trust boundaries, attack surfaces, controls, and residual risks |
 | [Verification guide](docs/VERIFICATION.md) | Whole-repository and focused verification gates |
 | [Deployment runbook](docs/DEPLOYMENT_RUNBOOK.md) | Current G10 Circle + Reactive Legacy deployment and acceptance procedure |
+| [G10 deployment readiness](docs/G10_DEPLOYMENT_READINESS.md) | Verified simulations, predicted addresses, costs, and the remaining owner gate |
 | [Reactive Legacy migration](docs/REACTIVE_LEGACY_MIGRATION.md) | Pinned Legacy topology, infrastructure, authentication, funding, and proof gates |
 | [Circle migration](docs/CIRCLE_MIGRATION.md) | Rationale and record of the active transport migration |
 | [Phase 8D handoff](docs/PHASE8D_HANDOFF.md) | Live deployment, receipts, spend, and acceptance evidence |
