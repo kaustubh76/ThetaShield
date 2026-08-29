@@ -9,7 +9,7 @@ import {OwnedTwoStep} from "../../src/security/OwnedTwoStep.sol";
 import {MockMessageTransmitterV2} from "../mocks/MockMessageTransmitterV2.sol";
 
 contract ThetaShieldControllerTest is Test {
-    address private constant OWNER = 0xd1DcAAFf9356d5a42f2eE6F90179C4509386a83f;
+    address private constant OWNER = address(0xA11CE);
     uint32 private constant PROCESSOR_DOMAIN = 0;
     bytes32 private constant PROCESSOR = bytes32(uint256(uint160(address(0xBEEF))));
     bytes32 private constant POOL_ID = keccak256("theta-shield-test-pool");

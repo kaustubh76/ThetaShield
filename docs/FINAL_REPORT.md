@@ -77,13 +77,13 @@ The remaining blockers for anything beyond a testnet demo are a production
 oracle adapter, independent audits, monitored redundant keepers, hardware-backed
 or multisig ownership, and incident response. The public Phase 8D Circle trace
 remains historical evidence. The G10 Circle + Reactive Legacy trace is complete
-and linked from `docs/G10_LIVE_ACCEPTANCE.md`; its idle Cron credit must be
+and linked from `the live deployment manifest`; its idle Cron credit must be
 monitored and replenished as an operational liveness requirement.
 
 ## Reproduce
 
 ```sh
-git clone --recurse-submodules git@github.com:RudraBhaskar9439/ThetaShield.git
+git clone --recurse-submodules git@github.com:kaustubh76/ThetaShield.git
 cd ThetaShield
 make verify
 ```

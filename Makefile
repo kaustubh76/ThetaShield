@@ -127,6 +127,7 @@ deployment-dry-run:
 
 deployment-schema-check:
 	$(PYTHON) -m json.tool deployments/manifest.schema.json >/dev/null
+	$(PYTHON) script/check_deployment_manifests.py
 
 phase7-check: dependency-check secret-check boundary-fuzz-check invariant-check gas-check fork-check deployment-schema-check deployment-dry-run
 

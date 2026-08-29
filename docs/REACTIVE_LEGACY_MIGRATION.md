@@ -1,9 +1,9 @@
 # Reactive Legacy Lasna Migration
 
 > **Implemented and accepted.** The final Legacy RSC
-> `0x56E5590ef1fdA9fcA32ab2EEbF1B57845c29900a` produced both authenticated
+> `0x4f00e3BDd224F4c4b4958D54cD774E84B9092609` produced both authenticated
 > Ethereum Sepolia callbacks in the public G10 lifecycle. See
-> [G10 Live Acceptance](G10_LIVE_ACCEPTANCE.md) for receipts and operating
+> [G10 Live Acceptance](../deployments/unichain-sepolia-ethereum-sepolia-reactive-legacy-kaustubh76-live.json) for receipts and operating
 > funding notes.
 
 ## Decision

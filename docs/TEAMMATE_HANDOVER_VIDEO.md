@@ -13,11 +13,11 @@ lives, how to verify it, and which boundaries must not be crossed casually.
 Open these tabs in order:
 
 1. [`README.md`](../README.md)
-2. [ThetaShield dashboard](https://theta-shield.vercel.app)
+2. [ThetaShield dashboard](https://thetashield.vercel.app)
 3. [Detailed Architecture 4](THETASHIELD_ARCHITECTURE4.png)
 4. [Simplified video architecture](THETASHIELD_VIDEO_ARCHITECTURE.png)
-5. [`docs/G10_LIVE_ACCEPTANCE.md`](G10_LIVE_ACCEPTANCE.md)
-6. [`deployments/unichain-sepolia-ethereum-sepolia-reactive-legacy-g10-live.json`](../deployments/unichain-sepolia-ethereum-sepolia-reactive-legacy-g10-live.json)
+5. [`the live deployment manifest`](../deployments/unichain-sepolia-ethereum-sepolia-reactive-legacy-kaustubh76-live.json)
+6. [`deployments/unichain-sepolia-ethereum-sepolia-reactive-legacy-kaustubh76-live.json`](../deployments/unichain-sepolia-ethereum-sepolia-reactive-legacy-kaustubh76-live.json)
 7. The repository tree in an editor
 8. A terminal at the repository root
 
@@ -229,7 +229,7 @@ the recording unless there is time; show the command and the latest receipt.
 “Clone the private repository with submodules, then run the full gate.”
 
 ```bash
-git clone --recurse-submodules git@github.com:RudraBhaskar9439/ThetaShield.git
+git clone --recurse-submodules git@github.com:kaustubh76/ThetaShield.git
 cd ThetaShield
 FOUNDRY_PROFILE=ci make verify
 ```
@@ -254,7 +254,7 @@ parameters are documented, but credentials must be shared separately through
 an approved secure channel or replaced with teammate-owned credentials.
 
 The live deployment was created from the public owner address
-`0xd1DcAAFf9356d5a42f2eE6F90179C4509386a83f`. Repository access alone does not
+`0x33189c643774ED2713EbFf5A6923e5fa42b96eE8`. Repository access alone does not
 transfer on-chain administration.
 
 The controller, Circle transport, and demo reference feed use two-step

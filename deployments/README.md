@@ -2,7 +2,7 @@
 
 The current G10 `RESEARCH_V1` deployment and its complete Circle + Reactive
 Legacy acceptance trace are recorded in
-`unichain-sepolia-ethereum-sepolia-reactive-legacy-g10-live.json`. It
+`unichain-sepolia-ethereum-sepolia-reactive-legacy-kaustubh76-live.json`. It
 contains the three-pool reference sampler, paired lenses, authenticated Legacy
 callbacks, returned Circle recommendation, later fee-proof swap, and the
 approved-versus-actual spend record for revision
@@ -10,7 +10,7 @@ approved-versus-actual spend record for revision
 
 The Phase 8D Circle deployment and complete two-chain acceptance trace are
 recorded in
-`unichain-sepolia-ethereum-sepolia-circle-phase8d-live.json`. It covers the
+`unichain-sepolia-ethereum-sepolia-reactive-legacy-kaustubh76-live.json`. It covers the
 live Unichain Sepolia hook/controller/transport and Ethereum Sepolia demo
 feed/processor deployed from revision
 `7dcaadad351b238a64133f053f195e11d9a2ef71`.

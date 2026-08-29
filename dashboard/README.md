@@ -47,7 +47,7 @@ For Vercel, select `dashboard` as the project root. The committed
 `vercel.json` selects the Next.js framework and native build command; the
 output directory remains the Next.js default.
 
-Production: <https://theta-shield.vercel.app>
+Production: <https://thetashield.vercel.app>
 
 ## Lens-aware live reads
 

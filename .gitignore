@@ -36,3 +36,4 @@ dist/
 tmp/
 *.log
 circle-attestation*.json
+.vercel

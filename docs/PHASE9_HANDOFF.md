@@ -2,7 +2,7 @@
 
 > **Post-Phase-9 update:** the public dashboard now defaults to the paired G10
 > lenses and links the complete Circle + Reactive Legacy acceptance trail. See
-> [G10 Live Acceptance](G10_LIVE_ACCEPTANCE.md). The original Phase 9 text below
+> [G10 Live Acceptance](../deployments/unichain-sepolia-ethereum-sepolia-reactive-legacy-kaustubh76-live.json). The original Phase 9 text below
 > is retained as its historical handoff.
 
 ## Delivered
@@ -18,9 +18,8 @@
 - A Phase 9 integrity checker plus root Make targets for dependency install,
   dashboard verification, and clean-clone reproduction.
 
-The original dashboard deployment remains owner-only at
-<https://thetashield-uhi10.rbrudra9439.chatgpt.site>. A public Vercel
-production deployment is available at <https://theta-shield.vercel.app>.
+The public Vercel production deployment is available at
+<https://thetashield.vercel.app>.
 
 ## Verification
 

@@ -588,6 +588,7 @@ export const trustBands = [
     items: [
       "Circle observation and recommendation receipts",
       "Three-source RESEARCH_V1 profile live on G10",
+      "Self-contained reference market — operator-moved, not independent",
       "Paired lenses and two Reactive Legacy callbacks proven",
       "Unaudited testnet prototype",
     ],

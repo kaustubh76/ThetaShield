@@ -108,11 +108,11 @@ copy, and a final clean-clone reproduction.
 
 The dashboard, final report, demo script, draft submission, and Phase 9
 verification gate are complete. Phase 8D live addresses and acceptance evidence
-are recorded in [`PHASE8D_HANDOFF.md`](PHASE8D_HANDOFF.md). No external
+are recorded in [`the live deployment manifest`](../deployments/unichain-sepolia-ethereum-sepolia-reactive-legacy-kaustubh76-live.json). No external
 submission has been made. The migration decision is recorded in
 [`CIRCLE_MIGRATION.md`](CIRCLE_MIGRATION.md).
 
 The post-release functional programme and its locked architecture decisions are
 recorded in [`FUNCTIONAL_GAP_IMPLEMENTATION.md`](FUNCTIONAL_GAP_IMPLEMENTATION.md).
 The completed G10 deployment and public receipts are recorded in
-[`G10_LIVE_ACCEPTANCE.md`](G10_LIVE_ACCEPTANCE.md).
+[`the live deployment manifest`](../deployments/unichain-sepolia-ethereum-sepolia-reactive-legacy-kaustubh76-live.json).

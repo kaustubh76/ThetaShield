@@ -56,22 +56,20 @@ const explorers = {
 };
 
 const liveAddresses = [
-  ["Hook", "0xD4b944d3b50003d0DBa0201De2828663903900C0", explorers.unichain],
-  ["Controller", "0x20C178712A124F5B1e86206280c6672082C5C9C6", explorers.unichain],
-  ["Circle transport", "0x0C36E4a7a83Bf916B10f467b95296f2E19Dca55C", explorers.unichain],
-  ["Processor", "0x64846969b386444BFa1a2905DB6Dad319b578654", explorers.ethereum],
-  ["Reactive RSC", "0x56E5590ef1fdA9fcA32ab2EEbF1B57845c29900a", explorers.reactive],
+  ["Hook", "0x7f5d1beB9957d94c7fc0c8FC4D8DA4A0A0b8c0c0", explorers.unichain],
+  ["Controller", "0x23ae3E1A306824F0CBA0b6561cB7E5502f63dFb7", explorers.unichain],
+  ["Circle transport", "0x4f00e3BDd224F4c4b4958D54cD774E84B9092609", explorers.unichain],
+  ["Processor", "0x7bdF95029fd614e5FCB5C7B2D63e263a8Ca4BBF2", explorers.ethereum],
+  ["Reactive RSC", "0x4f00e3BDd224F4c4b4958D54cD774E84B9092609", explorers.reactive],
 ] as const;
 
 const liveReceipts = [
-  ["01", "Swap observed", "Unichain Sepolia", "0x7bc130d5dc7c031f253c6418540c16d3b7143aa2e24dd99a7c092fbea0f55bd7", explorers.unichain],
-  ["02", "Circle observation received", "Ethereum Sepolia", "0xb348e4ba02762635b18b3299158f4523b15b8fadd0fb8af72dde0275f4d0a5bc", explorers.ethereum],
-  ["03", "Reactive maturity wake", "Reactive Lasna", "0xf5577cc1819d6f1519cbf3734c3d289980df3e29361f21e66c4f93ff1f41567e", explorers.reactive],
-  ["04", "Authenticated processing callback", "Ethereum Sepolia", "0xbe1b53942518324fdf9494c857b8a9b9a4b42a6f4455780fe6d1d952a7ec31d3", explorers.ethereum],
-  ["05", "Reactive finalization wake", "Reactive Lasna", "0x56f432c88ea8342c758e523c0b8300bb13b968e5d6b13e2ece4d7748c3a267de", explorers.reactive],
-  ["06", "Recommendation sent", "Ethereum Sepolia", "0x8ad2731242f40d7d42b3b13ab3bc56c8a6adf8e66a7a06e37867b127bffe9ffc", explorers.ethereum],
-  ["07", "Recommendation installed", "Unichain Sepolia", "0x14928a93c760ca5c04a9343d24b3622da8dbdcc2044120186b984714e1ff35a9", explorers.unichain],
-  ["08", "Hook fee proven", "Unichain Sepolia", "0x678ab18735f94703508d184c5585fcc2689df260b64362c8c9e598cb41dde724", explorers.unichain],
+  ["01", "Swap observed", "Unichain Sepolia", "0x3ad17b9a8e284026df5f30b675689c500841478ef349944f89b90decda0e93cf", explorers.unichain],
+  ["02", "Circle observation received", "Ethereum Sepolia", "0x34619e9faa51bec6e08ca79317103d0126e09e4a6d79e4d7c18bcdf62db526e6", explorers.ethereum],
+  ["03", "Authenticated processing callback", "Ethereum Sepolia", "0x302af17e45e9c6e0e92f3cd5a2a8c09ef7e049a2fc5e9e928653b79d736a96a8", explorers.ethereum],
+  ["04", "Recommendation sent", "Ethereum Sepolia", "0x77eb4442df3c08ec62e13222bdde301627bc2901b8973ecfe746b6be84d51719", explorers.ethereum],
+  ["05", "Recommendation installed", "Unichain Sepolia", "0xe95924edea96230539da0a3e329d8948e9994fd9b37a92918599ca179309d18a", explorers.unichain],
+  ["06", "Hook fee proven", "Unichain Sepolia", "0x43de20571e80987e566f240e4cb3dad8de0c3235fd90942475360e2e75520e1b", explorers.unichain],
 ] as const;
 
 function shortHex(value: string, left = 8, right = 6) {
@@ -193,7 +191,7 @@ function LiveProofPanel() {
         {proof ? <span>confidence {proof.origin.recommendation.confidenceBps / 100}% · valid until {formatChainTime(proof.origin.recommendation.validUntil)}</span> : null}
       </div>
 
-      <div className="receipt-heading"><span>LIVE RECEIPT TRAIL</span><b>Eight public transactions · open any receipt</b></div>
+      <div className="receipt-heading"><span>LIVE RECEIPT TRAIL</span><b>Six public transactions · open any receipt</b></div>
       <div className="receipt-rail">
         {liveReceipts.map(([number, title, chain, hash, explorer]) => (
           <a className="receipt-step" href={`${explorer}/tx/${hash}`} key={hash} rel="noreferrer" target="_blank">

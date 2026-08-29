@@ -23,7 +23,7 @@ Delivered:
   later execution-price normalization; and
 - local integration against the official Uniswap v4 core `PoolManager`.
 
-The public account `0xd1DcAAFf9356d5a42f2eE6F90179C4509386a83f` is recorded as
+The public account `0x33189c643774ED2713EbFf5A6923e5fa42b96eE8` is recorded as
 the intended owner/deployer in `.env.example`. No private key is present or
 required for local verification.
 

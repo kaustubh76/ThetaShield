@@ -179,6 +179,11 @@ links and addresses on screen for verification, not narration.
 - The RSC remains active forever without lREACT credit monitoring.
 - Circle schedules delayed work automatically.
 - The deployed testnet reference feed is a production oracle.
+- The three live reference pools are independent price discovery. (They are one
+  self-contained project-issued pair across three fee tiers, moved together by
+  `runMoveReferences()`; their agreement is structural, not evidential.)
+- A live non-baseline fee would be measured adverse selection. (Under the current
+  topology it would be operator-moved, and must be shown as a mechanism demo.)
 
 ## Judge questions
 
@@ -205,6 +210,15 @@ wallet blacklist or identity score.
 
 The current swap continues. Existing recommendations expire, and the controller
 returns to the bounded baseline. Reactive is outside the critical path.
+
+### Is the live reference price real market data?
+
+No. The `RESEARCH_V1` reference market is three fee tiers of a project-issued pair on
+Ethereum Sepolia, separate from the protected Unichain pair, seeded and moved by us.
+It exercises the full multi-source path — liquidity floors, robust median, dispersion,
+confidence — against a market we control. Independent evidence needs reference tiers
+co-located with the protected pair; that is the next architectural step, not a claim
+we make today.
 
 ### Why did the live fee not increase?
 

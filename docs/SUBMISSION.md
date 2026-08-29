@@ -37,9 +37,9 @@ correlation; H5 retains `59.70%` toxic coverage with a `20.79` percentage-point
 false-positive reduction. These are synthetic risk-proxy results, not exact LVR
 or profitability claims.
 
-Repository: <https://github.com/RudraBhaskar9439/ThetaShield> (private during development)
+Repository: <https://github.com/kaustubh76/ThetaShield> (private during development)
 
-Dashboard: <https://theta-shield.vercel.app> (public production deployment)
+Dashboard: <https://thetashield.vercel.app> (public production deployment)
 
 Current boundary: unaudited and testnet-only, with a permissionless
 liquidity-filtered three-pool reference sampler and a completed public

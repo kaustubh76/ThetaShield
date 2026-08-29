@@ -52,7 +52,36 @@ def main() -> None:
         if f"uses: {action}@{commit}" not in workflow:
             raise SystemExit(f"CI action {action} differs from the dependency lock")
 
+    _check_local_foundry(lock["toolchains"]["foundry_ci"])
+
     print(f"Dependency lock verified: {len(expected_submodules)} top-level submodules and pinned CI toolchains.")
+
+
+def _check_local_foundry(expected: str) -> None:
+    """Fail closed when the local Foundry differs from the pinned CI toolchain.
+
+    The Phase 5/6/6.1/G1 artifacts are byte-reproducible only against one Foundry
+    build: `research/experiments/phase5_baselines.py` measures hook gas by running
+    `forge test --match-contract ThetaShieldHookGasTest`, and that measurement
+    calibrates every downstream fee budget. A different Foundry reports different
+    gas, so the committed artifacts read as stale and `snapshots/*.json` is
+    rewritten as a side effect. Reporting that once, here, is clearer than four
+    unexplained "artifacts are stale" failures later in `make verify`.
+    """
+    version_output = _run("forge", "--version")
+    reported = version_output.splitlines()[0] if version_output else ""
+    normalized = expected.lstrip("v")
+    # Match only the version line so a build timestamp or commit hash cannot alias it.
+    if normalized in reported:
+        return
+    raise SystemExit(
+        f"local Foundry does not match the pinned toolchain {expected}\n"
+        f"  reported: {reported}\n"
+        "  The research artifacts are calibrated against a hook-gas measurement taken\n"
+        f"  with Foundry {expected}; another build changes the measured gas, so\n"
+        "  phase5/phase6/phase61/gap-g1 checks fail and snapshots/ is rewritten.\n"
+        f"  Install the pinned build with: foundryup --install {expected}"
+    )
 
 
 def _gitmodule_values(key: str) -> dict[str, str]:

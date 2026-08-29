@@ -44,8 +44,8 @@ test("server-renders the complete ThetaShield research dashboard", async () => {
   assert.match(html, /Interrogate the trade-offs/i);
   assert.match(html, /Direct audited getters are used only when the paired G10 lenses are explicitly disabled/i);
   assert.match(html, /Public Circle lifecycle/);
-  assert.match(html, /Reactive maturity wake/);
-  assert.match(html, /Eight public transactions/i);
+  assert.match(html, /Authenticated processing callback/);
+  assert.match(html, /Six public transactions/i);
   assert.match(html, /Circle CCTP/);
   assert.match(html, /Live Circle \+ Reactive loop proven/);
   assert.match(html, /Risk proxy—not exact LVR/);
@@ -69,6 +69,6 @@ test("live API defaults to the paired G10 lenses with a named direct fallback", 
   assert.match(route, /historical-direct/);
   assert.match(route, /readOriginLens/);
   assert.match(route, /readProcessorLens/);
-  assert.match(route, /0x393cBc35F3303Cbb2e83657fC2DDAd03b65Ce3A0/);
-  assert.match(route, /0xf1EE0503F968E9E828eEBf258594bEF8C40d97a9/);
+  assert.match(route, /0xEF9C630C6977d16Dac5107fe590FB184CB593D5d/);
+  assert.match(route, /0x4a1b453f4Ba183d7BEcd7e81bFfd8fB0682F1EAb/);
 });

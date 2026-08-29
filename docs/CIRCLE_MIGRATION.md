@@ -80,4 +80,4 @@ Sepolia/Lasna dry-run manifests are historical and must not be broadcast.
 Hook submission remains outside this plan and must not be performed.
 
 The live addresses and complete Circle acceptance trace are recorded in
-[`PHASE8D_HANDOFF.md`](PHASE8D_HANDOFF.md) and the schema-v3 live manifest.
+[`the live deployment manifest`](../deployments/unichain-sepolia-ethereum-sepolia-reactive-legacy-kaustubh76-live.json) and the schema-v3 live manifest.
