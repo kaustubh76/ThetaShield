@@ -34,6 +34,9 @@ test("server-renders the complete ThetaShield research dashboard", async () => {
   assert.match(html, /See the delayed fee travel/i);
   assert.match(html, /REACTIVE NETWORK/i);
   assert.match(html, /LP-benefit replay console/i);
+  assert.match(html, /Pause replay/i);
+  assert.match(html, /Replay cursor/i);
+  assert.match(html, /CONTROL JOURNEY/i);
   assert.match(html, /ObservationTransportFailed/i);
   assert.match(html, /DropReason\.EpochCapacity/i);
   assert.match(html, /Interrogate the trade-offs/i);

@@ -56,6 +56,16 @@ const mechanismStages = [
   ["origin", "Next fee", "Later swap consumes installed state"],
 ] as const;
 
+const mechanismPhases = [
+  { lane: "origin", label: "Swap path", network: "Unichain", firstStage: 0, lastStage: 2 },
+  { lane: "circle", label: "Evidence outbound", network: "CIRCLE CCTP V2", firstStage: 3, lastStage: 4 },
+  { lane: "processor", label: "Queue evidence", network: "Ethereum", firstStage: 5, lastStage: 5 },
+  { lane: "reactive", label: "Autonomous wake", network: "REACTIVE NETWORK", firstStage: 6, lastStage: 7 },
+  { lane: "processor", label: "Delayed analysis", network: "Ethereum", firstStage: 8, lastStage: 13 },
+  { lane: "circle", label: "Recommendation return", network: "CIRCLE CCTP V2", firstStage: 14, lastStage: 14 },
+  { lane: "origin", label: "Apply next fee", network: "Unichain", firstStage: 15, lastStage: 16 },
+] as const;
+
 function percent(value: number, digits = 1) {
   return `${value.toFixed(digits)}%`;
 }
@@ -86,12 +96,17 @@ function ArchitectureAnimator({
     if (!playing || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const interval = window.setInterval(
       () => setActiveStage((current) => (current + 1) % mechanismStages.length),
-      1_250,
+      1_600,
     );
     return () => window.clearInterval(interval);
   }, [playing]);
 
   const active = mechanismStages[activeStage];
+  const activePhaseIndex = mechanismPhases.findIndex(
+    (phase) => activeStage >= phase.firstStage && activeStage <= phase.lastStage,
+  );
+  const activePhase = mechanismPhases[Math.max(0, activePhaseIndex)];
+  const activePhaseStages = mechanismStages.slice(activePhase.firstStage, activePhase.lastStage + 1);
   const failure = failureModes[failureMode];
 
   return (
@@ -118,32 +133,58 @@ function ArchitectureAnimator({
         </button>
       </div>
 
-      <div className="architecture-lanes">
-        {(["origin", "circle", "processor", "reactive"] as const).map((lane) => (
-          <div className={`architecture-lane ${lane}`} key={lane}>
-            <div className="lane-heading">
-              <span>{lane === "origin" ? "UNICHAIN SEPOLIA" : lane === "circle" ? "CIRCLE CCTP V2" : lane === "processor" ? "ETHEREUM PROCESSOR" : "REACTIVE NETWORK"}</span>
-              <b>{lane === "origin" ? "execution + enforcement" : lane === "circle" ? "authenticated cross-chain rail" : lane === "processor" ? "delayed evidence engine" : "autonomous event + cron plane"}</b>
-            </div>
-            <div className="lane-stages">
-              {mechanismStages.map(([stageLane, title, copy], index) => stageLane === lane ? (
-                <button
-                  aria-label={`Step ${index + 1}: ${title}`}
-                  className={index === activeStage ? "active" : index < activeStage ? "complete" : ""}
-                  key={title}
-                  onClick={() => { setActiveStage(index); setPlaying(false); }}
-                  type="button"
-                >
-                  <span>{String(index + 1).padStart(2, "0")}</span><b>{title}</b><small>{copy}</small>
-                </button>
-              ) : null)}
+      <div
+        className="control-journey"
+        style={{ "--journey-progress": `${(Math.max(0, activePhaseIndex) / (mechanismPhases.length - 1)) * 100}%` } as CSSProperties}
+      >
+        <div className="journey-track" aria-hidden="true"><i /><b /></div>
+        <div className="journey-phases" aria-label="ThetaShield control journey">
+          {mechanismPhases.map((phase, phaseIndex) => (
+            <button
+              aria-label={`Phase ${phaseIndex + 1}: ${phase.label} on ${phase.network}`}
+              className={phaseIndex === activePhaseIndex ? "active" : phaseIndex < activePhaseIndex ? "complete" : ""}
+              data-lane={phase.lane}
+              key={`${phase.network}-${phase.label}`}
+              onClick={() => { setActiveStage(phase.firstStage); setPlaying(false); }}
+              type="button"
+            >
+              <span>{String(phaseIndex + 1).padStart(2, "0")}</span>
+              <i aria-hidden="true" />
+              <b>{phase.label}</b>
+              <small>{phase.network}</small>
+            </button>
+          ))}
+        </div>
+        <div className="journey-detail">
+          <div>
+            <span>ACTIVE STEP {String(activeStage + 1).padStart(2, "0")} / {mechanismStages.length}</span>
+            <b>{active[1]}</b>
+            <p>{active[2]}</p>
+          </div>
+          <div className="phase-sequence" aria-label={`Steps in ${activePhase.label}`}>
+            <span>{activePhase.network.toUpperCase()} · {activePhase.label}</span>
+            <div>
+              {activePhaseStages.map(([, title], index) => {
+                const absoluteIndex = activePhase.firstStage + index;
+                return (
+                  <button
+                    aria-label={`Step ${absoluteIndex + 1}: ${title}`}
+                    className={absoluteIndex === activeStage ? "active" : absoluteIndex < activeStage ? "complete" : ""}
+                    key={title}
+                    onClick={() => { setActiveStage(absoluteIndex); setPlaying(false); }}
+                    type="button"
+                  >
+                    <i />{title}
+                  </button>
+                );
+              })}
             </div>
           </div>
-        ))}
+        </div>
       </div>
 
       <div className="mechanism-status" aria-live="polite">
-        <div><span>ACTIVE STEP {String(activeStage + 1).padStart(2, "0")}</span><b>{active[1]}</b><p>{active[2]}</p></div>
+        <div><span>CONTROL JOURNEY</span><b>{activePhase.label}</b><p>{activePhase.network} is carrying this stage. The trace advances in execution order without moving the reader between disconnected lanes.</p></div>
         <div className={failureMode === "healthy" ? "healthy" : "failed"}><span>SELECTED PATH</span><code>{failure.code}</code><p>{failure.result}</p></div>
       </div>
 
@@ -160,16 +201,24 @@ function ArchitectureAnimator({
 function FeeTimeline({
   points,
   meanFeeBps,
+  activeIndex,
 }: {
   points: SimulatorData["scenarios"][number]["points"];
   meanFeeBps: number;
+  activeIndex: number;
 }) {
   const maximum = Math.max(6, ...points.flatMap((point) => [point.buyFeeBps, point.sellFeeBps]));
+  const cursor = points.length > 1 ? (activeIndex / (points.length - 1)) * 100 : 0;
   return (
-    <div className="fee-timeline" aria-label="ThetaShield buy and sell fee over the scenario replay">
+    <div className="fee-timeline" aria-label="Live ThetaShield buy and sell fee replay">
       <div className="timeline-grid" style={{ "--mean": `${Math.min(100, (meanFeeBps / maximum) * 100)}%` } as CSSProperties}>
-        {points.map((point) => (
-          <i key={point.step} title={`Step ${point.step}: buy ${point.buyFeeBps.toFixed(2)} bps, sell ${point.sellFeeBps.toFixed(2)} bps`}>
+        <b className="replay-cursor-line" style={{ "--cursor": `${cursor}%` } as CSSProperties} />
+        {points.map((point, index) => (
+          <i
+            className={index === activeIndex ? "current" : index < activeIndex ? "past" : "future"}
+            key={point.step}
+            title={`Step ${point.step}: buy ${point.buyFeeBps.toFixed(2)} bps, sell ${point.sellFeeBps.toFixed(2)} bps`}
+          >
             <span className="buy" style={{ "--point": `${(point.buyFeeBps / maximum) * 100}%` } as CSSProperties} />
             <span className="sell" style={{ "--point": `${(point.sellFeeBps / maximum) * 100}%` } as CSSProperties} />
           </i>
@@ -189,6 +238,9 @@ function LPBenefitSimulator({
 }) {
   const [scenarioId, setScenarioId] = useState("persistent_informed_buying");
   const [policyId, setPolicyId] = useState("thetashield");
+  const [replayIndex, setReplayIndex] = useState(0);
+  const [replayPlaying, setReplayPlaying] = useState(true);
+  const [replaySpeed, setReplaySpeed] = useState(1);
   const [activeDimension, setActiveDimension] = useState(data.sensitivity[0].id);
   const [sensitivitySelections, setSensitivitySelections] = useState<Record<string, string>>(() => {
     const expected: Record<string, string> = {
@@ -205,6 +257,8 @@ function LPBenefitSimulator({
 
   const scenario = data.scenarios.find((entry) => entry.id === scenarioId) ?? data.scenarios[0];
   const policy = data.policies.find((entry) => entry.id === policyId) ?? data.policies[0];
+  const safeReplayIndex = Math.min(replayIndex, Math.max(0, scenario.points.length - 1));
+  const replayPoint = scenario.points[safeReplayIndex] ?? scenario.points[0];
   const outcome = scenario.lpOutcomes[policy.id];
   const sensitivityDimension = data.sensitivity.find((entry) => entry.id === activeDimension) ?? data.sensitivity[0];
   const sensitivity = sensitivityDimension.options.find(
@@ -230,6 +284,19 @@ function LPBenefitSimulator({
     [data.policies, scenario],
   );
 
+  useEffect(() => {
+    if (
+      !replayPlaying ||
+      scenario.points.length < 2 ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) return;
+    const interval = window.setInterval(
+      () => setReplayIndex((current) => current >= scenario.points.length - 1 ? 0 : current + 1),
+      Math.max(55, 220 / replaySpeed),
+    );
+    return () => window.clearInterval(interval);
+  }, [replayPlaying, replaySpeed, scenario.points.length]);
+
   return (
     <section className="section benefit-simulator" id="simulator">
       <div className="section-heading split-heading">
@@ -238,7 +305,7 @@ function LPBenefitSimulator({
       </div>
 
       <div className="simulator-controls">
-        <label><span>Scenario · 15</span><select value={scenarioId} onChange={(event) => setScenarioId(event.target.value)}>{data.scenarios.map((entry) => <option key={entry.id} value={entry.id}>{entry.label}</option>)}</select></label>
+        <label><span>Scenario · 15</span><select value={scenarioId} onChange={(event) => { setScenarioId(event.target.value); setReplayIndex(0); setReplayPlaying(true); }}>{data.scenarios.map((entry) => <option key={entry.id} value={entry.id}>{entry.label}</option>)}</select></label>
         <label><span>Policy · 5</span><select value={policyId} onChange={(event) => setPolicyId(event.target.value)}>{data.policies.map((entry) => <option key={entry.id} value={entry.id}>{entry.label}</option>)}</select></label>
         {data.sensitivity.map((dimension) => (
           <label key={dimension.id}>
@@ -259,10 +326,51 @@ function LPBenefitSimulator({
         <div><span>ACTIVE EXACT SENSITIVITY</span><b>{sensitivityDimension.label} · {sensitivity.label}</b><p>All other Phase 6 parameters remain at that experiment’s locked default.</p></div>
       </div>
 
+      <div className="replay-toolbar">
+        <div className="replay-actions">
+          <button
+            className="replay-play-control"
+            onClick={() => setReplayPlaying((current) => !current)}
+            type="button"
+          >{replayPlaying ? "Pause replay" : "Play replay"}</button>
+          <button
+            className="replay-reset-control"
+            onClick={() => { setReplayIndex(0); setReplayPlaying(false); }}
+            type="button"
+          >Reset</button>
+        </div>
+        <label className="replay-scrubber">
+          <span>Replay cursor</span>
+          <input
+            aria-label="Replay cursor"
+            max={Math.max(0, scenario.points.length - 1)}
+            min="0"
+            onChange={(event) => { setReplayIndex(Number(event.target.value)); setReplayPlaying(false); }}
+            type="range"
+            value={safeReplayIndex}
+          />
+        </label>
+        <div className="replay-speeds" aria-label="Replay speed">
+          {[1, 2, 4].map((speed) => (
+            <button
+              aria-pressed={replaySpeed === speed}
+              className={replaySpeed === speed ? "active" : ""}
+              key={speed}
+              onClick={() => setReplaySpeed(speed)}
+              type="button"
+            >{speed}×</button>
+          ))}
+        </div>
+        <div className="replay-readout" aria-live="off">
+          <span>EVENT {safeReplayIndex + 1} / {scenario.points.length} · T+{replayPoint.step * scenario.stepSeconds}s</span>
+          <b><i className="buy" />BUY {replayPoint.buyFeeBps.toFixed(2)} BPS <i className="sell" />SELL {replayPoint.sellFeeBps.toFixed(2)} BPS</b>
+        </div>
+      </div>
+
       <div className="simulator-grid">
         <article className="sim-panel timeline-panel">
           <div className="panel-heading"><span>01 · FEE BY DIRECTION</span><b>{scenario.eventCount} events · {scenario.stepSeconds}s steps</b></div>
-          <FeeTimeline meanFeeBps={policy.meanFeeBps} points={scenario.points} />
+          <FeeTimeline activeIndex={safeReplayIndex} meanFeeBps={policy.meanFeeBps} points={scenario.points} />
           <p>Directional lines are the ThetaShield control replay; the dotted guide is the selected policy’s pooled mean.</p>
         </article>
 
