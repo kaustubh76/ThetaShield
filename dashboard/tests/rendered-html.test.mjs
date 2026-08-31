@@ -32,11 +32,13 @@ test("server-renders the complete ThetaShield research dashboard", async () => {
   assert.match(html, /INITIALIZING CONTROL LOOP/i);
   assert.match(html, /01 · OBSERVE/i);
   assert.match(html, /Directional LP protection/i);
-  assert.match(html, /Current sample excluded from/);
   assert.match(html, /The failures stayed in the record/);
   assert.match(html, /59\.70%/);
   assert.match(html, /FAIL · historical \/ PASS · holdout/i);
+  // The trust section was cut; its provenance line now closes the evidence section.
   assert.match(html, /Trust surface/i);
+  assert.match(html, /What the LP keeps/i);
+  assert.match(html, /Run the protection loop/i);
   assert.match(html, /thetashield-dashboard-g9-v2/i);
   // Server-rendered rather than mounted on the client, so the ambient background
   // layer is in the document at first paint and the page never flashes without it.
@@ -70,7 +72,6 @@ test("server-renders the complete ThetaShield research dashboard", async () => {
   // Before any read returns, the page names the declared paths without claiming
   // which one answered. The lens/direct claims themselves are client-side.
   assert.match(html, /with the audited getters as the declared fallback path/i);
-  assert.match(html, /Public Circle lifecycle/);
   assert.match(html, /Authenticated processing callback/);
 
   assert.match(html, /6 public transactions/i);
@@ -81,7 +82,6 @@ test("server-renders the complete ThetaShield research dashboard", async () => {
     assert.match(html, new RegExp(message.relay_transaction_hash));
   }
   assert.match(html, /Circle CCTP/);
-  assert.match(html, /Live Circle \+ Reactive loop proven/);
   assert.match(html, /Risk proxy—not exact LVR/);
   assert.match(html, /Live testnet proof/i);
   assert.match(html, /Read directly from deployed contracts/i);

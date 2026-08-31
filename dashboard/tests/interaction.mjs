@@ -83,8 +83,6 @@ check("replay speed selectable", (await evaluate(`document.querySelectorAll('.re
 await evaluate(`__q('.replay-reset-control').click(); true;`); await wait(400);
 check("replay reset", /EVENT 1 \//.test((await evaluate(`__txt('.replay-readout span')`)) ?? ""), await evaluate(`__txt('.replay-readout span')`));
 
-await evaluate(`document.querySelectorAll('.scenario-tabs button')[2].click(); true;`); await wait(400);
-check("signal lab tab switches", (await evaluate(`document.querySelectorAll('.scenario-tabs button')[2].getAttribute('aria-selected')`)) === "true", await evaluate(`__txt('.scenario-card .scenario-intro b')`));
 await evaluate(`__q('#registry-components').open = false; __q('#registry-components > summary').click(); true;`); await wait(300);
 check("accordion opens", (await evaluate(`__q('#registry-components').open`)) === true && (await evaluate(`document.querySelectorAll('#registry-components .component-row').length`)) > 0, `rows=${await evaluate(`document.querySelectorAll('#registry-components .component-row').length`)}`);
 
@@ -94,6 +92,20 @@ await evaluate(`__q('#registry-parameters').open = true; true;`); await wait(600
 const paramRows = await evaluate(`document.querySelectorAll('#registry-parameters .param-rows > div').length`);
 check("deployed parameters populate from shared poll (no click)", paramRows > 50, `rows=${paramRows}`);
 check("no lingering read-parameters button", (await evaluate(`[...document.querySelectorAll('button')].some(b => /Read deployed parameters/.test(b.textContent))`)) === false, "button removed");
+await evaluate(`document.querySelectorAll('.distinction-card')[1].click(); true;`); await wait(400);
+check("policy card selects a policy", (await evaluate(`document.querySelectorAll('.distinction-card')[1].getAttribute('aria-pressed')`)) === "true", await evaluate(`__txt('.distinction-card.active h3')`));
+
+await evaluate(`document.querySelectorAll('.policy-table .policy-pick')[0].click(); true;`); await wait(400);
+check("policy table row selects", (await evaluate(`document.querySelector('.policy-table tr.is-selected') !== null`)) === true, await evaluate(`__txt('.policy-table tr.is-selected .policy-pick')`));
+
+await evaluate(`document.querySelectorAll('.hypothesis-row')[0].querySelector('summary').click(); true;`); await wait(300);
+check("hypothesis row opens its rule", (await evaluate(`document.querySelectorAll('.hypothesis-row')[0].hasAttribute('open')`)) === true, (await evaluate(`__txt('.hypothesis-row[open] .hypothesis-rule')`)).slice(0, 46));
+
+await evaluate(`__q('.run-action').click(); true;`); await wait(2200);
+check("run control starts the guided run", (await evaluate(`__q('.run-progress') !== null && __q('.run-action').className.includes('is-running')`)) === true, await evaluate(`__txt('.run-progress')`));
+await evaluate(`__q('.run-action').click(); true;`); await wait(400);
+check("run control stops cleanly", (await evaluate(`__q('.run-action').className.includes('is-running')`)) === false, "stopped");
+
 check("nav anchors resolve", (await evaluate(`JSON.stringify([...document.querySelectorAll('.site-header nav a')].filter(a => !document.querySelector(a.getAttribute('href'))).map(a=>a.getAttribute('href')))`)) === "[]", "ok");
 check("external links https", (await evaluate(`JSON.stringify([...document.querySelectorAll('a[href]')].map(a=>a.getAttribute('href')).filter(h => !h.startsWith('#') && !/^https:\\/\\//.test(h)))`)) === "[]", "ok");
 

@@ -1,29 +1,21 @@
 "use client";
 
-import { useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
+import { useCallback, useRef, useState } from "react";
 import Accordion from "./components/accordion";
 import HoldoutPaired from "./components/charts/holdout-paired";
 import MarkoutTrace from "./components/charts/markout-trace";
 import PolicyScatter from "./components/charts/policy-scatter";
 import SensitivityMultiples from "./components/charts/sensitivity-multiples";
 import DistinctionStrip from "./components/distinction-strip";
-import { formatInt } from "./components/format";
 import LiveProofPanel from "./components/live-proof/live-proof-panel";
 import { useLiveProof } from "./components/live-proof/use-live-proof";
+import LpOutcome from "./components/lp-outcome";
 import RegistrySection from "./components/registry/registry-section";
+import { useReducedMotion } from "./components/use-reduced-motion";
 import type { DeploymentView } from "./deployment-data";
-import G9Experience from "./g9-experience";
+import G9Experience, { type RunPhase } from "./g9-experience";
 import LaunchIntro from "./launch-intro";
 import type { DashboardView } from "./research-data";
-
-function MetricBar({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="metric-bar">
-      <div><span>{label}</span><b>{value}%</b></div>
-      <i style={{ "--value": `${value}%` } as CSSProperties} />
-    </div>
-  );
-}
 
 export default function DashboardClient({
   data,
@@ -35,16 +27,13 @@ export default function DashboardClient({
   const {
     bundleMeta,
     controllerConfig,
-    evidenceStats,
     heroTrace,
     holdoutStory,
     hypotheses,
+    lpOutcome,
     policyRows,
     researchConfigRows,
-    researchScale,
-    scenarios,
     sensitivityAll,
-    trustBands,
   } = data;
   const live = useLiveProof();
   // "stale" is not a flavour of ready: the header must not keep asserting a live
@@ -56,49 +45,69 @@ export default function DashboardClient({
       : live.error
         ? "error"
         : "loading";
-  const [selectedId, setSelectedId] = useState(scenarios[0].id);
-  // The tablist roles were declared without arrow-key support, a tabpanel or a
-  // roving tabIndex, so the ARIA described an interaction the page did not
-  // implement. Completing the pattern is better than dropping the roles: these
-  // really are tabs over one panel.
-  const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-  const onTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
-    const last = scenarios.length - 1;
-    const next =
-      event.key === "ArrowRight" ? (index + 1) % scenarios.length
-        : event.key === "ArrowLeft" ? (index + last) % scenarios.length
-          : event.key === "Home" ? 0
-            : event.key === "End" ? last
-              : null;
-    if (next === null) return;
-    event.preventDefault();
-    const nextId = scenarios[next].id;
-    setSelectedId(nextId);
-    tabRefs.current[nextId]?.focus();
-  };
-  const selected = scenarios.find((scenario) => scenario.id === selectedId) ?? scenarios[0];
   const sensitivityCaseCount = sensitivityAll.dimensions.reduce(
     (total, dimension) => total + dimension.cases.length,
     0,
   );
-  // Derived from the frozen acceptance record, not asserted: a manifest that
-  // ever records a failed run must not keep rendering a completed checklist.
-  // The manifest's own verdict decides the marker; the automation status is
-  // reported verbatim rather than compared against a string typed here.
-  const acceptanceComplete = deployment.acceptance.passed;
-  const acceptanceSummary = acceptanceComplete
-    ? `Circle return, Reactive Legacy callbacks (${deployment.automation.status}), and the ${deployment.receipts.length}-receipt later-fee trail preserved`
-    : `acceptance not recorded as passed · automation ${deployment.automation.status}`;
-  const bands = trustBands.map((band) =>
-    band.id === "live"
-      ? {
-          ...band,
-          items: [
-            `Cycle ${deployment.acceptance.reactiveCycleId} accepted · expected ${(deployment.acceptance.expectedFeePips / 100).toFixed(2)} = observed ${(deployment.acceptance.observedFeePips / 100).toFixed(2)} bps`,
-            ...band.items,
-          ],
-        }
-      : band,
+
+  // The guided run. It owns only the phase; the sections it drives own their own
+  // playback state and report back when they reach the end. `runSeq` lets a
+  // re-run restart a phase it is already in.
+  const reducedMotion = useReducedMotion();
+  const [runPhase, setRunPhase] = useState<RunPhase>("idle");
+  const [runSeq, setRunSeq] = useState(0);
+  const [policyId, setPolicyId] = useState("thetashield");
+  const runningRef = useRef(false);
+
+  const reveal = useCallback(
+    (id: string) => {
+      document.getElementById(id)?.scrollIntoView({
+        behavior: reducedMotion ? "auto" : "smooth",
+        block: "start",
+      });
+    },
+    [reducedMotion],
+  );
+
+  const startRun = useCallback(() => {
+    runningRef.current = true;
+    setRunSeq((current) => current + 1);
+    setRunPhase("journey");
+    reveal("mechanism");
+  }, [reveal]);
+
+  const stopRun = useCallback(() => {
+    runningRef.current = false;
+    setRunPhase("idle");
+  }, []);
+
+  // Each driven section calls this when it reaches its own end.
+  const advanceRun = useCallback(
+    (finished: RunPhase) => {
+      if (!runningRef.current) return;
+      if (finished === "journey") {
+        setRunPhase("replay");
+        reveal("simulator");
+        return;
+      }
+      if (finished === "replay") {
+        setRunPhase("outcome");
+        reveal("lp-outcome");
+        runningRef.current = false;
+      }
+    },
+    [reveal],
+  );
+
+  const running = runPhase !== "idle" && runPhase !== "outcome";
+  const runStep = runPhase === "journey" ? 1 : runPhase === "replay" ? 2 : runPhase === "outcome" ? 3 : 0;
+
+  const selectPolicy = useCallback(
+    (id: string) => {
+      setPolicyId(id);
+      reveal("simulator");
+    },
+    [reveal],
   );
 
   return (
@@ -110,13 +119,12 @@ export default function DashboardClient({
           <span>THETASHIELD</span>
         </a>
         <nav aria-label="Primary navigation">
+          <a href="#lp-outcome">Outcome</a>
           <a href="#mechanism">Mechanism</a>
           <a href="#simulator">Replay</a>
-          <a href="#lab">Signal lab</a>
           <a href="#live-proof">Live proof</a>
           <a href="#registry">Registry</a>
           <a href="#evidence">Evidence</a>
-          <a href="#trust">Trust</a>
         </nav>
         <span className={`release-state ${liveStatus}`}>
           <i />
@@ -145,9 +153,29 @@ export default function DashboardClient({
             stale price; the LP financed the gap. ThetaShield prices that gap only when it repeats.
           </p>
           <div className="hero-actions">
-            <a className="primary-action" href="#live-proof">View live testnet proof</a>
-            <a className="secondary-action" href="#lab">Run the signal lab</a>
+            <button
+              className={running ? "run-action is-running" : "run-action"}
+              onClick={running ? stopRun : startRun}
+              type="button"
+            >
+              {running ? "Stop the run" : "Run the protection loop"}
+              <span aria-hidden="true">{running ? "■" : "▶"}</span>
+            </button>
+            <a className="secondary-action" href="#live-proof">Read the live contracts</a>
           </div>
+          {runStep > 0 ? (
+            <p aria-live="polite" className="run-progress">
+              <i className={runStep >= 1 ? "on" : ""} />
+              <i className={runStep >= 2 ? "on" : ""} />
+              <i className={runStep >= 3 ? "on" : ""} />
+              {runPhase === "journey"
+                ? "1 of 3 · the loop carries the evidence across both chains"
+                : runPhase === "replay"
+                  ? "2 of 3 · the fee responds only where the signal persists"
+                  : "3 of 3 · what the LP kept"}
+              {reducedMotion ? " · reduced motion: steps advance without animation" : ""}
+            </p>
+          ) : null}
           <p className="trust-line">Risk proxy—not exact LVR, individual LP loss, or a profitability claim.</p>
         </div>
 
@@ -166,80 +194,28 @@ export default function DashboardClient({
         </div>
       </section>
 
-      <DistinctionStrip policies={policyRows} />
+      <LpOutcome
+        highlighted={runPhase === "outcome"}
+        onExplore={() => reveal("simulator")}
+        outcome={lpOutcome}
+      />
 
-      <G9Experience data={data} deployment={deployment} />
+      <DistinctionStrip onSelect={selectPolicy} policies={policyRows} selectedId={policyId} />
 
-      <section className="section lab" id="lab">
-        <div className="section-heading split-heading">
-          <div><p className="kicker">Interactive signal lab</p><h2>Same volatility. Different information.</h2></div>
-          <p>Illustrative scenario replay using the controller’s documented units and direction rules. These cards are simulated—not live chain state.</p>
-        </div>
-
-        <div className="scenario-tabs" role="tablist" aria-label="Choose a market scenario">
-          {scenarios.map((scenario, index) => (
-            <button
-              aria-controls="lab-panel"
-              aria-selected={scenario.id === selectedId}
-              className={scenario.id === selectedId ? "active" : ""}
-              id={`lab-tab-${scenario.id}`}
-              key={scenario.id}
-              onClick={() => setSelectedId(scenario.id)}
-              onKeyDown={(event) => onTabKeyDown(event, index)}
-              ref={(node) => {
-                tabRefs.current[scenario.id] = node;
-              }}
-              role="tab"
-              tabIndex={scenario.id === selectedId ? 0 : -1}
-              type="button"
-            >
-              <span>{scenario.eyebrow}</span>{scenario.label}
-            </button>
-          ))}
-        </div>
-
-        <div aria-labelledby={`lab-tab-${selected.id}`} className="lab-grid" id="lab-panel" role="tabpanel" tabIndex={0}>
-          <article className="scenario-card">
-            <div className="scenario-intro"><span>SELECTED STREAM</span><b>{selected.label}</b><p>{selected.summary}</p></div>
-            <div className="fee-pair">
-              <div className={selected.buyFee !== controllerConfig.baselineFeeBps ? "fee active" : "fee"}>
-                <span>BUY-BASE</span><strong>{selected.buyFee}</strong><small>bps</small>
-              </div>
-              <div className={selected.sellFee !== controllerConfig.baselineFeeBps ? "fee active" : "fee"}>
-                <span>SELL-BASE</span><strong>{selected.sellFee}</strong><small>bps</small>
-              </div>
-            </div>
-            <div className="verdict"><i />{selected.verdict}</div>
-          </article>
-
-          <article className="filter-card">
-            <div className="card-title"><span>FILTER TRACE</span><b>Current sample excluded from σ</b></div>
-            <dl>
-              <div><dt>Signed markout</dt><dd>{selected.markout}</dd></div>
-              <div><dt>Trailing sigma</dt><dd>{selected.sigma}</dd></div>
-              <div><dt>Dead band</dt><dd>{selected.band}</dd></div>
-              <div className="filtered"><dt>Filtered markout</dt><dd>{selected.filtered}</dd></div>
-            </dl>
-            <div className="persistence">
-              <span>PERSISTENCE · {controllerConfig.persistenceRequired} OF {controllerConfig.persistenceWindow}</span>
-              <div>{selected.persistence.map((value, index) => <i className={value ? "toxic" : ""} key={index}>{value}</i>)}</div>
-            </div>
-          </article>
-
-          <article className="confidence-card">
-            <div className="card-title"><span>MECHANICAL CONFIDENCE</span><b>{selected.confidence.toFixed(1)}% composite</b></div>
-            <MetricBar label="confidence score" value={selected.confidence} />
-            <MetricBar label="reference cohesion" value={selected.referenceCohesion} />
-            <MetricBar label="transport delivery" value={selected.deliveryRate} />
-            <p>Bundle trace step {formatInt(selected.evidenceStep)} of {formatInt(selected.eventCount)}. The historical research stream caps confidence at {controllerConfig.confidenceCapPercent.toFixed(0)}%.</p>
-          </article>
-        </div>
-      </section>
+      <G9Experience
+        data={data}
+        deployment={deployment}
+        onPolicyChange={setPolicyId}
+        onRunPhaseComplete={advanceRun}
+        policyId={policyId}
+        runPhase={runPhase}
+        runSeq={runSeq}
+      />
 
       <section className="section live-proof" id="live-proof">
         <div className="section-heading split-heading">
           <div><p className="kicker">Live testnet proof</p><h2>Don’t trust the demo. Read the contracts.</h2></div>
-          <p>Read directly from deployed contracts across Unichain Sepolia and Ethereum Sepolia. This panel separates current chain state from the simulated signal lab.</p>
+          <p>Read directly from deployed contracts across Unichain Sepolia and Ethereum Sepolia, on every refresh.</p>
         </div>
         <LiveProofPanel deployment={deployment} live={live} />
       </section>
@@ -256,7 +232,7 @@ export default function DashboardClient({
       <section className="section evidence" id="evidence">
         <div className="section-heading split-heading">
           <div><p className="kicker">Falsifiable evidence</p><h2>The failures stayed in the record.</h2></div>
-          <p>Phase 6 failed H4 and H5. Phase 6.1 introduced a versioned change, locked parameters on training streams, and evaluated reserved holdout seeds.</p>
+          <p>Phase 6 failed H4 and H5. Phase 6.1 locked a versioned change on training streams, then scored it once on reserved holdout seeds.</p>
         </div>
 
         <div className="evidence-charts">
@@ -271,31 +247,23 @@ export default function DashboardClient({
           </article>
         </div>
 
-        <div className="hypothesis-grid">
+        {/* Six prose cards became six rows that open to the rule they were tested
+            against — the pass_rule was already loaded and never rendered here. */}
+        <div className="hypothesis-list">
           {hypotheses.map((hypothesis) => (
-            <article key={hypothesis.id}>
-              <span>{hypothesis.id}</span><h3>{hypothesis.title}</h3><b>{hypothesis.status}</b><p>{hypothesis.evidence}</p>
-            </article>
+            <details className="hypothesis-row" key={hypothesis.id}>
+              <summary>
+                <span className="hypothesis-id">{hypothesis.id}</span>
+                <b>{hypothesis.title}</b>
+                <em className={hypothesis.passed ? "pass" : "mixed"}>{hypothesis.status}</em>
+                <i aria-hidden="true">▸</i>
+              </summary>
+              <div className="hypothesis-body">
+                <p className="hypothesis-rule">{`Gate: ${hypothesis.passRule}.`}</p>
+                <p>{hypothesis.evidence}</p>
+              </div>
+            </details>
           ))}
-        </div>
-
-        <div className="research-grid">
-          <article className="pareto-card">
-            <div className="card-title"><span>DETECTION TRADE-OFF</span><b>Reserved holdout audit</b></div>
-            <div className="tradeoff-audit">
-              <div><span>Pareto points</span><strong>{evidenceStats.paretoPoints}</strong></div>
-              <div><span>Latency span</span><strong>{evidenceStats.latencySpan}</strong><small>steps</small></div>
-              <div><span>Oscillation reduction</span><strong>{formatInt(evidenceStats.h5OscillationReduction)}</strong><small>fee pips</small></div>
-            </div>
-            <p>Stronger filtering reduces false positives but delays reaction. ThetaShield makes the trade-off measurable instead of hiding it.</p>
-          </article>
-
-          <article className="research-scale">
-            <p className="kicker">Reproducible scope</p>
-            <div><strong>{formatInt(researchScale.phase6_raw_runs)}</strong><span>Phase 6 sensitivity runs</span></div>
-            <div><strong>{formatInt(researchScale.phase61_training_cases)}</strong><span>training-only remediation candidates</span></div>
-            <div><strong>{formatInt(researchScale.phase61_holdout_cases)}</strong><span>reserved holdout cases</span></div>
-          </article>
         </div>
 
         <div className="gate-board" role="list" aria-label="G1 closed-loop gates">
@@ -307,10 +275,24 @@ export default function DashboardClient({
         </div>
 
         <div className="policy-table" role="region" aria-label="Baseline comparison" tabIndex={0}>
-          <div className="table-heading"><span>POLICY COMPARISON</span><b>exact pooled values</b></div>
+          <div className="table-heading"><span>POLICY COMPARISON</span><b>select a row to replay it</b></div>
           <table>
-            <thead><tr><th>Policy</th><th>Mean fee · bps</th><th>False positives</th><th>Detection · steps</th><th>Signed</th><th>Persistent</th><th>Behavior</th></tr></thead>
-            <tbody>{policyRows.map((row) => <tr key={row.id}><td>{row.label}</td><td>{row.meanFeeBps}</td><td>{row.falsePositiveRate}</td><td>{row.detectionLatency ?? "—"}</td><td>{row.signed}</td><td>{row.persistent}</td><td>{row.behavior}</td></tr>)}</tbody>
+            <thead><tr><th>Policy</th><th>Mean fee · bps</th><th>False positives</th><th>Detection · steps</th><th>Behavior</th></tr></thead>
+            <tbody>
+              {policyRows.map((row) => (
+                <tr className={row.id === policyId ? "is-selected" : ""} key={row.id}>
+                  <td>
+                    <button className="policy-pick" onClick={() => selectPolicy(row.id)} type="button">
+                      {row.label}
+                    </button>
+                  </td>
+                  <td>{row.meanFeeBps}</td>
+                  <td>{row.falsePositiveRate}</td>
+                  <td>{row.detectionLatency ?? "—"}</td>
+                  <td>{row.behavior}</td>
+                </tr>
+              ))}
+            </tbody>
           </table>
         </div>
 
@@ -322,80 +304,15 @@ export default function DashboardClient({
         >
           <SensitivityMultiples sensitivity={sensitivityAll} />
         </Accordion>
-      </section>
 
-      <section className="section trust-surface" id="trust">
-        <div className="section-heading split-heading">
-          <div><p className="kicker">Trust surface</p><h2>Proof, simulation, and live history stay separate.</h2></div>
-          <p>{bundleMeta.boundary}</p>
-        </div>
-        <div className="trust-bands">
-          {bands.map((band) => (
-            <article className={`trust-band ${band.id}`} key={band.id}>
-              <span>{band.badge}</span>
-              <h3>{band.title}</h3>
-              <ul>{band.items.map((item) => <li key={item}>{item}</li>)}</ul>
-            </article>
-          ))}
-        </div>
-        <p className="bundle-proof">Evidence bundle <code>{bundleMeta.id}</code> · {bundleMeta.sourceCount} content-addressed sources</p>
-      </section>
-
-      <section className="section system" id="system">
-        <div className="section-heading"><p className="kicker">Autonomous system</p><h2>One delayed control loop. Bounded everywhere.</h2></div>
-        <div className="boundary-grid">
-          <article><span>SAFE FALLBACK</span><h3>Expired recommendation → {controllerConfig.baselineFeeBps} bps</h3><p>Stale state cannot keep a premium alive. Pause and missing-data paths return to the configured baseline.</p></article>
-          <article><span>MESSAGE SECURITY</span><h3>Transmitter + domain + peer</h3><p>Only finalized Circle messages from the sealed processor peer are accepted; replays and malformed recommendations revert.</p></article>
-          <article><span>PROCESSING BOUND</span><h3>Fixed work per keeper call</h3><p>Pending observations, reference history, epochs, and each permissionless processing call are capped.</p></article>
-        </div>
-
-        <div className="gas-panel">
-          <div className="card-title"><span>MEASURED GAS · ISOLATED LOCAL EVM</span><b>{`hook total ${formatInt(deployment.gas.hookTotal)} per swap`}</b></div>
-          <div className="gas-rows">
-            <div className="gas-row">
-              <span>hook · beforeSwap + afterSwap (warm)</span>
-              <div className="gas-bar" role="img" aria-label={`Hook gas: beforeSwap ${formatInt(deployment.gas.beforeSwap)} plus warm afterSwap ${formatInt(deployment.gas.afterSwapWarm)} equals ${formatInt(deployment.gas.hookTotal)} per swap.`}>
-                <i className="seg-a" style={{ width: `${(deployment.gas.beforeSwap / deployment.gas.hookTotal) * 100}%` }} />
-                <i className="seg-b" style={{ width: `${(deployment.gas.afterSwapWarm / deployment.gas.hookTotal) * 100}%` }} />
-              </div>
-              <b>{`${formatInt(deployment.gas.beforeSwap)} + ${formatInt(deployment.gas.afterSwapWarm)}`}</b>
-            </div>
-            <div className="gas-row">
-              <span>controller · apply recommendation cold / warm</span>
-              <div className="gas-bar">
-                <i className="seg-a" style={{ width: `${(deployment.gas.applyCold / deployment.gas.hookTotal) * 100}%` }} />
-              </div>
-              <b>{`${formatInt(deployment.gas.applyCold)} / ${formatInt(deployment.gas.applyWarm)}`}</b>
-            </div>
-            <div className="gas-row">
-              <span>controller · feeForSwap (warm read)</span>
-              <div className="gas-bar">
-                <i className="seg-a" style={{ width: `${Math.max(1, (deployment.gas.feeForSwapWarm / deployment.gas.hookTotal) * 100)}%` }} />
-              </div>
-              <b>{formatInt(deployment.gas.feeForSwapWarm)}</b>
-            </div>
-          </div>
-          <p className="card-caption">
-            Isolated local EVM call measurements under the pinned compiler profile. They exclude the
-            PoolManager and router transaction and are not a live-chain cost quote.
-          </p>
-        </div>
-      </section>
-
-      <section className="release-section">
-        <div>
-          <p className="kicker">Current release boundary</p>
-          <h2>Live Circle + Reactive loop proven.<br />Testnet-only.</h2>
-        </div>
-        <div className="release-list">
-          <p><i className="done" /><span><b>Public Circle lifecycle</b> · Unichain → Ethereum → Unichain, later-fee proof</span></p>
-          <p><i className="done" /><span><b>Research regression suite</b> · golden vectors and reproducible artifacts</span></p>
-          <p><i className="done" /><span><b>Security gates</b> · dependency lock, secret scan, gas ceilings</span></p>
-          <p>
-            <i className={acceptanceComplete ? "done" : "pending"} />
-            <span><b>G10 live acceptance</b> · {acceptanceSummary}</span>
-          </p>
-        </div>
+        {/* The provenance line the trust section used to carry: what kind of
+            evidence this is, and which bundle it came from. */}
+        <p className="evidence-provenance">
+          <b>Trust surface:</b> {bundleMeta.boundary}
+          {` Evidence bundle `}
+          <code>{bundleMeta.id}</code>
+          {` · ${bundleMeta.sourceCount} content-addressed sources.`}
+        </p>
       </section>
 
       <footer>

@@ -1,4 +1,5 @@
 import type { DeploymentView } from "../../deployment-data";
+import Accordion from "../accordion";
 import { feeBps, formatInt, shortHex } from "../format";
 import AutomationCard from "./automation-card";
 import EventsTicker from "./events-ticker";
@@ -40,6 +41,22 @@ export default function LiveProofPanel({
   // A snapshot that stopped refreshing is not the same finding as a live read.
   // Presenting it as one is the mirror image of claiming a fee before any read
   // returns, so it gets its own state rather than inheriting the green one.
+  const withheld: string[] = [];
+  if (proof) {
+    if (proof.readPath === "historical-direct") {
+      withheld.push("per-side state, deployed configuration, reference table, automation cycle and the recommendation TTL — the direct-getter path does not carry the lens aggregate");
+    }
+    if (!proof.referenceSources && proof.readPath === "lens") {
+      withheld.push(
+        proof.processor.referenceSourceCount
+          ? `the reference table — ${proof.processor.referenceSourceCount} sources are registered but none returned a readable, configured state`
+          : "the reference table — no sources are registered",
+      );
+    }
+    if (!proof.automation && proof.readPath === "lens") withheld.push("the automation cycle — the executor returned no readable cycle");
+    if (!proof.events) withheld.push("recent on-chain events — the bounded scan did not complete, which is not a finding that nothing happened");
+    if (!proof.reactive) withheld.push("the Reactive counters — that plane did not answer within the read budget");
+  }
   const statusTone = stale ? "stale" : proof ? "ok" : error ? "error" : "";
   const statusLabel = stale ? "Last known state" : proof ? "Live read" : error ? "RPC unavailable" : "Connecting";
 
@@ -208,7 +225,13 @@ export default function LiveProofPanel({
         ) : null}
       </div>
 
-      {proof && (proof.processor.sides || proof.automation || proof.reactive) ? (
+      {proof ? (
+        <Accordion
+          badge="⌗"
+          id="live-chain-state"
+          meta="per-side state · automation · reference sources · recent events"
+          title="Full chain state"
+        >
         <div className="live-side-grid">
           {proof.processor.sides && proof.processor.deployedConfig ? (
             <>
@@ -221,49 +244,15 @@ export default function LiveProofPanel({
             <ReactiveCard automation={proof.automation} deployment={deployment} reactive={proof.reactive} />
           ) : null}
         </div>
-      ) : null}
 
-      {proof && proof.readPath === "historical-direct" ? (
-        <p className="path-note">
-          Direct getter path: per-side state, the deployed configuration, the reference table, the
-          automation cycle and the recommendation TTL are aggregated by the processor lens and are not part
-          of this read, so those cards are withheld rather than guessed. Fees, counters and the receipt
-          trail below are unaffected.
-        </p>
-      ) : null}
-
-      {proof && !proof.referenceSources && proof.readPath === "lens" ? (
-        <p className="path-note">
-          {proof.processor.referenceSourceCount
-            ? `The processor reports ${proof.processor.referenceSourceCount} registered reference source${proof.processor.referenceSourceCount === 1 ? "" : "s"}, but none returned a readable, configured state this cycle, so no table is shown rather than an empty one.`
-            : "The processor reports no registered reference sources, so there is no table to show."}
-        </p>
-      ) : null}
-
-      {proof && !proof.automation && proof.readPath === "lens" ? (
-        <p className="path-note">
-          The automation executor did not return a readable cycle this cycle, so the last-cycle card and the
-          Reactive agreement line are withheld. The receipt trail below is unaffected.
-        </p>
-      ) : null}
-
-      {proof && !proof.events ? (
-        <p className="path-note">
-          {/* The route documents that a failed scan is not the same finding as an
-              empty scan. That distinction lives in the per-lane `scanned` flags,
-              which do not exist when the whole scan fails — so it is stated here
-              instead of the section simply disappearing. */}
-          The bounded event scan did not complete this cycle, so no claim is made about recent on-chain
-          activity. This is not a finding that nothing happened. The receipt trail below is permanent.
-        </p>
-      ) : null}
-
-      {proof && !proof.reactive ? (
-        <p className="path-note">
-          The Reactive plane did not answer within the read budget, so its counters are withheld rather than
-          shown as zero.
-        </p>
-      ) : null}
+        {/* One line instead of five. A withheld card and an empty one are still
+            different findings, so what is missing is still named — the route's
+            own "a failed scan is not an empty scan" rule depends on it. */}
+        {withheld.length ? (
+          <p className="path-note">
+            {`Withheld from this read, rather than shown as zero: ${withheld.join("; ")}.`}
+          </p>
+        ) : null}
 
       {proof?.referenceSources ? (
         <ReferenceSources
@@ -276,6 +265,8 @@ export default function LiveProofPanel({
 
       {proof?.events ? (
         <EventsTicker deployment={deployment} events={proof.events} generatedAt={proof.generatedAt} />
+      ) : null}
+        </Accordion>
       ) : null}
 
       <div className="receipt-heading"><span>LIVE RECEIPT TRAIL</span><b>{`${deployment.receipts.length} public transactions · open any receipt`}</b></div>

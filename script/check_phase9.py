@@ -133,7 +133,7 @@ def main() -> None:
         "holdout_table",
         "compact_scenario_replays",
         "phase6_sensitivity",
-        "trustBands",
+        "lpOutcome",
     ):
         require(research_data, phrase, "dashboard/app/research-data.ts")
 

@@ -17,7 +17,15 @@ const storyline: Record<string, { eyebrow: string; line: string }> = {
   },
 };
 
-export default function DistinctionStrip({ policies }: { policies: PolicyRows }) {
+export default function DistinctionStrip({
+  policies,
+  onSelect,
+  selectedId,
+}: {
+  policies: PolicyRows;
+  onSelect: (id: string) => void;
+  selectedId: string;
+}) {
   const featured = ["fixed_fee", "volatility_only", "thetashield"]
     .map((id) => policies.find((policy) => policy.id === id))
     .filter((policy): policy is PolicyRows[number] => Boolean(policy));
@@ -29,12 +37,19 @@ export default function DistinctionStrip({ policies }: { policies: PolicyRows })
       </h2>
       <div className="distinction-grid">
         {featured.map((policy) => (
-          <article className={policy.id === "thetashield" ? "distinction-card active" : "distinction-card"} key={policy.id}>
+          <button
+            aria-pressed={policy.id === selectedId}
+            className={policy.id === selectedId ? "distinction-card active" : "distinction-card"}
+            key={policy.id}
+            onClick={() => onSelect(policy.id)}
+            type="button"
+          >
             <span>{storyline[policy.id]?.eyebrow}</span>
             <h3>{policy.label}</h3>
             <div className="distinction-fee"><strong>{policy.meanFeeBps}</strong><small>bps mean fee</small></div>
             <p>{storyline[policy.id]?.line}</p>
-          </article>
+            <em className="distinction-pick">Replay this policy →</em>
+          </button>
         ))}
       </div>
       <div className="distinction-caption">

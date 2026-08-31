@@ -1,5 +1,5 @@
 import bundleJson from "../data/dashboard_bundle.json";
-import { bitmapBits, feeBps as pipsToBps, formatInt, signedFixed } from "./components/format";
+import { feeBps as pipsToBps, formatInt, signedFixed } from "./components/format";
 import {
   formatParamBool,
   formatParamCount,
@@ -249,46 +249,8 @@ function mean(metrics: PolicyMetrics, key: string): number {
   return metrics[key]?.mean ?? 0;
 }
 
-function wadToBps(value: number): string {
-  return `${signedFixed(value / WAD_PER_BASIS_POINT, 2)} bps`;
-}
-
 function wadToPercent(value: number, digits = 2): string {
   return `${(value / WAD_PER_PERCENT).toFixed(digits)}%`;
-}
-
-function traceSnapshot(trace: RepresentativeTrace): TraceStep {
-  const epochSteps = trace.steps.filter((step) =>
-    step.evidence.some((evidence) => evidence.epoch_complete),
-  );
-  if (!epochSteps.length) return trace.steps[0];
-
-  if (trace.scenario === "conflicting_references") {
-    return epochSteps.reduce((selected, candidate) => {
-      const selectedDispersion = selected.evidence[0]?.reference_dispersion_wad ?? 0;
-      const candidateDispersion = candidate.evidence[0]?.reference_dispersion_wad ?? 0;
-      return candidateDispersion >= selectedDispersion ? candidate : selected;
-    });
-  }
-
-  return epochSteps.reduce((selected, candidate) => {
-    const selectedSpread = Math.abs(
-      selected.fee_by_direction_pips.buy - selected.fee_by_direction_pips.sell,
-    );
-    const candidateSpread = Math.abs(
-      candidate.fee_by_direction_pips.buy - candidate.fee_by_direction_pips.sell,
-    );
-    return candidateSpread >= selectedSpread ? candidate : selected;
-  });
-}
-
-function scenarioVerdict(trace: RepresentativeTrace, step: TraceStep): string {
-  const baseline = bundle.selected_research_config.base_fee_pips;
-  if (trace.scenario === "conflicting_references") return "Dispersion suppresses confidence";
-  if (trace.final_transport.callbacks_missing > 0) return "Delivery loss remains visible";
-  if (step.fee_by_direction_pips.buy > baseline) return "Buy protection active";
-  if (step.fee_by_direction_pips.sell > baseline) return "Sell protection active";
-  return "Baseline held";
 }
 
 function presentationFor<T>(map: Record<string, T>, key: string, kind: string): T {
@@ -297,57 +259,11 @@ function presentationFor<T>(map: Record<string, T>, key: string, kind: string): 
   return entry;
 }
 
-const scenarios = Object.values(bundle.representative_traces).map((trace) => {
-  const selected = traceSnapshot(trace);
-  const evidence = selected.evidence.find((entry) => entry.epoch_complete) ?? selected.evidence[0];
-  const presentation = presentationFor(scenarioPresentation, trace.scenario, "scenario");
-  const totalCallbacks =
-    trace.final_transport.callbacks_applied +
-    trace.final_transport.callbacks_missing +
-    trace.final_transport.callbacks_rejected;
-  const deliveryRate = totalCallbacks
-    ? (trace.final_transport.callbacks_applied * 100) / totalCallbacks
-    : 100;
-  const maximumDispersion = bundle.selected_research_config.maximum_reference_dispersion_wad;
-  const referenceCohesion = Math.max(
-    0,
-    100 - ((evidence?.reference_dispersion_wad ?? 0) * 100) / maximumDispersion,
-  );
-
-  return {
-    id: trace.scenario,
-    label: presentation.label,
-    eyebrow: presentation.eyebrow,
-    summary: trace.description,
-    buyFee: pipsToBps(selected.fee_by_direction_pips.buy),
-    sellFee: pipsToBps(selected.fee_by_direction_pips.sell),
-    markout: wadToBps(evidence?.raw_markout_wad ?? 0),
-    sigma: wadToBps(evidence?.sigma_wad ?? 0),
-    band: `±${Math.abs((evidence?.dead_band_wad ?? 0) / WAD_PER_BASIS_POINT).toFixed(2)} bps`,
-    filtered: wadToBps(evidence?.filtered_markout_wad ?? 0),
-    confidence: (evidence?.confidence_wad ?? 0) / WAD_PER_PERCENT,
-    referenceCohesion,
-    deliveryRate,
-    callbacks: trace.final_transport,
-    persistence: bitmapBits(
-      evidence?.persistence_bitmap ?? 0,
-      bundle.selected_research_config.persistence_window,
-    ),
-    evidenceStep: selected.step,
-    eventCount: trace.event_count,
-    verdict: scenarioVerdict(trace, selected),
-  };
-});
-
 const holdoutById = Object.fromEntries(bundle.holdout_table.map((row) => [row.id, row]));
 
 function hypothesisEvidence(hypothesis: Hypothesis): string {
   if (hypothesis.id === "H1") {
-    const value = valueAt(hypothesis.evidence, [
-      "paired_lp_net_improvement_quote_wad",
-      "mean",
-    ]);
-    return `${signedFixed(value / 1e18, 4)} quote paired improvement`;
+    return "measured as the paired LP figure at the top of the page";
   }
   if (hypothesis.id === "H2") {
     return `${wadToPercent(valueAt(hypothesis.evidence, ["false_positive_rate_wad", "mean"]))} benign false positives`;
@@ -373,6 +289,10 @@ const hypotheses = bundle.hypotheses.map((hypothesis) => {
     status: holdout
       ? `${hypothesis.status.toUpperCase()} · historical / ${holdout.holdout_status.toUpperCase()} · holdout`
       : hypothesis.status.toUpperCase(),
+    // The rule each hypothesis was actually tested against was already loaded
+    // and never shown; the expandable row is where it belongs.
+    passRule: hypothesis.pass_rule,
+    passed: holdout ? holdout.holdout_status === "pass" : hypothesis.status === "pass",
     evidence: hypothesisEvidence(hypothesis),
   };
 });
@@ -420,25 +340,62 @@ const policyRows = Object.entries(bundle.policy_metrics).map(([policy, metrics])
 const h4Holdout = holdoutById.H4.holdout_evidence;
 const h5Holdout = holdoutById.H5.holdout_evidence;
 
-const evidenceStats = {
-  h4Correlation: signedFixed(valueAt(h4Holdout, ["rank_correlation_wad"]) / 1e18, 3),
-  paretoPoints: valueAt(h4Holdout, ["pareto_point_count"]),
-  latencySpan: valueAt(h4Holdout, ["latency_span_steps"]),
-  h5RetainedCoverage: wadToPercent(valueAt(h5Holdout, ["retained_coverage_ratio_wad"])),
-  h5NoiseReduction: `${(valueAt(h5Holdout, ["fpr_reduction_mean_wad"]) / WAD_PER_PERCENT).toFixed(2)} pp`,
-  h5OscillationReduction: valueAt(h5Holdout, ["oscillation_reduction_mean_pips"]),
-};
+// The LP outcome the page leads with. Two halves, because one alone would
+// mislead: ThetaShield beats the FIXED-FEE baseline on matched streams (H1's
+// actual pass rule), but it does NOT beat volatility-only on absolute LP net —
+// it loses to it in 13 of 15 scenarios. Where it wins against volatility-only is
+// that it charges less and cries wolf far less often on benign flow.
+//
+// Absolute LP net is negative for every policy here, so nothing in this object
+// may be presented as profit; the bundle's own interpretation_boundary travels
+// with it.
+const lpOutcome = (() => {
+  const h1 = bundle.hypotheses.find((entry) => entry.id === "H1");
+  const h3 = bundle.hypotheses.find((entry) => entry.id === "H3");
+  const h6 = bundle.hypotheses.find((entry) => entry.id === "H6");
+  if (!h1 || !h3 || !h6) throw new Error("dashboard bundle is missing H1, H3 or H6");
 
-const researchScale = {
-  ...bundle.research_scale,
-  ...bundle.experiment_dimensions,
-};
+  const paired = h1.evidence.paired_lp_net_improvement_quote_wad as Interval;
+  const mine = bundle.policy_metrics.thetashield;
+  const rival = bundle.policy_metrics.volatility_only;
+  const fixed = bundle.policy_metrics.fixed_fee;
 
-// Reads `selected_research_config` — the candidate the study selected. The
-// replay's sensitivity defaults read `trace_configuration.research_config`
-// instead, and the shipped bundle's two blocks genuinely differ (dead band 1.0
-// vs 1.5, trailing window 16 vs 32, fast path off vs on). Both are honest; the
-// UI has to say which one it is showing, never silently mix them.
+  const feeBpsOf = (metrics: PolicyMetrics) => (metrics.mean_applied_fee_pips.mean ?? 0) / 100;
+  const fprOf = (metrics: PolicyMetrics) => (metrics.false_positive_rate_wad.mean ?? 0) / WAD_PER_PERCENT;
+  const pooledGap =
+    ((mine.lp_net_pnl_quote_wad.mean ?? 0) - (fixed.lp_net_pnl_quote_wad.mean ?? 0)) / 1e18;
+
+  return {
+    // Half one: the paired comparison H1 actually tests.
+    paired: {
+      mean: signedFixed((paired.mean ?? 0) / 1e18, 4),
+      low: signedFixed((paired.ci95_low ?? 0) / 1e18, 4),
+      high: signedFixed((paired.ci95_high ?? 0) / 1e18, 4),
+      pairs: paired.count,
+      status: h1.status.toUpperCase(),
+    },
+    // Half two: the fairness comparison, where the gap is large.
+    fairness: {
+      feeBps: feeBpsOf(mine).toFixed(2),
+      rivalFeeBps: feeBpsOf(rival).toFixed(2),
+      falsePositivePercent: fprOf(mine).toFixed(2),
+      rivalFalsePositivePercent: fprOf(rival).toFixed(2),
+      falsePositiveGap: (fprOf(rival) - fprOf(mine)).toFixed(2),
+      noiseRobustness: round(
+        valueAt(h3.evidence, ["raw_minus_thetashield_false_positive_rate_wad", "mean"]) / WAD_PER_PERCENT,
+      ),
+      directionalAdvantage: round(
+        valueAt(h6.evidence, ["thetashield_minus_volatility_directional_rate_wad", "mean"]) / WAD_PER_PERCENT,
+      ),
+    },
+    // The paired figure and the pooled table are different populations. Stating
+    // one without the other is how a reader ends up with the wrong number.
+    pooledGap: signedFixed(pooledGap, 4),
+    pooledRuns: mine.lp_net_pnl_quote_wad.count,
+    boundary: bundle.interpretation_boundary,
+  };
+})();
+
 const controllerConfig = {
   baselineFeeBps: pipsToBps(bundle.selected_research_config.base_fee_pips),
   confidenceCapPercent: bundle.selected_research_config.confidence_cap_wad / WAD_PER_PERCENT,
@@ -694,44 +651,6 @@ const holdoutStory = [
   },
 ];
 
-const trustBands = [
-  {
-    id: "proven",
-    badge: "PROVEN · LOCAL",
-    title: "Executable safety boundary",
-    items: [
-      "Python ↔ Solidity golden-vector parity",
-      "Stateful controller invariants",
-      "Real Uniswap v4 local lifecycle",
-      "Research-profile directional regression",
-    ],
-  },
-  {
-    id: "simulated",
-    badge: "SIMULATED · REPRODUCIBLE",
-    title: "Economic evidence boundary",
-    items: [
-      `${formatInt(bundle.experiment_dimensions.phase5_runs)} locked policy runs`,
-      `${bundle.experiment_dimensions.phase5_scenarios} scenarios × ${bundle.experiment_dimensions.phase5_seeds} seeds`,
-      `${Object.keys(bundle.representative_traces).length} deterministic control traces`,
-      "Coverage feedback with fee-elastic flow",
-    ],
-  },
-  {
-    id: "live",
-    badge: "LIVE · HISTORICAL DEMO",
-    title: "Public-chain acceptance boundary",
-    items: [
-      "Circle observation and recommendation receipts",
-      "Three-source RESEARCH_V1 profile live on G10",
-      "Self-contained reference market — operator-moved, not independent",
-      "Paired lenses and two Reactive Legacy callbacks proven",
-      "Unaudited testnet prototype",
-    ],
-  },
-];
-
-
 const sensitivityAll = {
   dimensions: [...new Set(
     Object.values(bundle.phase6_sensitivity)
@@ -786,17 +705,14 @@ const bundleMeta = {
 export const dashboardView = {
   bundleMeta,
   controllerConfig,
-  evidenceStats,
   heroTrace,
   holdoutStory,
   hypotheses,
+  lpOutcome,
   policyRows,
   researchConfigRows,
-  researchScale,
-  scenarios,
   sensitivityAll,
   simulator,
-  trustBands,
 };
 
 export type DashboardView = typeof dashboardView;

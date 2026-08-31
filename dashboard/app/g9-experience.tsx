@@ -11,6 +11,14 @@ import type { DashboardView } from "./research-data";
 
 type SimulatorData = DashboardView["simulator"];
 
+/** Which leg of the guided run is playing. "idle" means nothing is driving. */
+export type RunPhase = "idle" | "journey" | "replay" | "outcome";
+
+// The guided run steps faster than free autoplay: it is a demonstration with an
+// end, not an ambient loop, and three legs have to fit in a watchable span.
+const RUN_STAGE_MS = 620;
+const RUN_REPLAY_MS = 45;
+
 type FailureMode = "healthy" | "cctp" | "stale" | "replay" | "capacity";
 
 const failureModes: Record<FailureMode, { label: string; code: string; result: string }> = {
@@ -86,10 +94,16 @@ function ArchitectureAnimator({
   failureMode,
   onFailureMode,
   deployment,
+  runPhase,
+  runSeq,
+  onRunPhaseComplete,
 }: {
   failureMode: FailureMode;
   onFailureMode: (mode: FailureMode) => void;
   deployment: DeploymentView;
+  runPhase: RunPhase;
+  runSeq: number;
+  onRunPhaseComplete: (finished: RunPhase) => void;
 }) {
   const [activeStage, setActiveStage] = useState(0);
   const [playing, setPlaying] = useState(true);
@@ -101,13 +115,31 @@ function ArchitectureAnimator({
   }
 
   useEffect(() => {
-    if (!playing) return;
+    if (!playing || runPhase === "journey") return;
     const interval = window.setInterval(
       () => setActiveStage((current) => (current + 1) % mechanismStages.length),
       1_600,
     );
     return () => window.clearInterval(interval);
-  }, [playing]);
+  }, [playing, runPhase]);
+
+  // The guided run walks the loop once, start to finish, then hands over. The
+  // counter lives in the timer rather than in state so nothing is set during the
+  // effect body, and the first tick lands on stage 0.
+  useEffect(() => {
+    if (runPhase !== "journey") return;
+    let stage = -1;
+    const interval = window.setInterval(() => {
+      stage += 1;
+      if (stage >= mechanismStages.length) {
+        window.clearInterval(interval);
+        onRunPhaseComplete("journey");
+        return;
+      }
+      setActiveStage(stage);
+    }, RUN_STAGE_MS);
+    return () => window.clearInterval(interval);
+  }, [runPhase, runSeq, onRunPhaseComplete]);
 
   const active = mechanismStages[activeStage];
   const activePhaseIndex = mechanismPhases.findIndex(
@@ -372,12 +404,21 @@ function FrontierPlot({
 function LPBenefitSimulator({
   data,
   failureMode,
+  policyId,
+  onPolicyChange,
+  runPhase,
+  runSeq,
+  onRunPhaseComplete,
 }: {
   data: SimulatorData;
   failureMode: FailureMode;
+  policyId: string;
+  onPolicyChange: (id: string) => void;
+  runPhase: RunPhase;
+  runSeq: number;
+  onRunPhaseComplete: (finished: RunPhase) => void;
 }) {
   const [scenarioId, setScenarioId] = useState("persistent_informed_buying");
-  const [policyId, setPolicyId] = useState("thetashield");
   const [replayIndex, setReplayIndex] = useState(0);
   const [replayPlaying, setReplayPlaying] = useState(true);
   const [replaySpeed, setReplaySpeed] = useState(1);
@@ -393,6 +434,26 @@ function LPBenefitSimulator({
   const [sensitivitySelections, setSensitivitySelections] = useState<Record<string, string>>(() =>
     Object.fromEntries(data.sensitivity.map((dimension) => [dimension.id, dimension.options[0].id])),
   );
+
+  useEffect(() => {
+    if (runPhase !== "replay") return;
+    const points = data.scenarios.find((entry) => entry.id === scenarioId)?.points.length ?? 0;
+    if (points < 2) {
+      onRunPhaseComplete("replay");
+      return;
+    }
+    let index = -1;
+    const interval = window.setInterval(() => {
+      index += 1;
+      if (index >= points) {
+        window.clearInterval(interval);
+        onRunPhaseComplete("replay");
+        return;
+      }
+      setReplayIndex(index);
+    }, RUN_REPLAY_MS);
+    return () => window.clearInterval(interval);
+  }, [runPhase, runSeq, scenarioId, data.scenarios, onRunPhaseComplete]);
 
   const scenario = data.scenarios.find((entry) => entry.id === scenarioId) ?? data.scenarios[0];
   const policy = data.policies.find((entry) => entry.id === policyId) ?? data.policies[0];
@@ -426,24 +487,24 @@ function LPBenefitSimulator({
   );
 
   useEffect(() => {
-    if (!replayPlaying || scenario.points.length < 2) return;
+    if (!replayPlaying || runPhase === "replay" || scenario.points.length < 2) return;
     const interval = window.setInterval(
       () => setReplayIndex((current) => current >= scenario.points.length - 1 ? 0 : current + 1),
       Math.max(55, 220 / replaySpeed),
     );
     return () => window.clearInterval(interval);
-  }, [replayPlaying, replaySpeed, scenario.points.length]);
+  }, [replayPlaying, replaySpeed, runPhase, scenario.points.length]);
 
   return (
     <section className="section benefit-simulator" id="simulator">
       <div className="section-heading split-heading">
         <div><p className="kicker">LP-benefit replay console</p><h2>Interrogate the trade-offs.</h2></div>
-        <p>Every displayed result comes from the deterministic evidence bundle. Parameter selectors replay exact one-factor Phase 6 cases; they do not invent untested combinations.</p>
+        <p>These cards are simulated—not live chain state. Every displayed result comes from the deterministic evidence bundle. Parameter selectors replay exact one-factor Phase 6 cases; they do not invent untested combinations.</p>
       </div>
 
       <div className="simulator-controls">
         <label><span>Scenario · {data.scenarios.length}</span><select value={scenarioId} onChange={(event) => { setScenarioId(event.target.value); setReplayIndex(0); setReplayPlaying(true); }}>{data.scenarios.map((entry) => <option key={entry.id} value={entry.id}>{entry.label}</option>)}</select></label>
-        <label><span>Policy · {data.policies.length}</span><select value={policyId} onChange={(event) => setPolicyId(event.target.value)}>{data.policies.map((entry) => <option key={entry.id} value={entry.id}>{entry.label}</option>)}</select></label>
+        <label><span>Policy · {data.policies.length}</span><select value={policyId} onChange={(event) => onPolicyChange(event.target.value)}>{data.policies.map((entry) => <option key={entry.id} value={entry.id}>{entry.label}</option>)}</select></label>
         {data.sensitivity.map((dimension) => (
           <label key={dimension.id}>
             <span>{dimension.label}</span>
@@ -585,15 +646,40 @@ function LPBenefitSimulator({
 export default function G9Experience({
   data,
   deployment,
+  policyId,
+  onPolicyChange,
+  runPhase,
+  runSeq,
+  onRunPhaseComplete,
 }: {
   data: DashboardView;
   deployment: DeploymentView;
+  policyId: string;
+  onPolicyChange: (id: string) => void;
+  runPhase: RunPhase;
+  runSeq: number;
+  onRunPhaseComplete: (finished: RunPhase) => void;
 }) {
   const [failureMode, setFailureMode] = useState<FailureMode>("healthy");
   return (
     <>
-      <ArchitectureAnimator deployment={deployment} failureMode={failureMode} onFailureMode={setFailureMode} />
-      <LPBenefitSimulator data={data.simulator} failureMode={failureMode} />
+      <ArchitectureAnimator
+        deployment={deployment}
+        failureMode={failureMode}
+        onFailureMode={setFailureMode}
+        onRunPhaseComplete={onRunPhaseComplete}
+        runPhase={runPhase}
+        runSeq={runSeq}
+      />
+      <LPBenefitSimulator
+        data={data.simulator}
+        failureMode={failureMode}
+        onPolicyChange={onPolicyChange}
+        onRunPhaseComplete={onRunPhaseComplete}
+        policyId={policyId}
+        runPhase={runPhase}
+        runSeq={runSeq}
+      />
     </>
   );
 }

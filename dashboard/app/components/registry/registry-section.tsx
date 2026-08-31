@@ -202,7 +202,41 @@ export default function RegistrySection({
         </div>
       </Accordion>
 
-      <Accordion badge="05" id="registry-qa" meta={`${judgeQuestions.length} questions`} title="Judge Q&A">
+      <Accordion badge="05" id="registry-gas" meta={`hook total ${formatInt(deployment.gas.hookTotal)} per swap`} title="Measured gas">
+        <div className="gas-panel">
+          <div className="card-title"><span>MEASURED GAS · ISOLATED LOCAL EVM</span><b>{`hook total ${formatInt(deployment.gas.hookTotal)} per swap`}</b></div>
+          <div className="gas-rows">
+            <div className="gas-row">
+              <span>hook · beforeSwap + afterSwap (warm)</span>
+              <div className="gas-bar" role="img" aria-label={`Hook gas: beforeSwap ${formatInt(deployment.gas.beforeSwap)} plus warm afterSwap ${formatInt(deployment.gas.afterSwapWarm)} equals ${formatInt(deployment.gas.hookTotal)} per swap.`}>
+                <i className="seg-a" style={{ width: `${(deployment.gas.beforeSwap / deployment.gas.hookTotal) * 100}%` }} />
+                <i className="seg-b" style={{ width: `${(deployment.gas.afterSwapWarm / deployment.gas.hookTotal) * 100}%` }} />
+              </div>
+              <b>{`${formatInt(deployment.gas.beforeSwap)} + ${formatInt(deployment.gas.afterSwapWarm)}`}</b>
+            </div>
+            <div className="gas-row">
+              <span>controller · apply recommendation cold / warm</span>
+              <div className="gas-bar">
+                <i className="seg-a" style={{ width: `${(deployment.gas.applyCold / deployment.gas.hookTotal) * 100}%` }} />
+              </div>
+              <b>{`${formatInt(deployment.gas.applyCold)} / ${formatInt(deployment.gas.applyWarm)}`}</b>
+            </div>
+            <div className="gas-row">
+              <span>controller · feeForSwap (warm read)</span>
+              <div className="gas-bar">
+                <i className="seg-a" style={{ width: `${Math.max(1, (deployment.gas.feeForSwapWarm / deployment.gas.hookTotal) * 100)}%` }} />
+              </div>
+              <b>{formatInt(deployment.gas.feeForSwapWarm)}</b>
+            </div>
+          </div>
+          <p className="card-caption">
+            Isolated local EVM call measurements under the pinned compiler profile. They exclude the
+            PoolManager and router transaction and are not a live-chain cost quote.
+          </p>
+        </div>
+      </Accordion>
+
+      <Accordion badge="06" id="registry-qa" meta={`${judgeQuestions.length} questions`} title="Judge Q&A">
         <div className="qa-list">
           {judgeQuestions.map((entry, index) => (
             <details className="qa-item" key={entry.question} open={index === 0}>
@@ -213,7 +247,7 @@ export default function RegistrySection({
         </div>
       </Accordion>
 
-      <Accordion badge="06" id="registry-glossary" meta={`${glossary.length} terms`} title="Glossary">
+      <Accordion badge="07" id="registry-glossary" meta={`${glossary.length} terms`} title="Glossary">
         <dl className="glossary">
           {glossary.map(([term, definition]) => (
             <div key={term}><dt>{term}</dt><dd>{definition}</dd></div>
