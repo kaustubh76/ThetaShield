@@ -28,7 +28,12 @@ export default function LiveProofPanel({
   const originName = deployment.networks.find((network) => network.role === "origin")?.name ?? "Origin";
   const processorName =
     deployment.networks.find((network) => network.role === "processor")?.name ?? "Processor";
-  const { proof, error, loading, refresh } = live;
+  const { proof, error, loading, refresh, stale, lastSuccessAt, failureCount } = live;
+  // A snapshot that stopped refreshing is not the same finding as a live read.
+  // Presenting it as one is the mirror image of claiming a fee before any read
+  // returns, so it gets its own state rather than inheriting the green one.
+  const statusTone = stale ? "stale" : proof ? "ok" : error ? "error" : "";
+  const statusLabel = stale ? "Last known state" : proof ? "Live read" : error ? "RPC unavailable" : "Connecting";
 
   const paused = Boolean(proof && (proof.origin.globallyPaused || proof.origin.poolPaused));
   const pauseLabel = !proof
@@ -92,15 +97,30 @@ export default function LiveProofPanel({
     <>
       <div className="live-toolbar">
         <div>
-          <span className={`live-status ${proof ? "ok" : error ? "error" : ""}`}><i />{proof ? "Live read" : error ? "RPC unavailable" : "Connecting"}</span>
-          <p>{proof ? `${proof.readPath === "lens" ? "Lens aggregate" : "Historical direct getters"} · read at ${new Date(proof.generatedAt).toLocaleTimeString()}` : "Reading both public testnets…"}</p>
+          <span className={`live-status ${statusTone}`}><i />{statusLabel}</span>
+          <p>
+            {proof
+              ? `${proof.readPath === "lens" ? "Lens aggregate" : "Historical direct getters"} · read at ${new Date(lastSuccessAt ?? proof.generatedAt).toLocaleTimeString()}${
+                  stale ? ` · ${failureCount} refresh${failureCount === 1 ? "" : "es"} failed since` : ""
+                }`
+              : "Reading both public testnets…"}
+          </p>
         </div>
         <button className="refresh-button" disabled={loading} onClick={() => void refresh()} type="button">
           {loading ? "Reading on-chain state…" : "Refresh on-chain state"}
         </button>
       </div>
 
-      {error && !proof ? <div className="rpc-error"><b>Live RPC read paused.</b><span>{error}. The verified receipt trail remains available below.</span></div> : null}
+      {error ? (
+        <div className={proof ? "rpc-error stale" : "rpc-error"} title={error}>
+          <b>{proof ? "Refresh failed — showing the last successful read." : "Live RPC read paused."}</b>
+          <span>
+            {proof
+              ? "The values below are a snapshot, not current chain state. The verified receipt trail below is permanent."
+              : "No claim is made about current chain state. The verified receipt trail below is permanent."}
+          </span>
+        </div>
+      ) : null}
 
       <div className="live-grid" aria-live="polite">
         <article className="live-card origin-card">
@@ -173,8 +193,18 @@ export default function LiveProofPanel({
             </>
           ) : null}
           {proof.automation ? <AutomationCard automation={proof.automation} /> : null}
-          {proof.reactive ? <ReactiveCard deployment={deployment} reactive={proof.reactive} /> : null}
+          {proof.reactive ? (
+            <ReactiveCard automation={proof.automation} deployment={deployment} reactive={proof.reactive} />
+          ) : null}
         </div>
+      ) : null}
+
+      {proof && proof.readPath === "historical-direct" ? (
+        <p className="path-note">
+          Direct getter path: per-side state, the deployed configuration, the reference table and the
+          recommendation TTL are aggregated by the processor lens and are not part of this read, so those
+          cards are withheld rather than guessed. Fees, counters and the receipt trail below are unaffected.
+        </p>
       ) : null}
 
       {proof?.referenceSources ? (

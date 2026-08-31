@@ -3,7 +3,7 @@ import manifestJson from "../data/deployment_manifest.json";
 type ManifestShape = {
   components: { name: string; address: string }[];
   reference_sampler: { sources: { source_id: string }[] };
-  reactive_automation: { rsc_address: string; chain_id: number };
+  reactive_automation: { rsc_address: string; chain_id: number; deployer_rvm_id: string };
 };
 
 const manifest = manifestJson as unknown as ManifestShape;
@@ -30,6 +30,11 @@ export const ADDRESSES = {
   executor: componentAddress("ThetaShieldAutomationExecutor"),
   reactiveRsc: manifest.reactive_automation.rsc_address,
 } as const;
+
+// An RSC's counters are mutated by react(), which runs in the deployer's
+// ReactiveVM — not in the Lasna chain EVM. Reading them therefore needs the
+// RVM-scoped rnk_call, addressed by this id.
+export const REACTIVE_RVM_ID = manifest.reactive_automation.deployer_rvm_id;
 
 // The pool id is not part of deployment manifest schema v3; this is the single
 // permitted identifier fallback in dashboard app code.

@@ -56,11 +56,13 @@ export default function RegistrySection({
   researchConfig,
   deployedConfig,
   liveStatus,
+  readPath,
 }: {
   deployment: DeploymentView;
   researchConfig: { key: string; value: string }[];
   deployedConfig: DeployedConfigView | null;
-  liveStatus: "loading" | "ready" | "error";
+  liveStatus: "loading" | "ready" | "stale" | "error";
+  readPath: "lens" | "historical-direct" | null;
 }) {
   const roles: ("origin" | "processor" | "reactive")[] = ["origin", "processor", "reactive"];
 
@@ -124,7 +126,12 @@ export default function RegistrySection({
       </Accordion>
 
       <Accordion badge="03" defaultOpen id="registry-parameters" meta={`${researchConfig.length} research keys · deployed values read live`} title="Deployed parameters">
-        <DeployedParameters config={deployedConfig} researchConfig={researchConfig} status={liveStatus} />
+        <DeployedParameters
+          config={deployedConfig}
+          readPath={readPath}
+          researchConfig={researchConfig}
+          status={liveStatus}
+        />
       </Accordion>
 
       <Accordion badge="04" id="registry-cost" meta={`${deployment.cost.every((entry) => entry.approvedByOwner) ? "owner approved" : "approval incomplete"} · ${deployment.cost.every((entry) => Number.parseFloat(entry.actual) <= Number.parseFloat(entry.estimatedMaximum)) ? "actuals under estimate" : "an actual exceeded its estimate"}`} title="Deployment cost">

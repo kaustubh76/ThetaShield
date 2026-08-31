@@ -47,7 +47,15 @@ export default function DashboardClient({
     trustBands,
   } = data;
   const live = useLiveProof();
-  const liveStatus = live.proof ? "ready" : live.error ? "error" : "loading";
+  // "stale" is not a flavour of ready: the header must not keep asserting a live
+  // recommendation once refreshes have stopped landing.
+  const liveStatus = live.stale
+    ? "stale"
+    : live.proof
+      ? "ready"
+      : live.error
+        ? "error"
+        : "loading";
   const [selectedId, setSelectedId] = useState(scenarios[0].id);
   const selected = scenarios.find((scenario) => scenario.id === selectedId) ?? scenarios[0];
   const sensitivityCaseCount = sensitivityAll.dimensions.reduce(
@@ -97,9 +105,11 @@ export default function DashboardClient({
             ? live.proof?.recommendationExpired
               ? "Testnet · baseline held"
               : "Testnet · recommendation live"
-            : liveStatus === "error"
-              ? "Testnet · chain read unavailable"
-              : "Testnet · reading chain"}
+            : liveStatus === "stale"
+              ? "Testnet · last known state"
+              : liveStatus === "error"
+                ? "Testnet · chain read unavailable"
+                : "Testnet · reading chain"}
         </span>
       </header>
 
@@ -212,6 +222,7 @@ export default function DashboardClient({
         deployedConfig={live.proof?.processor.deployedConfig ?? null}
         deployment={deployment}
         liveStatus={liveStatus}
+        readPath={live.proof?.readPath ?? null}
         researchConfig={researchConfigRows}
       />
 

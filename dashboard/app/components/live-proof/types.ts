@@ -86,6 +86,10 @@ export type AutomationView = {
 };
 
 export type ReactiveView = {
+  // "rvm" is the correct read (rnk_call against the deployer's ReactiveVM, where
+  // react() actually writes); "chain" is the degraded fallback, whose counters
+  // are structurally always zero and must be labelled rather than believed.
+  source: "rvm" | "chain";
   wakeRequestCount: number;
   observationSignalCount: number;
   consecutiveRetries: number;

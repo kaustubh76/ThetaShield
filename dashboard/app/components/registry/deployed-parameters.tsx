@@ -42,11 +42,18 @@ export default function DeployedParameters({
   researchConfig,
   config,
   status,
+  readPath,
 }: {
   researchConfig: ConfigRow[];
   config: DeployedConfigView | null;
-  status: "loading" | "ready" | "error";
+  status: "loading" | "ready" | "stale" | "error";
+  readPath: "lens" | "historical-direct" | null;
 }) {
+  // A read that SUCCEEDED without carrying this group is neither loading nor
+  // failing. Without this third case the column showed "Reading…" forever on the
+  // direct path — a progress message for a request that had already returned.
+  const unavailable = config === null && (status === "ready" || status === "stale");
+
   return (
     <div>
       <div className="param-columns">
@@ -60,10 +67,12 @@ export default function DeployedParameters({
             </dl>
           ) : (
             <div className="param-loader">
-              <p>
+              <p className={status === "error" || unavailable ? "param-error" : undefined}>
                 {status === "error"
                   ? "Testnet RPC unavailable — the deployed scheduler and fee-curve values could not be read. The audited getters remain readable on the explorer."
-                  : "Reading the scheduler and fee-curve configuration from the deployed processor on Ethereum Sepolia…"}
+                  : unavailable
+                    ? `The read succeeded on the ${readPath === "historical-direct" ? "direct getter" : "current"} path, which does not carry the aggregated scheduler and fee-curve configuration. These values are read through the deployed processor lens; the audited getters remain readable on the explorer.`
+                    : "Reading the scheduler and fee-curve configuration from the deployed processor…"}
               </p>
             </div>
           )}

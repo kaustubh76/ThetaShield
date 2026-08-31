@@ -1,5 +1,13 @@
 import { NextResponse } from "next/server";
-import { ADDRESSES, EVENT_TOPICS, POOL_ID, READ_PATH, REFERENCE_SOURCE_IDS, RPC } from "../../live-config";
+import {
+  ADDRESSES,
+  EVENT_TOPICS,
+  POOL_ID,
+  READ_PATH,
+  REACTIVE_RVM_ID,
+  REFERENCE_SOURCE_IDS,
+  RPC,
+} from "../../live-config";
 
 export const dynamic = "force-dynamic";
 
@@ -146,6 +154,15 @@ async function batchOrSingle(url: string, calls: BatchCall[]): Promise<unknown[]
 
 function callOf(to: string, data: string): BatchCall {
   return { method: "eth_call", params: [{ to, data }, "latest"] };
+}
+
+// Reactive Network runs an RSC's react() inside the deployer's ReactiveVM, so
+// every counter react() touches lives in RVM state. A plain eth_call against the
+// contract's Lasna address reads the chain-side copy, which those writes never
+// reach and which therefore answers zero forever. rnk_call is the RVM-scoped
+// equivalent and returns what the RSC actually recorded.
+function rvmCallOf(to: string, data: string): BatchCall {
+  return { method: "rnk_call", params: [REACTIVE_RVM_ID, { to, data }, "latest"] };
 }
 
 function words(data: string): string[] {
@@ -664,14 +681,35 @@ async function readEvents() {
   };
 }
 
+const REACTIVE_COUNTER_SELECTORS = [
+  selectors.wakeRequestCount,
+  selectors.observationSignalCount,
+  selectors.consecutiveRetries,
+  selectors.lastCycleId,
+] as const;
+
 async function readReactive() {
-  const [wakeData, signalData, retriesData, lastCycleData] = (await batchOrSingle(REACTIVE_RPC, [
-    callOf(REACTIVE_RSC, selectors.wakeRequestCount),
-    callOf(REACTIVE_RSC, selectors.observationSignalCount),
-    callOf(REACTIVE_RSC, selectors.consecutiveRetries),
-    callOf(REACTIVE_RSC, selectors.lastCycleId),
-  ])) as string[];
+  // The RVM read is the correct one; the chain-side read is kept only as a
+  // last resort, and is reported as such so a zero from it is never mistaken
+  // for "the RSC did nothing".
+  let source: "rvm" | "chain" = "rvm";
+  let counters: string[];
+  try {
+    counters = (await batchOrSingle(
+      REACTIVE_RPC,
+      REACTIVE_COUNTER_SELECTORS.map((selector) => rvmCallOf(REACTIVE_RSC, selector)),
+    )) as string[];
+  } catch {
+    source = "chain";
+    counters = (await batchOrSingle(
+      REACTIVE_RPC,
+      REACTIVE_COUNTER_SELECTORS.map((selector) => callOf(REACTIVE_RSC, selector)),
+    )) as string[];
+  }
+
+  const [wakeData, signalData, retriesData, lastCycleData] = counters;
   return {
+    source,
     wakeRequestCount: decodeSingle(wakeData),
     observationSignalCount: decodeSingle(signalData),
     consecutiveRetries: decodeSingle(retriesData),
