@@ -1,0 +1,129 @@
+{
+  "note": "Decoded output of the recorded responses. Any change to a word offset that alters a value fails the test. Words holding identical values at cold start (several premiums are 0) cannot be told apart by value alone — the length assertions and the offset map in decode.ts are the guard there.",
+  "recommendation": {
+    "zeroForOneFeePips": 500,
+    "oneForZeroFeePips": 500,
+    "zeroForOneRiskWad": "0",
+    "oneForZeroRiskWad": "0",
+    "confidenceBps": 0,
+    "validAfter": 1787996472,
+    "validUntil": 1788000072,
+    "sequence": 1
+  },
+  "poolConfig": {
+    "baselineFeePips": 500,
+    "poolPaused": false
+  },
+  "feeForSwap": {
+    "feePips": 500,
+    "usedBaseline": true
+  },
+  "sides": {
+    "sell": {
+      "openEpochId": 29799940,
+      "lastFinalizedEpochId": 29799940,
+      "epochObservationCount": 0,
+      "persistenceBitmap": 0,
+      "latestCoverageRatioWad": "1250000000000000000",
+      "latestRiskWad": "0",
+      "latestConfidenceWad": "0",
+      "latestCalculatedFeePips": 500,
+      "latestToxicPremiumPips": 0,
+      "latestCoveragePremiumPips": 0,
+      "persistenceActive": false,
+      "fastPathActive": false,
+      "epochOpen": false
+    },
+    "buy": {
+      "openEpochId": 0,
+      "lastFinalizedEpochId": 0,
+      "epochObservationCount": 0,
+      "persistenceBitmap": 0,
+      "latestCoverageRatioWad": "1250000000000000000",
+      "latestRiskWad": "0",
+      "latestConfidenceWad": "0",
+      "latestCalculatedFeePips": 500,
+      "latestToxicPremiumPips": 0,
+      "latestCoveragePremiumPips": 0,
+      "persistenceActive": false,
+      "fastPathActive": false,
+      "epochOpen": false
+    }
+  },
+  "deployedConfig": {
+    "scheduler": {
+      "markoutHorizonSeconds": 60,
+      "observationLifetimeSeconds": 7200,
+      "referenceSelectionWindowSeconds": 3600,
+      "epochDurationSeconds": 60,
+      "recommendationLifetimeSeconds": 3600,
+      "maximumPendingObservations": 32,
+      "maximumProcessPerCall": 32,
+      "maximumEpochObservations": 4,
+      "trailingWindow": 16,
+      "minimumTrailingObservations": 16,
+      "targetObservationCount": 4,
+      "requiredToxicEpochs": 3,
+      "persistenceWindow": 5,
+      "fastPathHoldEpochs": 0,
+      "maximumReferenceSamplesPerSource": 4,
+      "minimumReferenceSources": 3,
+      "fastPathEnabled": true,
+      "deadBandKWad": "1000000000000000000",
+      "maximumDispersionWad": "20000000000000000",
+      "confidenceCapWad": "1000000000000000000",
+      "toxicThresholdWad": "750000000000000",
+      "alphaWad": "250000000000000000",
+      "fastPathConfidenceFloorWad": "500000000000000000",
+      "fastPathToxicThresholdWad": "750000000000000"
+    },
+    "feeCurve": {
+      "baseFeePips": 500,
+      "minimumFeePips": 500,
+      "maximumFeePips": 10000,
+      "gainFeePips": 450000,
+      "coverageGainFeePips": 50,
+      "maximumIncreasePips": 500,
+      "maximumDecreasePips": 100,
+      "confidenceFloorWad": "500000000000000000",
+      "targetCoverageWad": "1250000000000000000",
+      "minimumEstimatedLossWad": "1000000000000000"
+    }
+  },
+  "referenceSource": {
+    "sourceId": "0xc747bb9e807253c4ccaf8aadb189ab0c711fabb226ae069054f3dfe67d239a56",
+    "configured": true,
+    "latestSequence": 2,
+    "samples": [
+      {
+        "priceWad": "1000000000000000000",
+        "confidenceWad": "1000000000000000000",
+        "observedAt": 1787996400,
+        "sequence": 1
+      },
+      {
+        "priceWad": "998003993011731029",
+        "confidenceWad": "1000000000000000000",
+        "observedAt": 1787996532,
+        "sequence": 2
+      }
+    ]
+  },
+  "lastCycle": {
+    "cycleId": 2,
+    "pendingBefore": 0,
+    "pendingAfter": 0,
+    "settledBefore": 1,
+    "settledAfter": 1,
+    "expiredBefore": 0,
+    "expiredAfter": 0,
+    "recommendationBefore": 0,
+    "recommendationAfter": 1,
+    "publishedSources": 3,
+    "syncedSources": 3,
+    "samplerSucceeded": true,
+    "processSucceeded": true,
+    "recommendationDispatched": true,
+    "reactiveTrigger": true
+  }
+}

@@ -129,8 +129,14 @@ test("live API defaults to the paired G10 lenses with a named direct fallback", 
   assert.match(route, /readOriginLens/);
   assert.match(route, /readProcessorLens/);
   // The fallback the README promises has to exist, not just be named: a lens
-  // fault must degrade to the audited getters and say so in readPath.
-  assert.match(route, /readPath = "historical-direct";\n\s*\[origin, processorBundle\] = await Promise\.all\(\[readOrigin\(\), readProcessor\(\)\]\);/);
+  // fault must degrade to the audited getters and say so in readPath. Asserted
+  // by structure rather than exact formatting, which a reformat would break
+  // while proving nothing.
+  assert.match(route, /catch\s*\{[\s\S]{0,200}readPath = "historical-direct"/);
+  assert.match(route, /readOrigin\(\), readProcessor\(\)/);
+  // The Reactive counters live in the ReactiveVM, so they must be read with the
+  // RVM-scoped call, not eth_call.
+  assert.match(route, /rnk_call/);
   assert.match(route, /from "\.\.\/\.\.\/live-config"/);
 
   const config = await readFile(new URL("app/live-config.ts", root), "utf8");
