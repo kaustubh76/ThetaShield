@@ -31,6 +31,10 @@ function round2(value: number): number {
 
 export default function MarkoutTrace({ trace }: { trace: HeroTrace }) {
   const points = trace.points;
+  // An empty series would make every scale ±Infinity and crash on the endpoint
+  // read below. The bundle is locked today, but a regeneration must not take the
+  // whole page down with it.
+  if (!points.length) return null;
   const plotWidth = PLOT_RIGHT - PLOT_LEFT;
   const slot = plotWidth / Math.max(1, points.length);
   const barWidth = Math.max(1.2, slot * 0.55);

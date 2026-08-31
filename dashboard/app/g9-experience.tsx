@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { formatInt } from "./components/format";
 import type { DeploymentView } from "./deployment-data";
+import { JOURNEY_PHASES, type JourneyPhaseId } from "./journey-phases";
 import type { DashboardView } from "./research-data";
 
 type SimulatorData = DashboardView["simulator"];
@@ -37,35 +38,37 @@ const failureModes: Record<FailureMode, { label: string; code: string; result: s
   },
 };
 
-const mechanismStages = [
-  ["origin", "Swap", "Trader calls the v4 pool"],
-  ["origin", "beforeSwap", "Controller selects buy or sell fee"],
-  ["origin", "afterSwap", "Hook emits compact execution evidence"],
-  ["circle", "Circle dispatch", "Sealed origin peer sends observation"],
-  ["circle", "CCTP attestation", "Finality, domain, and sender authenticate"],
-  ["processor", "Processor queue", "Bounded observation slot is reserved"],
-  ["reactive", "Reactive event plane", "RSC watches queue and cron signals"],
-  ["reactive", "Bounded callback", "Executor advances eligible work"],
-  ["processor", "Maturity wait", "Future price evidence becomes available"],
-  ["processor", "Reference sync", "Permissionless pool-derived samples land"],
-  ["processor", "Signed markout", "Direction preserves favorable vs adverse flow"],
-  ["processor", "Dead band", "Trailing noise is removed"],
-  ["processor", "Epoch + persistence", "Notional, confidence, and n-of-k agree"],
-  ["processor", "Fee curve", "Bounded directional premium is calculated"],
-  ["circle", "Circle return", "Sequenced recommendation crosses back"],
-  ["origin", "Controller validation", "Peer, domain, TTL, bounds, sequence"],
-  ["origin", "Next fee", "Later swap consumes installed state"],
-] as const;
+const mechanismStages: readonly (readonly [JourneyPhaseId, string, string])[] = [
+  ["swap-path", "Swap", "Trader calls the v4 pool"],
+  ["swap-path", "beforeSwap", "Controller selects buy or sell fee"],
+  ["swap-path", "afterSwap", "Hook emits compact execution evidence"],
+  ["evidence-outbound", "Circle dispatch", "Sealed origin peer sends observation"],
+  ["evidence-outbound", "CCTP attestation", "Finality, domain, and sender authenticate"],
+  ["queue-evidence", "Processor queue", "Bounded observation slot is reserved"],
+  ["autonomous-wake", "Reactive event plane", "RSC watches queue and cron signals"],
+  ["autonomous-wake", "Bounded callback", "Executor advances eligible work"],
+  ["delayed-analysis", "Maturity wait", "Future price evidence becomes available"],
+  ["delayed-analysis", "Reference sync", "Permissionless pool-derived samples land"],
+  ["delayed-analysis", "Signed markout", "Direction preserves favorable vs adverse flow"],
+  ["delayed-analysis", "Dead band", "Trailing noise is removed"],
+  ["delayed-analysis", "Epoch + persistence", "Notional, confidence, and n-of-k agree"],
+  ["delayed-analysis", "Fee curve", "Bounded directional premium is calculated"],
+  ["recommendation-return", "Circle return", "Sequenced recommendation crosses back"],
+  ["apply-next-fee", "Controller validation", "Peer, domain, TTL, bounds, sequence"],
+  ["apply-next-fee", "Next fee", "Later swap consumes installed state"],
+];
 
-const mechanismPhases = [
-  { lane: "origin", label: "Swap path", network: "Unichain", firstStage: 0, lastStage: 2 },
-  { lane: "circle", label: "Evidence outbound", network: "CIRCLE CCTP V2", firstStage: 3, lastStage: 4 },
-  { lane: "processor", label: "Queue evidence", network: "Ethereum", firstStage: 5, lastStage: 5 },
-  { lane: "reactive", label: "Autonomous wake", network: "REACTIVE NETWORK", firstStage: 6, lastStage: 7 },
-  { lane: "processor", label: "Delayed analysis", network: "Ethereum", firstStage: 8, lastStage: 13 },
-  { lane: "circle", label: "Recommendation return", network: "CIRCLE CCTP V2", firstStage: 14, lastStage: 14 },
-  { lane: "origin", label: "Apply next fee", network: "Unichain", firstStage: 15, lastStage: 16 },
-] as const;
+// Derived, so a stage insertion moves the boundary with it. A phase that ends up
+// with no stage is a build-time error rather than a silently empty strip.
+const mechanismPhases = JOURNEY_PHASES.map((phase) => {
+  const firstStage = mechanismStages.findIndex(([id]) => id === phase.id);
+  if (firstStage < 0) throw new Error(`journey phase has no stage: ${phase.id}`);
+  let lastStage = firstStage;
+  while (lastStage + 1 < mechanismStages.length && mechanismStages[lastStage + 1][0] === phase.id) {
+    lastStage += 1;
+  }
+  return { ...phase, firstStage, lastStage };
+});
 
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 
@@ -135,9 +138,15 @@ function ArchitectureAnimator({
   const activePhase = mechanismPhases[Math.max(0, activePhaseIndex)];
   const activePhaseStages = mechanismStages.slice(activePhase.firstStage, activePhase.lastStage + 1);
   const failure = failureModes[failureMode];
-  const phaseReceipts = deployment.receipts.filter(
-    (receipt) => receipt.phase === activePhase.label,
-  );
+  const phaseReceipts = deployment.receipts.filter((receipt) => receipt.phase === activePhase.id);
+  // Chain names come from the manifest; the journey used to print "Unichain" and
+  // "Ethereum" while the rest of the page said "Unichain Sepolia" and
+  // "Ethereum Sepolia", and called the Reactive plane by a third name.
+  const phaseNetwork = (network: string): string => {
+    if (network === "reactive") return deployment.automation.networkName;
+    const match = deployment.networks.find((entry) => entry.role === network);
+    return match ? match.name : network;
+  };
 
   return (
     <section className="section mechanism-explorer" id="mechanism">
@@ -165,23 +174,26 @@ function ArchitectureAnimator({
 
       <div
         className="control-journey"
-        style={{ "--journey-progress": `${(Math.max(0, activePhaseIndex) / (mechanismPhases.length - 1)) * 100}%` } as CSSProperties}
+        style={{
+          "--journey-progress": `${(Math.max(0, activePhaseIndex) / Math.max(1, mechanismPhases.length - 1)) * 100}%`,
+          "--journey-phase-count": mechanismPhases.length,
+        } as CSSProperties}
       >
         <div className="journey-track" aria-hidden="true"><i /><b /></div>
         <div className="journey-phases" aria-label="ThetaShield control journey">
           {mechanismPhases.map((phase, phaseIndex) => (
             <button
-              aria-label={`Phase ${phaseIndex + 1}: ${phase.label} on ${phase.network}`}
+              aria-label={`Phase ${phaseIndex + 1}: ${phase.label} on ${phaseNetwork(phase.network)}`}
               className={phaseIndex === activePhaseIndex ? "active" : phaseIndex < activePhaseIndex ? "complete" : ""}
               data-lane={phase.lane}
-              key={`${phase.network}-${phase.label}`}
+              key={phase.id}
               onClick={() => { setActiveStage(phase.firstStage); setPlaying(false); }}
               type="button"
             >
               <span>{String(phaseIndex + 1).padStart(2, "0")}</span>
               <i aria-hidden="true" />
               <b>{phase.label}</b>
-              <small>{phase.network}</small>
+              <small>{phaseNetwork(phase.network)}</small>
             </button>
           ))}
         </div>
@@ -192,7 +204,7 @@ function ArchitectureAnimator({
             <p>{active[2]}</p>
           </div>
           <div className="phase-sequence" aria-label={`Steps in ${activePhase.label}`}>
-            <span>{activePhase.network.toUpperCase()} · {activePhase.label}</span>
+            <span>{phaseNetwork(activePhase.network).toUpperCase()} · {activePhase.label}</span>
             <div>
               {activePhaseStages.map(([, title], index) => {
                 const absoluteIndex = activePhase.firstStage + index;
@@ -229,7 +241,7 @@ function ArchitectureAnimator({
       </div>
 
       <div className="mechanism-status" aria-live="polite">
-        <div><span>CONTROL JOURNEY</span><b>{activePhase.label}</b><p>{activePhase.network} is carrying this stage. The trace advances in execution order without moving the reader between disconnected lanes.</p></div>
+        <div><span>CONTROL JOURNEY</span><b>{activePhase.label}</b><p>{phaseNetwork(activePhase.network)} is carrying this stage. The trace advances in execution order without moving the reader between disconnected lanes.</p></div>
         <div className={failureMode === "healthy" ? "healthy" : "failed"}><span>SELECTED PATH</span><code>{failure.code}</code><p>{failure.result}</p></div>
       </div>
 
@@ -259,6 +271,7 @@ function FeeTimeline({
   const TOP = 10;
   const BOTTOM = 210;
 
+  if (!points.length) return null;
   const values = points.flatMap((point) => [point.buyFeeBps, point.sellFeeBps, meanFeeBps]);
   const high = Math.max(...values);
   const low = Math.min(...values);

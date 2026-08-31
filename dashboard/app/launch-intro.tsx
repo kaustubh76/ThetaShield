@@ -94,7 +94,7 @@ export default function LaunchIntro({ deployment }: { deployment: DeploymentView
 
       <div className="launch-intro-foot" aria-hidden="true">
         <span>{deployment.networks.map((network) => network.name).join(" · ").toUpperCase()}</span>
-        <span><i /> {`LIVE TESTNET SYSTEM · CYCLE ${deployment.acceptance.reactiveCycleId} PROVEN`}</span>
+        <span><i /> {`PUBLIC TESTNET · ACCEPTANCE CYCLE ${deployment.acceptance.reactiveCycleId} PROVEN`}</span>
       </div>
       <button autoFocus className="launch-intro-skip" onClick={close} type="button">
         Skip intro <span>↗</span>

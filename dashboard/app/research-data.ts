@@ -307,10 +307,16 @@ function scenarioVerdict(trace: RepresentativeTrace, step: TraceStep): string {
   return "Baseline held";
 }
 
+function presentationFor<T>(map: Record<string, T>, key: string, kind: string): T {
+  const entry = map[key];
+  if (!entry) throw new Error(`dashboard bundle has an unpresented ${kind}: ${key}`);
+  return entry;
+}
+
 export const scenarios = Object.values(bundle.representative_traces).map((trace) => {
   const selected = traceSnapshot(trace);
   const evidence = selected.evidence.find((entry) => entry.epoch_complete) ?? selected.evidence[0];
-  const presentation = scenarioPresentation[trace.scenario];
+  const presentation = presentationFor(scenarioPresentation, trace.scenario, "scenario");
   const totalCallbacks =
     trace.final_transport.callbacks_applied +
     trace.final_transport.callbacks_missing +
@@ -420,7 +426,7 @@ function scatterPoint(metrics: PolicyMetrics) {
 
 export const policyRows = Object.entries(bundle.policy_metrics).map(([policy, metrics]) => ({
   id: policy,
-  ...policyPresentation[policy],
+  ...presentationFor(policyPresentation, policy, "policy"),
   meanFeeBps: pipsToBps(mean(metrics, "mean_applied_fee_pips")),
   falsePositiveRate: wadToPercent(mean(metrics, "false_positive_rate_wad")),
   detectionLatency: mean(metrics, "detection_latency_steps") || null,
@@ -503,7 +509,7 @@ function sensitivityOption(entry: SensitivityCase, label = entry.value_label) {
 export const simulator = {
   policies: Object.entries(bundle.policy_metrics).map(([policy, metrics]) => ({
     id: policy,
-    label: policyPresentation[policy].label,
+    label: presentationFor(policyPresentation, policy, "policy").label,
     meanFeeBps: mean(metrics, "mean_applied_fee_pips") / 100,
     benignFeeQuote: mean(metrics, "benign_trader_fees_quote_wad") / 1e18,
     toxicFeeQuote: mean(metrics, "toxic_trader_fees_quote_wad") / 1e18,

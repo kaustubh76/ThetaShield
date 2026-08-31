@@ -1,4 +1,5 @@
 import manifestJson from "../data/deployment_manifest.json";
+import type { JourneyPhaseId } from "./journey-phases";
 import gasJson from "../data/gas_snapshots.json";
 
 type ManifestNetwork = {
@@ -181,14 +182,16 @@ if (!observationMessage || !recommendationMessage) {
 
 const acceptance = manifest.acceptance;
 
-const receiptSpecs = [
-  ["Swap observed", "origin", acceptance.initial_swap_transaction_hash, "Swap path"],
-  ["Circle observation received", "processor", observationMessage.relay_transaction_hash, "Evidence outbound"],
-  ["Authenticated processing callback", "processor", acceptance.reactive_callback_transaction_hash, "Autonomous wake"],
-  ["Second callback · recommendation sent", "processor", recommendationMessage.send_transaction_hash, "Recommendation return"],
-  ["Recommendation installed", "origin", recommendationMessage.relay_transaction_hash, "Apply next fee"],
-  ["Hook fee proven", "origin", acceptance.later_swap_transaction_hash, "Apply next fee"],
-] as const;
+// The 4th element keys the shared journey phase, so a phase rename cannot
+// silently detach a receipt from the stage it evidences.
+const receiptSpecs: readonly (readonly [string, "origin" | "processor", string, JourneyPhaseId])[] = [
+  ["Swap observed", "origin", acceptance.initial_swap_transaction_hash, "swap-path"],
+  ["Circle observation received", "processor", observationMessage.relay_transaction_hash, "evidence-outbound"],
+  ["Authenticated processing callback", "processor", acceptance.reactive_callback_transaction_hash, "autonomous-wake"],
+  ["Second callback · recommendation sent", "processor", recommendationMessage.send_transaction_hash, "recommendation-return"],
+  ["Recommendation installed", "origin", recommendationMessage.relay_transaction_hash, "apply-next-fee"],
+  ["Hook fee proven", "origin", acceptance.later_swap_transaction_hash, "apply-next-fee"],
+];
 
 const receipts = receiptSpecs.map(([title, role, hash, phase], index) => ({
   index: String(index + 1).padStart(2, "0"),

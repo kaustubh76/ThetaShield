@@ -35,6 +35,7 @@ const selectors = {
   poolConfig: "0x0885f732",
   processorLensState: "0xb26921c5",
   circlePeerSealed: "0x136f296d",
+  finalizedThreshold: "0xbe7dd53a",
   pendingCount: "0xea70b4af",
   settledObservationCount: "0x9bd6496d",
   expiredObservationCount: "0x3886a4fa",
@@ -347,7 +348,7 @@ function optional<T>(work: Promise<T>, timeoutMs: number): Promise<T | null> {
 // "buy"/"sell" fields exposed below use base-buy / base-sell semantics:
 // buy ↔ oneForZero, sell ↔ zeroForOne.
 async function readOrigin() {
-  const [chainIdHex, blockHex, hookCode, controllerCode, transportCode, observationData, zeroForOneFeeData, oneForZeroFeeData, recommendationData, sequenceData, peerData, configData, globallyPausedData] =
+  const [chainIdHex, blockHex, hookCode, controllerCode, transportCode, observationData, zeroForOneFeeData, oneForZeroFeeData, recommendationData, sequenceData, peerData, configData, globallyPausedData, finalityData] =
     await Promise.all([
       rpc<string>(ORIGIN_RPC, "eth_chainId", []),
       rpc<string>(ORIGIN_RPC, "eth_blockNumber", []),
@@ -362,6 +363,7 @@ async function readOrigin() {
       call(ORIGIN_RPC, CONTROLLER, selectors.circlePeerSealed),
       call(ORIGIN_RPC, CONTROLLER, encodeBytes32Call(selectors.poolConfig, POOL_ID)),
       call(ORIGIN_RPC, CONTROLLER, selectors.globallyPaused),
+      call(ORIGIN_RPC, CONTROLLER, selectors.finalizedThreshold),
     ]);
 
   const decodedRecommendation = decodeRecommendation(recommendationData);
@@ -373,6 +375,7 @@ async function readOrigin() {
     blockNumber: Number(BigInt(blockHex)),
     contractsHealthy: hasCode(hookCode) && hasCode(controllerCode) && hasCode(transportCode),
     circlePeerSealed: decodeBool(peerData),
+    finalizedThreshold: decodeSingle(finalityData),
     baselineFeePips: config.baselineFeePips,
     configured: true,
     globallyPaused: decodeBool(globallyPausedData),
@@ -389,7 +392,7 @@ async function readOrigin() {
 }
 
 async function readOriginLens() {
-  const [chainIdHex, blockHex, lensCode, hookCode, controllerCode, transportCode, snapshotData, peerData, recommendationData] =
+  const [chainIdHex, blockHex, lensCode, hookCode, controllerCode, transportCode, snapshotData, peerData, recommendationData, finalityData] =
     (await batchOrSingle(ORIGIN_RPC, [
       { method: "eth_chainId", params: [] },
       { method: "eth_blockNumber", params: [] },
@@ -400,6 +403,7 @@ async function readOriginLens() {
       callOf(ORIGIN_LENS, encodeOriginLensCall()),
       callOf(CONTROLLER, selectors.circlePeerSealed),
       callOf(CONTROLLER, encodeBytes32Call(selectors.currentRecommendation, POOL_ID)),
+      callOf(CONTROLLER, selectors.finalizedThreshold),
     ])) as string[];
   const decoded = words(snapshotData);
   if (decoded.length !== 14) throw new Error("Unexpected origin lens response");
@@ -411,6 +415,7 @@ async function readOriginLens() {
     contractsHealthy:
       hasCode(lensCode) && hasCode(hookCode) && hasCode(controllerCode) && hasCode(transportCode),
     circlePeerSealed: decodeBool(peerData),
+    finalizedThreshold: decodeSingle(finalityData),
     baselineFeePips: unsigned(decoded[12]),
     configured: unsigned(decoded[13]) !== 0,
     globallyPaused: unsigned(decoded[9]) !== 0,

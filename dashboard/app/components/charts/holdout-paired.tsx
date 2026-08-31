@@ -10,8 +10,16 @@ const TRACK_Y = 22;
 
 function Dumbbell({ row }: { row: HoldoutStory[number] }) {
   const [domainMin, domainMax] = row.domain;
+  // Clamped to the track: an out-of-domain reading would otherwise be drawn
+  // outside the viewBox and vanish silently rather than sit at the edge.
   const x = (value: number) =>
-    TRACK_LEFT + ((value - domainMin) / (domainMax - domainMin)) * (TRACK_RIGHT - TRACK_LEFT);
+    Math.min(
+      TRACK_RIGHT,
+      Math.max(
+        TRACK_LEFT,
+        TRACK_LEFT + ((value - domainMin) / (domainMax - domainMin)) * (TRACK_RIGHT - TRACK_LEFT),
+      ),
+    );
   const historicalX = x(row.historicalValue);
   const holdoutX = x(row.holdoutValue);
   const targetX = x(row.targetValue);

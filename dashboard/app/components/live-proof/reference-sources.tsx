@@ -62,7 +62,7 @@ export default function ReferenceSources({
       <p className="card-caption">
         The sampler publishes a fixed confidence of 1.0 per reading — it does not attenuate for depth,
         spread or age, so that column is a constant, not a quality score.
-        One self-contained pair of project-issued tokens across three fee tiers, moved by the operator. It
+        {` One self-contained pair of project-issued tokens across ${deployment.referenceSampler.sources.length} fee tiers, moved by the operator. It`}
         exercises the permissionless multi-source median, liquidity-floor, and dispersion path — it is not
         independent price discovery, and agreement between these sources is structural, not evidential.
       </p>

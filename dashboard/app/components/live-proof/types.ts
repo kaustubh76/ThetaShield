@@ -124,6 +124,7 @@ export type LiveProof = {
     blockNumber: number;
     contractsHealthy: boolean;
     circlePeerSealed: boolean;
+    finalizedThreshold: number;
     baselineFeePips: number;
     configured: boolean;
     globallyPaused: boolean;

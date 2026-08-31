@@ -221,6 +221,7 @@ export default function DashboardClient({
       <RegistrySection
         deployedConfig={live.proof?.processor.deployedConfig ?? null}
         deployment={deployment}
+        finalizedThreshold={live.proof?.origin.finalizedThreshold ?? null}
         liveStatus={liveStatus}
         readPath={live.proof?.readPath ?? null}
         researchConfig={researchConfigRows}

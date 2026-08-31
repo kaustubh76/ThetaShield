@@ -103,8 +103,8 @@ export default function SideStateCard({
         {clampPips !== 0 ? (
           <p className="fee-stack-clamp">
             {clampPips < 0
-              ? `clamped down ${bps(-clampPips)} bps · deployed limit ${config.feeCurve.maximumDecreasePips / 100} bps per update`
-              : `clamped up ${bps(clampPips)} bps · deployed limit ${config.feeCurve.maximumIncreasePips / 100} bps per update`}
+              ? `clamped down ${bps(-clampPips)} bps · deployed limit ${bps(config.feeCurve.maximumDecreasePips)} bps per update`
+              : `clamped up ${bps(clampPips)} bps · deployed limit ${bps(config.feeCurve.maximumIncreasePips)} bps per update`}
           </p>
         ) : null}
       </div>
