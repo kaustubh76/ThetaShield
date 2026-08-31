@@ -142,7 +142,7 @@ type DashboardBundle = {
     maximum_reference_dispersion_wad: number;
     persistence_window: number;
     required_toxic_epochs: number;
-  };
+  } & Record<string, number | boolean>;
   representative_traces: Record<string, RepresentativeTrace>;
   compact_scenario_replays: Record<string, CompactReplay>;
   trace_configuration: {
@@ -158,6 +158,7 @@ type DashboardBundle = {
     overall_status: string;
     interpretation: string;
     interpretation_boundary: string;
+    gates: Record<string, { rule: string; status: string }>;
     elastic_fee_revenue_delta_quote_wad: number;
     aggregates: {
       elastic: Record<string, {
@@ -384,12 +385,44 @@ export const hypotheses = bundle.hypotheses.map((hypothesis) => {
   };
 });
 
+function round(value: number, digits = 2): number {
+  const factor = 10 ** digits;
+  return Math.round(value * factor) / factor;
+}
+
+// A missing interval bound collapses to the mean, so a whisker degenerates to its
+// point instead of being drawn from a coerced zero.
+function ciBound(
+  interval: Interval | undefined,
+  key: "ci95_low" | "ci95_high",
+  scale: number,
+  fallback: number,
+): number {
+  const bound = interval?.[key];
+  return bound === null || bound === undefined ? fallback : round(bound / scale);
+}
+
+function scatterPoint(metrics: PolicyMetrics) {
+  const feeBps = round(mean(metrics, "mean_applied_fee_pips") / 100);
+  const fprPercent = round(mean(metrics, "false_positive_rate_wad") / WAD_PER_PERCENT);
+  return {
+    feeBps,
+    feeLowBps: ciBound(metrics.mean_applied_fee_pips, "ci95_low", 100, feeBps),
+    feeHighBps: ciBound(metrics.mean_applied_fee_pips, "ci95_high", 100, feeBps),
+    fprPercent,
+    fprLowPercent: ciBound(metrics.false_positive_rate_wad, "ci95_low", WAD_PER_PERCENT, fprPercent),
+    fprHighPercent: ciBound(metrics.false_positive_rate_wad, "ci95_high", WAD_PER_PERCENT, fprPercent),
+    fnrPercent: round(mean(metrics, "false_negative_rate_wad") / WAD_PER_PERCENT),
+  };
+}
+
 export const policyRows = Object.entries(bundle.policy_metrics).map(([policy, metrics]) => ({
   id: policy,
   ...policyPresentation[policy],
   meanFeeBps: pipsToBps(mean(metrics, "mean_applied_fee_pips")),
   falsePositiveRate: wadToPercent(mean(metrics, "false_positive_rate_wad")),
   detectionLatency: mean(metrics, "detection_latency_steps") || null,
+  scatter: scatterPoint(metrics),
 }));
 
 const h4Holdout = holdoutById.H4.holdout_evidence;
@@ -477,7 +510,7 @@ export const simulator = {
     feeRevenueQuote: mean(metrics, "lp_fee_revenue_quote_wad") / 1e18,
     inventoryPnlQuote: mean(metrics, "inventory_pnl_quote_wad") / 1e18,
     lpNetQuote: mean(metrics, "lp_net_pnl_quote_wad") / 1e18,
-    precisionPercent: 100 - mean(metrics, "false_positive_rate_wad") / WAD_PER_PERCENT,
+    specificityPercent: 100 - mean(metrics, "false_positive_rate_wad") / WAD_PER_PERCENT,
     recallPercent: 100 - mean(metrics, "false_negative_rate_wad") / WAD_PER_PERCENT,
     detectionLatency: mean(metrics, "detection_latency_steps") || null,
   })),
@@ -530,6 +563,16 @@ export const simulator = {
     interpretation: bundle.closed_loop.interpretation,
     boundary: bundle.closed_loop.interpretation_boundary,
     feeRevenueDeltaQuote: bundle.closed_loop.elastic_fee_revenue_delta_quote_wad / 1e18,
+    coveragePolicyId:
+      Object.keys(bundle.closed_loop.aggregates.elastic).find((key) =>
+        key.startsWith("coverage_"),
+      ) ?? Object.keys(bundle.closed_loop.aggregates.elastic)[0],
+    gates: Object.entries(bundle.closed_loop.gates).map(([id, gate]) => ({
+      id,
+      label: scenarioLabel(id),
+      rule: gate.rule,
+      status: gate.status,
+    })),
     coverage: Object.fromEntries(
       Object.entries(bundle.closed_loop.aggregates.elastic).map(([policy, metrics]) => [
         policy,
@@ -557,6 +600,64 @@ export const simulator = {
 export const heroScenario = scenarios.find(
   (scenario) => scenario.id === "persistent_informed_buying",
 ) ?? scenarios[0];
+
+const heroTraceSource =
+  bundle.representative_traces.persistent_informed_buying ??
+  Object.values(bundle.representative_traces)[0];
+
+export const heroTrace = {
+  scenario: heroTraceSource.scenario,
+  label: scenarioPresentation[heroTraceSource.scenario]?.label ?? heroTraceSource.scenario,
+  stepSeconds: heroTraceSource.step_seconds,
+  eventCount: heroTraceSource.event_count,
+  seed: heroTraceSource.seed,
+  points: heroTraceSource.steps
+    .filter((step) => step.evidence.length > 0)
+    .map((step) => {
+      const evidence = step.evidence[0];
+      return {
+        step: step.step,
+        markoutBps: round(evidence.raw_markout_wad / WAD_PER_BASIS_POINT),
+        bandBps: round(evidence.dead_band_wad / WAD_PER_BASIS_POINT),
+        filteredBps: round(evidence.filtered_markout_wad / WAD_PER_BASIS_POINT),
+        buyFeeBps: round(step.fee_by_direction_pips.buy / 100),
+        sellFeeBps: round(step.fee_by_direction_pips.sell / 100),
+        toxic: step.trade?.toxic_label ?? false,
+      };
+    }),
+};
+
+const h4Historical = bundle.hypotheses.find((entry) => entry.id === "H4")?.evidence ?? {};
+const h5Historical = bundle.hypotheses.find((entry) => entry.id === "H5")?.evidence ?? {};
+
+export const holdoutStory = [
+  {
+    id: "H4",
+    title: "Detection trade-off",
+    metricLabel: "rank correlation",
+    target: "pass ≤ −0.35",
+    targetValue: -0.35,
+    historicalStatus: holdoutById.H4.historical_status.toUpperCase(),
+    holdoutStatus: holdoutById.H4.holdout_status.toUpperCase(),
+    historicalValue: round(valueAt(h4Historical, ["rank_correlation_wad"]) / 1e18, 3),
+    holdoutValue: round(valueAt(h4Holdout, ["rank_correlation_wad"]) / 1e18, 3),
+    unit: "",
+    domain: [-1, 1] as const,
+  },
+  {
+    id: "H5",
+    title: "Manipulation resistance",
+    metricLabel: "toxic coverage retained",
+    target: "pass ≥ 50%",
+    targetValue: 50,
+    historicalStatus: holdoutById.H5.historical_status.toUpperCase(),
+    holdoutStatus: holdoutById.H5.holdout_status.toUpperCase(),
+    historicalValue: round(valueAt(h5Historical, ["retained_coverage_ratio_wad"]) / WAD_PER_PERCENT),
+    holdoutValue: round(valueAt(h5Holdout, ["retained_coverage_ratio_wad"]) / WAD_PER_PERCENT),
+    unit: "%",
+    domain: [0, 100] as const,
+  },
+];
 
 export const trustBands = [
   {
@@ -595,6 +696,69 @@ export const trustBands = [
   },
 ];
 
+const sensitivityDimensionLabels: Record<string, string> = {
+  confidence_threshold: "Confidence threshold",
+  dead_band_k: "Dead-band k",
+  epoch_duration: "Epoch duration",
+  ewma_alpha: "EWMA alpha",
+  fee_gain: "Fee gain",
+  fee_step_limits: "Fee step limits",
+  markout_horizon: "Horizon",
+  maximum_fee: "Fee cap",
+  persistence_n_of_k: "Persistence n/K",
+  toxicity_threshold: "Toxicity threshold",
+  trailing_window: "Trailing window",
+};
+
+export const sensitivityAll = {
+  dimensions: [...new Set(
+    Object.values(bundle.phase6_sensitivity)
+      .filter((entry) => entry.dimension !== "default")
+      .map((entry) => entry.dimension),
+  )]
+    .sort()
+    .map((dimension) => ({
+      id: dimension,
+      label: sensitivityDimensionLabels[dimension] ?? scenarioLabel(dimension),
+      cases: Object.values(bundle.phase6_sensitivity)
+        .filter((entry) => entry.dimension === dimension)
+        .map((entry) => ({
+          id: entry.case_id,
+          valueLabel: entry.value_label,
+          fprPercent: round(entry.benign_false_positive_rate_wad / WAD_PER_PERCENT),
+          latencySteps: entry.persistent_effective_detection_latency_steps,
+          pareto: entry.pareto_optimal,
+        })),
+    })),
+  defaultCase: (() => {
+    const entry = bundle.phase6_sensitivity.default;
+    return entry
+      ? {
+          fprPercent: round(entry.benign_false_positive_rate_wad / WAD_PER_PERCENT),
+          latencySteps: entry.persistent_effective_detection_latency_steps,
+        }
+      : null;
+  })(),
+};
+
+function formatConfigValue(key: string, value: number | boolean): string {
+  if (typeof value === "boolean") return value ? "enabled" : "disabled";
+  if (key.endsWith("_wad")) {
+    const scaled = value / 1e18;
+    if (scaled !== 0 && Math.abs(scaled) < 0.01) {
+      return `${scaled} (${round(value / WAD_PER_BASIS_POINT)} bps)`;
+    }
+    return `${round(scaled, 4)}`;
+  }
+  if (key.endsWith("_pips")) return `${value.toLocaleString()} pips (${round(value / 100)} bps)`;
+  if (key.endsWith("_steps")) return `${value} steps`;
+  return value.toLocaleString();
+}
+
+export const researchConfigRows = Object.entries(bundle.selected_research_config)
+  .sort(([left], [right]) => left.localeCompare(right))
+  .map(([key, value]) => ({ key, value: formatConfigValue(key, value) }));
+
 export const bundleMeta = {
   id: bundle.bundle_id,
   boundary: bundle.interpretation_boundary,
@@ -607,10 +771,14 @@ export const dashboardView = {
   controllerConfig,
   evidenceStats,
   heroScenario,
+  heroTrace,
+  holdoutStory,
   hypotheses,
   policyRows,
+  researchConfigRows,
   researchScale,
   scenarios,
+  sensitivityAll,
   simulator,
   trustBands,
 };

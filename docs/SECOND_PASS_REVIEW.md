@@ -62,7 +62,7 @@ never relayed. Relay is manual and nobody is running it.
 
 | Read | Value |
 |---|---|
-| `rnk_getSubscribers(<deployer RVM id>)` | **13 active subscriptions** |
+| `rnk_getSubscribers(<deployer RVM id>)` | **13 active subscriptions** (a later read-only re-query of the deployer RVM id `0x33189c64…` returns **3**; the earlier `13` was not reproducible) |
 | RSC balance | **`0.0020584 lREACT`** (reserve was `2.0`) |
 | Deployer balance on Lasna | `28.94 lREACT` |
 | System contract codehash | `0x29fce405…a67465` — **matches the pin** |
@@ -262,10 +262,13 @@ Related, all cheap:
 - **`preflight_fingerprints: []` in the G10 manifest.** `docs/VERIFICATION.md` calls the two
   live read-only `ReactiveLegacyPreflight` calls "mandatory for G10". The older Phase 8D
   manifest records two; G10 records none.
+  **RESOLVED** — the current live manifest records four preflight fingerprints.
 - **Nothing validates manifests against the schema.** `deployment-schema-check` runs
   `python -m json.tool deployments/manifest.schema.json` — it pretty-prints the schema and
   never opens a manifest. The schema is well-built and entirely unenforced; roughly 15 lines
   of `jsonschema` in `check_phase9.py` closes it.
+  **RESOLVED** — `deployment-schema-check` now also runs `script/check_deployment_manifests.py`,
+  which validates every non-archive manifest against the schema.
 - **All 14 components are `verified: false`.** Acknowledged in `deployments/README.md`, but
   the README links "Live testnet proof" and the dashboard links every address.
   `EXPLORER_API_KEY` already exists in `.env.example`.
@@ -382,13 +385,13 @@ python3 script/check_phase9.py # after doc or dashboard edits
 Live re-verification (read-only), after reviving the deployment:
 
 ```sh
-cast call 0x20C178712A124F5B1e86206280c6672082C5C9C6 'feeForSwap(bytes32,bool)(uint24,bool)' \
-  0x7395eeea4b661939d12196748d988ba1ed168e5d1b9c73094f372edf41bab9a5 true \
+cast call 0x23ae3E1A306824F0CBA0b6561cB7E5502f63dFb7 'feeForSwap(bytes32,bool)(uint24,bool)' \
+  0x98cea44f9f7d6a1432b12a8a56e022758ffe447a9f2e529da7557eb788cdc2a5 true \
   --rpc-url https://sepolia.unichain.org           # expect usedBaseline=false after a mature cycle
 
 curl -s -X POST -H 'Content-Type: application/json' \
-  --data '{"jsonrpc":"2.0","id":1,"method":"rnk_getSubscribers","params":["0x56E5590ef1fdA9fcA32ab2EEbF1B57845c29900a"]}' \
-  https://lasna-rpc.rnk.dev/                       # expect 3 subscriptions; currently []
+  --data '{"jsonrpc":"2.0","id":1,"method":"rnk_getSubscribers","params":["0x33189c643774ED2713EbFf5A6923e5fa42b96eE8"]}' \
+  https://lasna-rpc.rnk.dev/                       # returns 3 subscriptions
 ```
 
 Definition of done for Part 0: `usedBaseline == false` on at least one direction, the RSC holds a

@@ -1,5 +1,9 @@
 # Phase 8B Handoff — Circle Contracts and Local Lifecycle
 
+> Historical record: the statement that the control path no longer depends on
+> Reactive Network was true at Phase 8B. G6 restored a Reactive Legacy Lasna
+> scheduler, and the live G10 deployment uses it for bounded automation.
+
 ## Outcome
 
 ThetaShield's deployable control path no longer depends on Reactive Network,

@@ -120,8 +120,10 @@ cycles without a centralized cron server.
 
 The proof is public: the final Legacy RSC emitted both wake requests, and the
 official Ethereum callback proxy delivered both authenticated calls to our
-executor. The executor sampled three independent v4 pools and advanced the same
-permissionless processor a fallback keeper can call.
+executor. The executor sampled three liquidity-qualified v4 pools — three fee tiers of one
+self-contained project-issued pair, so their agreement is structural rather than
+evidential — and advanced the same permissionless processor a fallback keeper
+can call.
 
 Circle decides which evidence is authentic. Reactive decides when eligible work
 should run. That separation gives ThetaShield automation without giving the

@@ -1,5 +1,10 @@
 # Phase 8C Handoff — Circle Release Hardening
 
+> Historical record: the Reactive/Lasna removal described here was partly
+> reversed in G6, which restored the Reactive Legacy Lasna scheduler that the
+> live G10 deployment now uses. Submodule and Reactive claims below describe
+> the Phase 8C state, not the current one.
+
 ## Outcome
 
 The deployable and user-facing ThetaShield release path now uses Circle CCTP V2

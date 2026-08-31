@@ -15,7 +15,7 @@ processor work, with an independent keeper fallback. The failed Omni direct
 callback path remains retired.
 
 A complete live testnet deployment and G10 lifecycle is recorded from source revision
-`c0a44dac111848e794989ba4b6bde62e6ffc4cf7`. The hook, transport, controller,
+`4b3aff6247349a581275839f280d9902de3ceccd`. The hook, transport, controller,
 and origin Lens run on Unichain Sepolia; the three-pool sampler, bounded
 processor, processor Lens, and callback executor run on Ethereum Sepolia; and
 the event-driven scheduler runs on Reactive Legacy Lasna. Finalized Circle

@@ -1,11 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { DeploymentView } from "./deployment-data";
 
 const INTRO_EXIT_MS = 2_200;
 const INTRO_DONE_MS = 2_850;
 
-export default function LaunchIntro() {
+export default function LaunchIntro({ deployment }: { deployment: DeploymentView }) {
   const [visible, setVisible] = useState(true);
   const [exiting, setExiting] = useState(false);
   const manualTimer = useRef<number | null>(null);
@@ -92,8 +93,8 @@ export default function LaunchIntro() {
       </div>
 
       <div className="launch-intro-foot" aria-hidden="true">
-        <span>UNICHAIN SEPOLIA</span>
-        <span><i /> LIVE TESTNET SYSTEM</span>
+        <span>{deployment.networks.map((network) => network.name).join(" · ").toUpperCase()}</span>
+        <span><i /> {`LIVE TESTNET SYSTEM · CYCLE ${deployment.acceptance.reactiveCycleId} PROVEN`}</span>
       </div>
       <button autoFocus className="launch-intro-skip" onClick={close} type="button">
         Skip intro <span>↗</span>

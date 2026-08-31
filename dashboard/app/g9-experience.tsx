@@ -1,10 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore, type CSSProperties } from "react";
+import { formatInt } from "./components/format";
+import type { DeploymentView } from "./deployment-data";
 import type { DashboardView } from "./research-data";
 
 type SimulatorData = DashboardView["simulator"];
-type ControllerConfig = DashboardView["controllerConfig"];
+
+// Which control-journey phase each acceptance receipt proves (by receipt order).
+const receiptPhaseIndex = [0, 1, 3, 5, 6, 6] as const;
 
 type FailureMode = "healthy" | "cctp" | "stale" | "replay" | "capacity";
 
@@ -66,6 +70,24 @@ const mechanismPhases = [
   { lane: "origin", label: "Apply next fee", network: "Unichain", firstStage: 15, lastStage: 16 },
 ] as const;
 
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+
+function subscribeReducedMotion(onChange: () => void) {
+  const query = window.matchMedia(REDUCED_MOTION_QUERY);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+}
+
+// Autoplay stops when the visitor prefers reduced motion, but the transport
+// controls stay live so they can still opt into the animation deliberately.
+function useReducedMotion() {
+  return useSyncExternalStore(
+    subscribeReducedMotion,
+    () => window.matchMedia(REDUCED_MOTION_QUERY).matches,
+    () => false,
+  );
+}
+
 function percent(value: number, digits = 1) {
   return `${value.toFixed(digits)}%`;
 }
@@ -85,15 +107,23 @@ function selectInitialOption(
 function ArchitectureAnimator({
   failureMode,
   onFailureMode,
+  deployment,
 }: {
   failureMode: FailureMode;
   onFailureMode: (mode: FailureMode) => void;
+  deployment: DeploymentView;
 }) {
   const [activeStage, setActiveStage] = useState(0);
   const [playing, setPlaying] = useState(true);
+  const reducedMotion = useReducedMotion();
+  const [motionApplied, setMotionApplied] = useState(false);
+  if (reducedMotion && !motionApplied) {
+    setMotionApplied(true);
+    setPlaying(false);
+  }
 
   useEffect(() => {
-    if (!playing || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!playing) return;
     const interval = window.setInterval(
       () => setActiveStage((current) => (current + 1) % mechanismStages.length),
       1_600,
@@ -108,6 +138,9 @@ function ArchitectureAnimator({
   const activePhase = mechanismPhases[Math.max(0, activePhaseIndex)];
   const activePhaseStages = mechanismStages.slice(activePhase.firstStage, activePhase.lastStage + 1);
   const failure = failureModes[failureMode];
+  const phaseReceipts = deployment.receipts.filter(
+    (_, index) => receiptPhaseIndex[index] === Math.max(0, activePhaseIndex),
+  );
 
   return (
     <section className="section mechanism-explorer" id="mechanism">
@@ -179,6 +212,21 @@ function ArchitectureAnimator({
                 );
               })}
             </div>
+            {phaseReceipts.length ? (
+              <div className="journey-receipts">
+                <span>PROVEN BY RECEIPT</span>
+                {phaseReceipts.map((receipt) => (
+                  <a href={receipt.url} key={receipt.hash} rel="noreferrer" target="_blank">
+                    {`${receipt.index} · ${receipt.title} ↗`}
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <div className="journey-receipts idle">
+                <span>PROVEN BY RECEIPT</span>
+                <em>receipts land on the adjacent phases</em>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -207,24 +255,124 @@ function FeeTimeline({
   meanFeeBps: number;
   activeIndex: number;
 }) {
-  const maximum = Math.max(6, ...points.flatMap((point) => [point.buyFeeBps, point.sellFeeBps]));
-  const cursor = points.length > 1 ? (activeIndex / (points.length - 1)) * 100 : 0;
+  const WIDTH = 700;
+  const HEIGHT = 235;
+  const LEFT = 34;
+  const RIGHT = 694;
+  const TOP = 10;
+  const BOTTOM = 210;
+
+  const values = points.flatMap((point) => [point.buyFeeBps, point.sellFeeBps, meanFeeBps]);
+  const high = Math.max(...values);
+  const low = Math.min(...values);
+  const pad = Math.max(0.4, (high - low) * 0.18);
+  const max = high + pad;
+  const min = Math.max(0, low - pad);
+  const x = (index: number) =>
+    LEFT + (points.length > 1 ? (index / (points.length - 1)) * (RIGHT - LEFT) : 0);
+  const y = (value: number) => BOTTOM - ((value - min) / (max - min || 1)) * (BOTTOM - TOP);
+  const round1 = (value: number) => Math.round(value * 10) / 10;
+
+  // Step lines: the controller holds a fee until a recommendation installs, so a
+  // stepped path is the honest shape — straight interpolation would imply drift.
+  const stepPath = (select: (point: (typeof points)[number]) => number) =>
+    points
+      .map((point, index) => {
+        const px = round1(x(index));
+        const py = round1(y(select(point)));
+        return index === 0 ? `M${px} ${py}` : `H${px} V${py}`;
+      })
+      .join(" ");
+
+  const cursorX = round1(x(Math.min(activeIndex, points.length - 1)));
+  const active = points[Math.min(activeIndex, points.length - 1)];
+  const ticks = [min, (min + max) / 2, max];
+
   return (
-    <div className="fee-timeline" aria-label="Live ThetaShield buy and sell fee replay">
-      <div className="timeline-grid" style={{ "--mean": `${Math.min(100, (meanFeeBps / maximum) * 100)}%` } as CSSProperties}>
-        <b className="replay-cursor-line" style={{ "--cursor": `${cursor}%` } as CSSProperties} />
-        {points.map((point, index) => (
-          <i
-            className={index === activeIndex ? "current" : index < activeIndex ? "past" : "future"}
-            key={point.step}
-            title={`Step ${point.step}: buy ${point.buyFeeBps.toFixed(2)} bps, sell ${point.sellFeeBps.toFixed(2)} bps`}
-          >
-            <span className="buy" style={{ "--point": `${(point.buyFeeBps / maximum) * 100}%` } as CSSProperties} />
-            <span className="sell" style={{ "--point": `${(point.sellFeeBps / maximum) * 100}%` } as CSSProperties} />
-          </i>
+    <div className="fee-timeline">
+      <svg
+        className="timeline-svg"
+        viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+        role="img"
+        aria-label={`Directional fee replay: buy and sell fees across ${points.length} sampled steps against the selected policy's pooled mean of ${meanFeeBps.toFixed(2)} bps.`}
+      >
+        {ticks.map((tick) => (
+          <g key={tick}>
+            <line className="tl-grid" x1={LEFT} x2={RIGHT} y1={y(tick)} y2={y(tick)} />
+            <text className="tl-tick" x={LEFT - 6} y={y(tick) + 2.5}>{tick.toFixed(1)}</text>
+          </g>
         ))}
-      </div>
+        <line className="tl-mean" x1={LEFT} x2={RIGHT} y1={y(meanFeeBps)} y2={y(meanFeeBps)} />
+        <path className="tl-line tl-sell" d={stepPath((point) => point.sellFeeBps)} />
+        <path className="tl-line tl-buy" d={stepPath((point) => point.buyFeeBps)} />
+        <line className="tl-cursor" x1={cursorX} x2={cursorX} y1={TOP} y2={BOTTOM} />
+        <circle className="tl-dot tl-dot-sell" cx={cursorX} cy={round1(y(active.sellFeeBps))} r={4} />
+        <circle className="tl-dot tl-dot-buy" cx={cursorX} cy={round1(y(active.buyFeeBps))} r={4}>
+          <title>{`step ${active.step}: buy ${active.buyFeeBps.toFixed(2)} bps · sell ${active.sellFeeBps.toFixed(2)} bps`}</title>
+        </circle>
+      </svg>
       <div className="timeline-legend"><span className="buy">ThetaShield buy</span><span className="sell">ThetaShield sell</span><span className="mean">Selected-policy pooled mean</span></div>
+    </div>
+  );
+}
+
+function FrontierPlot({
+  points,
+}: {
+  points: { id: string; label: string; recall: number; specificity: number }[];
+}) {
+  const WIDTH = 420;
+  const HEIGHT = 250;
+  const LEFT = 40;
+  const RIGHT = 406;
+  const TOP = 16;
+  const BOTTOM = 212;
+  // Percentages can sit at the very edge of the domain, so clamp the plotted
+  // centre by the marker radius — the old percentage positioning let a 100%
+  // value render entirely outside the plot box.
+  const x = (recall: number) => LEFT + (Math.min(100, Math.max(0, recall)) / 100) * (RIGHT - LEFT);
+  const y = (specificity: number) =>
+    BOTTOM - (Math.min(100, Math.max(0, specificity)) / 100) * (BOTTOM - TOP);
+
+  return (
+    <div className="frontier-plot">
+      <svg
+        viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+        role="img"
+        aria-label={points
+          .map((point) => `${point.label}: ${point.specificity.toFixed(1)}% specificity at ${point.recall.toFixed(1)}% recall`)
+          .join("; ")}
+      >
+        {[0, 25, 50, 75, 100].map((tick) => (
+          <g key={tick}>
+            <line className="fp-grid" x1={LEFT} x2={RIGHT} y1={y(tick)} y2={y(tick)} />
+            <line className="fp-grid" x1={x(tick)} x2={x(tick)} y1={TOP} y2={BOTTOM} />
+          </g>
+        ))}
+        <line className="fp-axis" x1={LEFT} x2={LEFT} y1={TOP} y2={BOTTOM} />
+        <line className="fp-axis" x1={LEFT} x2={RIGHT} y1={BOTTOM} y2={BOTTOM} />
+        <text className="fp-label" x={LEFT} y={TOP - 5}>specificity ↑</text>
+        <text className="fp-label fp-label-end" x={RIGHT} y={BOTTOM + 15}>recall →</text>
+        {points.map((point, index) => {
+          const cx = x(point.recall);
+          const cy = y(point.specificity);
+          // Anchor the caption away from whichever edge the marker is nearest.
+          const flipDown = cy - TOP < 26;
+          const flipLeft = cx > RIGHT - 90;
+          return (
+            <g className={`fp-point fp-${point.id}`} key={point.id}>
+              <circle cx={cx} cy={cy} r={index === 0 ? 6 : 5} />
+              <text
+                className={flipLeft ? "fp-caption fp-label-end" : "fp-caption"}
+                x={flipLeft ? cx - 10 : cx + 10}
+                y={flipDown ? cy + 15 : cy - 9}
+              >
+                {point.label}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
     </div>
   );
 }
@@ -241,13 +389,19 @@ function LPBenefitSimulator({
   const [replayIndex, setReplayIndex] = useState(0);
   const [replayPlaying, setReplayPlaying] = useState(true);
   const [replaySpeed, setReplaySpeed] = useState(1);
+  const reducedMotion = useReducedMotion();
+  const [motionApplied, setMotionApplied] = useState(false);
+  if (reducedMotion && !motionApplied) {
+    setMotionApplied(true);
+    setReplayPlaying(false);
+  }
   const [activeDimension, setActiveDimension] = useState(data.sensitivity[0].id);
   const [sensitivitySelections, setSensitivitySelections] = useState<Record<string, string>>(() => {
     const expected: Record<string, string> = {
       dead_band_k: String(data.defaults.deadBandK),
       persistence_n_of_k: data.defaults.persistence,
       ewma_alpha: data.defaults.alpha.toFixed(2),
-      maximum_fee: `${Math.round(data.defaults.maximumFeeBps * 100).toLocaleString()} pips`,
+      maximum_fee: `${formatInt(Math.round(data.defaults.maximumFeeBps * 100))} pips`,
     };
     return Object.fromEntries(data.sensitivity.map((dimension) => [
       dimension.id,
@@ -264,10 +418,14 @@ function LPBenefitSimulator({
   const sensitivity = sensitivityDimension.options.find(
     (entry) => entry.id === sensitivitySelections[sensitivityDimension.id],
   ) ?? sensitivityDimension.options[0];
-  const maximumOutcome = Math.max(
-    0.000001,
-    ...Object.values(scenario.lpOutcomes).map((entry) => Math.abs(entry.mean)),
-  );
+  // All five policies land within ~0.1% of each other, so a zero-based scale
+  // renders five identical full-width bars. The zoom spans the observed window
+  // instead, and the caption says so.
+  const outcomeMeans = Object.values(scenario.lpOutcomes).map((entry) => entry.mean);
+  const zoomWindow = { best: Math.max(...outcomeMeans), worst: Math.min(...outcomeMeans) };
+  const zoomSpan = Math.max(1e-9, zoomWindow.best - zoomWindow.worst);
+  const zoomShare = (value: number) =>
+    Math.round((12 + ((value - zoomWindow.worst) / zoomSpan) * 88) * 10) / 10;
   const trueScale = Math.max(Math.abs(policy.inventoryPnlQuote), Math.abs(policy.feeRevenueQuote), 0.000001);
   const transportTotal =
     scenario.finalTransport.callbacks_applied +
@@ -276,7 +434,7 @@ function LPBenefitSimulator({
   const deliveryPercent = transportTotal
     ? (scenario.finalTransport.callbacks_applied * 100) / transportTotal
     : 100;
-  const coverage = data.closedLoop.coverage.coverage_thetashield;
+  const coverage = data.closedLoop.coverage[data.closedLoop.coveragePolicyId];
   const failure = failureModes[failureMode];
 
   const selectedScenarioOutcomes = useMemo(
@@ -285,11 +443,7 @@ function LPBenefitSimulator({
   );
 
   useEffect(() => {
-    if (
-      !replayPlaying ||
-      scenario.points.length < 2 ||
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    ) return;
+    if (!replayPlaying || scenario.points.length < 2) return;
     const interval = window.setInterval(
       () => setReplayIndex((current) => current >= scenario.points.length - 1 ? 0 : current + 1),
       Math.max(55, 220 / replaySpeed),
@@ -305,8 +459,8 @@ function LPBenefitSimulator({
       </div>
 
       <div className="simulator-controls">
-        <label><span>Scenario · 15</span><select value={scenarioId} onChange={(event) => { setScenarioId(event.target.value); setReplayIndex(0); setReplayPlaying(true); }}>{data.scenarios.map((entry) => <option key={entry.id} value={entry.id}>{entry.label}</option>)}</select></label>
-        <label><span>Policy · 5</span><select value={policyId} onChange={(event) => setPolicyId(event.target.value)}>{data.policies.map((entry) => <option key={entry.id} value={entry.id}>{entry.label}</option>)}</select></label>
+        <label><span>Scenario · {data.scenarios.length}</span><select value={scenarioId} onChange={(event) => { setScenarioId(event.target.value); setReplayIndex(0); setReplayPlaying(true); }}>{data.scenarios.map((entry) => <option key={entry.id} value={entry.id}>{entry.label}</option>)}</select></label>
+        <label><span>Policy · {data.policies.length}</span><select value={policyId} onChange={(event) => setPolicyId(event.target.value)}>{data.policies.map((entry) => <option key={entry.id} value={entry.id}>{entry.label}</option>)}</select></label>
         {data.sensitivity.map((dimension) => (
           <label key={dimension.id}>
             <span>{dimension.label}</span>
@@ -385,13 +539,19 @@ function LPBenefitSimulator({
         </article>
 
         <article className="sim-panel frontier-panel">
-          <div className="panel-heading"><span>03 · PRECISION / RECALL</span><b>pooled + sensitivity</b></div>
-          <div className="frontier-readout">
-            <div style={{ "--x": `${policy.recallPercent}%`, "--y": `${policy.precisionPercent}%` } as CSSProperties}><i /><span>{policy.label}</span></div>
-            <div className="sensitivity-point" style={{ "--x": `${100 - sensitivity.falseNegativePercent}%`, "--y": `${100 - sensitivity.falsePositivePercent}%` } as CSSProperties}><i /><span>{sensitivityDimension.label}</span></div>
-            <small className="frontier-x">recall →</small><small className="frontier-y">precision ↑</small>
-          </div>
-          <p>{percent(policy.precisionPercent)} precision · {percent(policy.recallPercent)} recall · {policy.detectionLatency ?? "—"} step detection</p>
+          <div className="panel-heading"><span>03 · SPECIFICITY / RECALL</span><b>pooled + sensitivity</b></div>
+          <FrontierPlot
+            points={[
+              { id: "policy", label: policy.label, recall: policy.recallPercent, specificity: policy.specificityPercent },
+              {
+                id: "sensitivity",
+                label: sensitivityDimension.label,
+                recall: 100 - sensitivity.falseNegativePercent,
+                specificity: 100 - sensitivity.falsePositivePercent,
+              },
+            ]}
+          />
+          <p>{`${percent(policy.specificityPercent)} specificity (benign flow passed at baseline) · ${percent(policy.recallPercent)} recall · ${policy.detectionLatency ?? "—"} step detection`}</p>
         </article>
 
         <article className="sim-panel lp-outcome-panel">
@@ -402,9 +562,15 @@ function LPBenefitSimulator({
             <div><span>Net</span><i style={{ "--bar": `${Math.abs(policy.lpNetQuote) / trueScale * 100}%` } as CSSProperties} /><b>{quote(policy.lpNetQuote)} quote</b></div>
           </div>
           <div className="paired-zoom">
-            {selectedScenarioOutcomes.map((entry) => <div className={entry.id === policy.id ? "active" : ""} key={entry.id}><span>{entry.label}</span><i style={{ "--bar": `${Math.abs(entry.outcome.mean) / maximumOutcome * 100}%` } as CSSProperties} /><b>{quote(entry.outcome.mean)}</b></div>)}
+            {selectedScenarioOutcomes.map((entry) => (
+              <div className={entry.id === policy.id ? "active" : ""} key={entry.id}>
+                <span>{entry.label}</span>
+                <i style={{ "--bar": `${zoomShare(entry.outcome.mean)}%` } as CSSProperties} />
+                <b>{quote(entry.outcome.mean)}</b>
+              </div>
+            ))}
           </div>
-          <p>Scenario mean {quote(outcome.mean)} quote · 95% interval [{quote(outcome.low)}, {quote(outcome.high)}]. Inventory PnL is shown at its real scale before the policy zoom.</p>
+          <p>{`Scenario mean ${quote(outcome.mean)} quote · 95% interval [${quote(outcome.low)}, ${quote(outcome.high)}]. Inventory PnL is shown at its real scale above; the zoom below spans only ${quote(zoomWindow.worst)} to ${quote(zoomWindow.best)}, so bar length compares policies against each other, not against zero.`}</p>
         </article>
 
         <article className="sim-panel transport-panel">
@@ -435,14 +601,15 @@ function LPBenefitSimulator({
 
 export default function G9Experience({
   data,
+  deployment,
 }: {
   data: DashboardView;
-  controllerConfig: ControllerConfig;
+  deployment: DeploymentView;
 }) {
   const [failureMode, setFailureMode] = useState<FailureMode>("healthy");
   return (
     <>
-      <ArchitectureAnimator failureMode={failureMode} onFailureMode={setFailureMode} />
+      <ArchitectureAnimator deployment={deployment} failureMode={failureMode} onFailureMode={setFailureMode} />
       <LPBenefitSimulator data={data.simulator} failureMode={failureMode} />
     </>
   );

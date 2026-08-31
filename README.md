@@ -95,7 +95,7 @@ Its authority is deliberately narrow: Reactive cannot forge a Circle observation
 ## Live testnet deployment
 
 The G10 `RESEARCH_V1` lifecycle is live across Unichain Sepolia, Ethereum
-Sepolia, and Reactive Legacy Lasna. A real swap emitted observation `5`; Circle
+Sepolia, and Reactive Legacy Lasna. A real swap emitted observation `1`; Circle
 delivered it to the processor; Reactive armed the delayed work, issued the
 maturity and finalization wakes, and produced two authenticated Ethereum
 callbacks; Circle returned recommendation sequence `1`; and a later PoolManager
@@ -161,7 +161,7 @@ ThetaShield was evaluated against fixed-fee, volatility-only, raw-markout, and d
 | Evidence | Result |
 |---|---:|
 | Phase 6 sensitivity runs | `3,150` |
-| Python research tests | `38` |
+| Python research tests | `48` |
 | H4 holdout rank correlation | `−0.727` |
 | H4 holdout Pareto points | `6` |
 | H5 retained toxic coverage | `59.70%` |

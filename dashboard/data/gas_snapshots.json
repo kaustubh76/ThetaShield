@@ -1,0 +1,11 @@
+{
+  "ThetaShieldControllerGasTest": {
+    "phase7_apply_recommendation_cold": 142543,
+    "phase7_apply_recommendation_warm": 15175,
+    "phase7_fee_for_swap_warm": 3771
+  },
+  "ThetaShieldHookGasTest": {
+    "phase5_after_swap_warm": 166781,
+    "phase5_before_swap": 33192
+  }
+}

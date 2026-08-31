@@ -240,7 +240,7 @@ experiments, dependency locks, secret scanning, the deployment schema, the
 dashboard production build, both rendered-dashboard tests, and the production
 dependency audit.
 
-The two fork tests are opt-in and skip without configured RPC variables. Use
+The three fork tests are opt-in and skip without configured RPC variables. Use
 `make fork-check` when the RPC endpoints are explicitly configured. The
 verification command itself never broadcasts.”
 

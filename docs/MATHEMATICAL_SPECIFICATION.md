@@ -104,7 +104,10 @@ w = min(wRaw, confidenceCap)
 ```
 
 The initial documented single-source cap is `0.60`, but the cap remains
-configurable. A single source can never create full confidence.
+configurable. A single source can never create full confidence. The shipped
+`RESEARCH_V1` profile sets `confidenceCapWad` to `1e18`; the `0.60` figure is
+the Phase 1 starting point and the value carried in the research config (see
+section 12).
 
 ## 8. Persistence
 
@@ -159,18 +162,45 @@ hold counter may keep this path active for a fixed number of later epochs.
 
 ## 11. Phase 1 research defaults
 
-| Parameter | Starting value |
-|---|---:|
-| Markout horizon | 60 seconds |
-| Epoch duration | 30 seconds |
-| Trailing window | 32 observations/epochs, experiment-dependent |
-| Dead-band `k` | 1.5 WAD |
-| Persistence | 3 of 5 |
-| EWMA alpha | 0.25 WAD |
-| Baseline fee | 500 fee pips (5 bps) |
-| Maximum fee | 10,000 fee pips (100 bps) |
-| Recommendation TTL | 180 seconds |
-| Minimum trailing observations | 32 in the Phase 1 experiment |
+| Parameter | Phase 1 starting value | Shipped `RESEARCH_V1` |
+|---|---:|---:|
+| Markout horizon | 60 seconds | 60 seconds |
+| Epoch duration | 30 seconds | 60 seconds |
+| Trailing window | 32 observations/epochs, experiment-dependent | 16 |
+| Dead-band `k` | 1.5 WAD | 1.0 WAD |
+| Persistence | 3 of 5 | 3 of 5 |
+| EWMA alpha | 0.25 WAD | 0.25 WAD |
+| Baseline fee | 500 fee pips (5 bps) | 500 fee pips (5 bps) |
+| Maximum fee | 10,000 fee pips (100 bps) | 10,000 fee pips (100 bps) |
+| Recommendation TTL | 180 seconds | 3,600 seconds |
+| Minimum trailing observations | 32 in the Phase 1 experiment | 16 |
 
-These are research starting points, not calibrated production claims. Every
-important value remains configurable and will be sensitivity-tested in Phase 6.
+The first column is the Phase 1 research starting point, not a calibrated
+production claim. The second column is what
+`script/profiles/ThetaShieldProfiles.sol` actually deploys after the Phase 6
+sensitivity sweep and the Phase 6.1 remediation locked different values. Where
+the two differ, the shipped column is authoritative for anything running
+on-chain.
+
+## 12. Shipped configuration divergences
+
+Two shipped constants differ from the values recorded in the research
+artifacts. This section records the difference; it does not assert which value
+is intended:
+
+| Constant | Research artifacts | Shipped `RESEARCH_V1` |
+|---|---:|---:|
+| `gainFeePips` | `500_000` (`phase61_summary.json` `selected_gain_fee_pips`) | `450_000` |
+| `confidenceCapWad` | `0.6e18` (`selected_research_config`) | `1e18` |
+
+The research harness selected a `500_000` gain and a `0.6e18` cap; the deployed
+profile ships `450_000` and `1e18`. Phase 5 and Phase 6 headline metrics were
+produced under the harness values, so a fee magnitude reproduced from those
+reports will not match the deployed curve exactly.
+
+Note also that `test/integration/ConfigMirror.t.sol` locks the shipped
+`450_000` under a test named
+`test_researchProfileMatchesLockedPhase61AndCoverageParameters`; the assertion
+is correct about what ships, but the name over-promises agreement with Phase
+6.1. The dashboard's deployed-parameter panel reads both sides live and labels
+each with its provenance rather than presenting either as the other.
