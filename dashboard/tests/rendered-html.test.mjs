@@ -38,6 +38,9 @@ test("server-renders the complete ThetaShield research dashboard", async () => {
   assert.match(html, /FAIL · historical \/ PASS · holdout/i);
   assert.match(html, /Trust surface/i);
   assert.match(html, /thetashield-dashboard-g9-v2/i);
+  // Server-rendered rather than mounted on the client, so the ambient background
+  // layer is in the document at first paint and the page never flashes without it.
+  assert.match(html, /<canvas\b[^>]*signal-field/);
   assert.match(html, /markout-trace/);
   assert.match(html, /Research replay from the locked evidence bundle/);
   assert.match(html, /policy-scatter/);

@@ -5,21 +5,48 @@
   --panel: #0d1815;
   --line: #263b34;
   --muted: #8da39a;
-  --dim: #60756d;
+  /* Lifted from #60756d, which sat at 3.91:1 on --ink and so had never cleared
+     WCAG AA for the 6.5-11px text it is used for throughout. At 5.60:1 it
+     clears with room, which is also what affords the signal field its alpha. */
+  --dim: #7a8f86;
   --paper: #edf7f2;
   --signal: #80ffb2;
   --signal-2: #33d98a;
   --violet: #9e91ff;
   --amber: #ffbd59;
   --danger: #ff6d82;
+
+  /* Every full-width band paints one of these instead of an opaque hex, so the
+     signal field behind the page reads at the same strength from the hero to
+     the footer. --veil is the single knob: lower it and the field comes
+     forward everywhere at once. Four grounds, matching the four near-black
+     shades the sections already used. */
+  --veil: .72;
+  --ground-ink: rgb(7 16 14 / var(--veil));
+  --ground-deep: rgb(8 18 15 / var(--veil));
+  --ground-raised: rgb(10 21 18 / var(--veil));
+  --ground-proof: rgb(9 20 17 / var(--veil));
 }
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; background: var(--ink); }
 body { margin: 0; background: var(--ink); color: var(--paper); font-family: var(--font-geist-sans), Arial, sans-serif; }
+/* Raised above .signal-field. Without this the field would paint over every
+   static section while sliding under the `position: relative` blocks, which
+   renders as a checkerboard rather than a background. */
+main { position: relative; z-index: 1; }
 a { color: inherit; text-decoration: none; }
 button { font: inherit; }
 ::selection { color: var(--ink); background: var(--signal); }
+
+/* Ambient point field, mounted once in the root layout behind every route.
+   z-index 0 rather than -1: html owns the propagated page background, so body
+   paints its own ground as an ordinary in-flow block and a negative layer
+   would sit behind it, never visible. The mask keeps the field off the corners
+   and hides points wrapping around the edges. The delay lets it surface as the
+   launch intro clears instead of being revealed abruptly. */
+.signal-field { position: fixed; inset: 0; z-index: 0; width: 100%; height: 100%; pointer-events: none; opacity: 0; mask-image: radial-gradient(ellipse 120% 100% at 50% 45%, #000 55%, transparent 100%); animation: signal-field-in 1.4s 2.2s ease-out forwards; }
+@keyframes signal-field-in { to { opacity: 1; } }
 
 .launch-intro { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; overflow: hidden; color: var(--paper); background: #030806; animation: launch-intro-in 360ms ease-out both; isolation: isolate; }
 .launch-intro::before { position: absolute; inset: 0; z-index: -2; content: ""; opacity: .32; background-image: linear-gradient(rgba(128,255,178,.045) 1px, transparent 1px), linear-gradient(90deg, rgba(128,255,178,.035) 1px, transparent 1px); background-size: 72px 72px; mask-image: radial-gradient(circle at center, #000, transparent 72%); }
@@ -87,7 +114,7 @@ nav a:hover, nav a:focus-visible { color: var(--signal); }
 .release-state { display: flex; align-items: center; gap: 8px; color: var(--muted); font-family: var(--font-geist-mono), monospace; font-size: 10px; text-transform: uppercase; letter-spacing: .08em; }
 .release-state i, .verdict i, .release-list i { width: 7px; height: 7px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 12px currentColor; }
 
-.hero { display: grid; grid-template-columns: minmax(0, .95fr) minmax(520px, 1.05fr); align-items: center; gap: clamp(54px, 8vw, 132px); min-height: calc(100vh - 72px); padding: 76px clamp(24px, 7vw, 108px) 92px; overflow: hidden; }
+.hero { display: grid; grid-template-columns: minmax(0, .95fr) minmax(520px, 1.05fr); align-items: center; gap: clamp(54px, 8vw, 132px); min-height: calc(100vh - 72px); padding: 76px clamp(24px, 7vw, 108px) 92px; overflow: hidden; background: var(--ground-ink); }
 .kicker { margin: 0 0 22px; color: var(--signal); font-family: var(--font-geist-mono), monospace; font-size: 10px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; }
 h1 { max-width: 720px; margin: 0; font-size: clamp(58px, 7.3vw, 116px); font-weight: 620; letter-spacing: -.075em; line-height: .91; }
 h1 em { color: var(--signal); font-style: normal; }
@@ -128,15 +155,18 @@ h1 em { color: var(--signal); font-style: normal; }
 .stage-simnote { margin: 12px 0 0; color: var(--dim); font-family: var(--font-geist-mono), monospace; font-size: 8px; letter-spacing: .08em; text-transform: uppercase; }
 .hero-vignette { max-width: 480px; margin: 18px 0 0; padding: 14px 16px; border-left: 2px solid var(--amber); background: rgba(255,189,89,.05); color: var(--muted); font-size: 13px; line-height: 1.6; }
 .hero-vignette b { color: var(--amber); font-weight: 600; }
+/* Bar tracks and cell wells are opaque while the panels around them stay
+   translucent: the field reading through a card is depth, but the same field
+   drifting through a measurement surface reads as an artifact. */
 .direction-readout { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.direction-readout div { padding: 20px; border: 1px solid var(--line); background: rgba(7,16,14,.6); }
+.direction-readout div { padding: 20px; border: 1px solid var(--line); background: #060d0b; }
 .direction-readout span, .fee span { display: block; color: var(--muted); font-family: var(--font-geist-mono), monospace; font-size: 8px; letter-spacing: .08em; }
 .direction-readout strong { display: inline-block; margin-top: 6px; font-size: 38px; letter-spacing: -.06em; }
 .direction-readout div:first-child strong { color: var(--signal); }
 .direction-readout small { margin-left: 8px; color: var(--dim); font-size: 9px; }
 .stage-foot { margin-top: 18px; }
 
-.distinction-strip { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.distinction-strip { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--ground-ink); }
 .distinction-grid { display: grid; grid-template-columns: repeat(3, 1fr); }
 .distinction-card { position: relative; padding: 34px clamp(24px, 3vw, 52px) 30px; border-right: 1px solid var(--line); }
 .distinction-card:last-child { border-right: 0; }
@@ -162,7 +192,7 @@ h1 em { color: var(--signal); font-style: normal; }
 .split-heading { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, .58fr); align-items: end; gap: 70px; max-width: none; }
 .split-heading > p { margin: 0 0 5px !important; font-size: 14px !important; }
 
-.mechanism-explorer { background: radial-gradient(circle at 82% 12%, rgba(158,145,255,.08), transparent 26%), linear-gradient(180deg, #07100e, #0a1512); }
+.mechanism-explorer { background: radial-gradient(circle at 82% 12%, rgba(158,145,255,.08), transparent 26%), linear-gradient(180deg, var(--ground-ink), var(--ground-raised)); }
 .mechanism-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 14px; }
 .failure-switches { display: flex; flex-wrap: wrap; gap: 7px; }
 .failure-switches button, .play-control { padding: 10px 13px; border: 1px solid var(--line); border-radius: 2px; color: var(--muted); background: rgba(13,24,21,.8); cursor: pointer; font-family: var(--font-geist-mono), monospace; font-size: 8px; text-transform: uppercase; }
@@ -218,7 +248,7 @@ h1 em { color: var(--signal); font-style: normal; }
 .loss-monitor > span { margin-right: auto; color: var(--amber); }
 .loss-monitor code { padding: 6px 8px; color: var(--muted); border: 1px solid var(--line); font-family: var(--font-geist-mono), monospace; font-size: 8px; }
 
-.benefit-simulator { background: radial-gradient(circle at 9% 15%, rgba(128,255,178,.08), transparent 26%), #07100e; }
+.benefit-simulator { background: radial-gradient(circle at 9% 15%, rgba(128,255,178,.08), transparent 26%), var(--ground-ink); }
 .simulator-controls { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border: 1px solid var(--line); }
 .simulator-controls label { min-width: 0; padding: 14px; border-right: 1px solid var(--line); }
 .simulator-controls label:last-child { border-right: 0; }
@@ -317,7 +347,7 @@ h1 em { color: var(--signal); font-style: normal; }
 .sensitivity-audit small { margin-top: 7px; color: var(--dim); font-size: 7px; text-transform: uppercase; }
 .sim-boundary { margin: 15px 0 0; color: var(--dim); font: 8px/1.5 var(--font-geist-mono), monospace; text-transform: uppercase; }
 
-.lab { background: #08120f; }
+.lab { background: var(--ground-deep); }
 .scenario-tabs { display: grid; grid-template-columns: repeat(4, 1fr); margin-bottom: 14px; }
 .scenario-tabs button { padding: 18px; border: 1px solid var(--line); border-right: 0; color: var(--muted); background: transparent; cursor: pointer; text-align: left; }
 .scenario-tabs button:last-child { border-right: 1px solid var(--line); }
@@ -354,7 +384,7 @@ h1 em { color: var(--signal); font-style: normal; }
 .metric-bar > i { display: block; height: 5px; margin-top: 9px; background: linear-gradient(90deg, var(--signal) 0 var(--value), var(--line) var(--value) 100%); }
 .confidence-card > p { margin: 36px 0 0; color: var(--dim); font-size: 10px; line-height: 1.55; }
 
-.live-proof { background: radial-gradient(circle at 82% 12%, rgba(128,255,178,.09), transparent 27%), #091411; }
+.live-proof { background: radial-gradient(circle at 82% 12%, rgba(128,255,178,.09), transparent 27%), var(--ground-proof); }
 .live-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 18px 20px; border: 1px solid var(--line); border-bottom: 0; background: rgba(13,24,21,.8); }
 .live-toolbar > div { display: flex; align-items: center; gap: 16px; }
 .live-toolbar p { margin: 0; color: var(--dim); font-family: var(--font-geist-mono), monospace; font-size: 8px; text-transform: uppercase; }
@@ -425,12 +455,12 @@ h1 em { color: var(--signal); font-style: normal; }
 .side-persistence { margin-top: 16px; }
 .side-persistence > span, .conf-gauge > span { display: block; color: var(--dim); font-family: var(--font-geist-mono), monospace; font-size: 7.5px; letter-spacing: .06em; text-transform: uppercase; }
 .bit-cells { display: flex; gap: 6px; margin-top: 8px; }
-.bit-cells i { width: 22px; height: 14px; border: 1px solid var(--line); background: rgba(7,16,14,.6); }
+.bit-cells i { width: 22px; height: 14px; border: 1px solid var(--line); background: #060d0b; }
 .bit-cells i.lit { border-color: rgba(255,109,130,.6); background: rgba(255,109,130,.3); box-shadow: 0 0 9px rgba(255,109,130,.35); }
 .side-persistence .flag { display: inline-block; margin-top: 8px; color: var(--dim); font-family: var(--font-geist-mono), monospace; font-size: 7.5px; letter-spacing: .08em; text-transform: uppercase; }
 .side-persistence .flag.on { color: var(--danger); }
 .conf-gauge { margin-top: 16px; }
-.conf-track { position: relative; height: 8px; margin-top: 8px; border: 1px solid var(--line); background: rgba(7,16,14,.6); }
+.conf-track { position: relative; height: 8px; margin-top: 8px; border: 1px solid var(--line); background: #060d0b; }
 .conf-track > i { position: absolute; inset: 0 auto 0 0; width: var(--value); background: linear-gradient(90deg, rgba(128,255,178,.35), var(--signal)); }
 .conf-track .floor-mark, .conf-track .cap-mark { position: absolute; top: -3px; bottom: -3px; width: 1px; }
 .conf-track .floor-mark { left: var(--floor); background: var(--amber); }
@@ -468,7 +498,7 @@ h1 em { color: var(--signal); font-style: normal; }
 .side-epochs { margin: 12px 0 0; color: var(--dim); font-family: var(--font-geist-mono), monospace; font-size: 7.5px; letter-spacing: .05em; text-transform: uppercase; }
 .fee-stack { margin-top: 16px; }
 .fee-stack > span { display: block; color: var(--dim); font-family: var(--font-geist-mono), monospace; font-size: 7.5px; letter-spacing: .06em; text-transform: uppercase; }
-.fee-stack-bar { display: flex; height: 10px; margin-top: 8px; border: 1px solid var(--line); background: rgba(7,16,14,.6); }
+.fee-stack-bar { display: flex; height: 10px; margin-top: 8px; border: 1px solid var(--line); background: #060d0b; }
 .fee-stack-bar i.seg-base { background: rgba(141,163,154,.45); }
 .fee-stack-bar i.seg-toxic { background: var(--danger); }
 .fee-stack-bar i.seg-coverage { background: var(--violet); }
@@ -542,7 +572,7 @@ h1 em { color: var(--signal); font-style: normal; }
 .cost-row .cost-head b { font-size: 13px; }
 .cost-row .cost-head span { color: var(--dim); font-family: var(--font-geist-mono), monospace; font-size: 8.5px; }
 .cost-row .cost-head em { margin-left: auto; color: var(--signal); font-family: var(--font-geist-mono), monospace; font-size: 7.5px; font-style: normal; letter-spacing: .06em; text-transform: uppercase; }
-.cost-bar { position: relative; height: 10px; margin-top: 8px; border: 1px solid var(--line); background: rgba(7,16,14,.6); }
+.cost-bar { position: relative; height: 10px; margin-top: 8px; border: 1px solid var(--line); background: #060d0b; }
 .cost-bar i { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, rgba(128,255,178,.35), var(--signal)); }
 .cost-figures { display: flex; justify-content: space-between; margin-top: 6px; color: var(--dim); font-family: var(--font-geist-mono), monospace; font-size: 8px; }
 .fingerprints { margin-top: 18px; }
@@ -566,7 +596,7 @@ h1 em { color: var(--signal); font-style: normal; }
 .gas-rows { display: grid; gap: 14px; margin-top: 16px; }
 .gas-row { display: grid; grid-template-columns: 1fr 2fr auto; align-items: center; gap: 14px; }
 .gas-row > span { color: var(--muted); font-family: var(--font-geist-mono), monospace; font-size: 8.5px; letter-spacing: .04em; text-transform: uppercase; }
-.gas-bar { display: flex; height: 10px; border: 1px solid var(--line); background: rgba(7,16,14,.6); }
+.gas-bar { display: flex; height: 10px; border: 1px solid var(--line); background: #060d0b; }
 .gas-bar .seg-a { background: linear-gradient(90deg, rgba(128,255,178,.3), var(--signal-2)); }
 .gas-bar .seg-b { background: rgba(158,145,255,.55); }
 .gas-row > b { color: var(--paper); font-family: var(--font-geist-mono), monospace; font-size: 10px; font-weight: 500; }
@@ -591,7 +621,7 @@ h1 em { color: var(--signal); font-style: normal; }
 .event-lane li a:hover, .event-lane li a:focus-visible { color: var(--signal); }
 .event-empty { margin: 10px 0 0; color: var(--dim); font-family: var(--font-geist-mono), monospace; font-size: 8.5px; text-transform: uppercase; }
 
-.evidence { background: radial-gradient(circle at 85% 14%, rgba(158,145,255,.075), transparent 25%), var(--ink); }
+.evidence { background: radial-gradient(circle at 85% 14%, rgba(158,145,255,.075), transparent 25%), var(--ground-ink); }
 .hypothesis-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 14px; }
 .hypothesis-grid article { min-height: 175px; padding: 22px; border: 1px solid var(--line); background: rgba(13,24,21,.72); }
 .hypothesis-grid span { color: var(--violet); font-family: var(--font-geist-mono), monospace; font-size: 9px; }
@@ -665,7 +695,7 @@ h1 em { color: var(--signal); font-style: normal; }
 .policy-table th { color: var(--dim); font-family: var(--font-geist-mono), monospace; font-size: 8px; font-weight: 500; text-transform: uppercase; }
 .policy-table tbody tr:last-child { color: var(--signal); }
 
-.trust-surface { background: radial-gradient(circle at 12% 20%, rgba(128,255,178,.07), transparent 28%), #08120f; }
+.trust-surface { background: radial-gradient(circle at 12% 20%, rgba(128,255,178,.07), transparent 28%), var(--ground-deep); }
 .trust-bands { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
 .trust-band { position: relative; min-height: 330px; padding: 30px; overflow: hidden; border: 1px solid var(--line); background: rgba(13,24,21,.86); }
 .trust-band::before { position: absolute; inset: 0 auto 0 0; width: 3px; content: ""; background: var(--signal); }
@@ -681,18 +711,18 @@ h1 em { color: var(--signal); font-style: normal; }
 .bundle-proof { margin: 16px 0 0; color: var(--dim); font-family: var(--font-geist-mono), monospace; font-size: 8px; text-transform: uppercase; }
 .bundle-proof code { color: var(--signal); }
 
-.system { background: #0a1512; }
+.system { background: var(--ground-raised); }
 .boundary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 14px; }
 .boundary-grid article { padding: 26px; border: 1px solid var(--line); }
 .boundary-grid h3 { margin: 24px 0 12px; font-size: 18px; }
 .boundary-grid p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.55; }
 
-.release-section { display: grid; grid-template-columns: 1fr 1fr; gap: 100px; padding: 120px clamp(24px, 7vw, 108px); background: linear-gradient(130deg, rgba(128,255,178,.08), transparent 38%); }
+.release-section { display: grid; grid-template-columns: 1fr 1fr; gap: 100px; padding: 120px clamp(24px, 7vw, 108px); background: linear-gradient(130deg, rgba(128,255,178,.08), transparent 38%), var(--ground-ink); }
 .release-list p { display: flex; align-items: center; gap: 15px; margin: 0; padding: 19px 0; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 12px; }
 .release-list i.done { color: var(--signal); background: var(--signal); }
 .release-list i.pending { color: var(--amber); background: var(--amber); }
 .release-list b { color: var(--paper); }
-footer { display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: end; padding: 44px clamp(24px, 5vw, 76px); border-top: 1px solid var(--line); }
+footer { display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: end; padding: 44px clamp(24px, 5vw, 76px); border-top: 1px solid var(--line); background: var(--ground-ink); }
 footer > p { margin: 0; color: var(--muted); font-size: 12px; text-align: center; }
 footer > div:last-child { display: grid; justify-content: end; gap: 5px; color: var(--dim); font-family: var(--font-geist-mono), monospace; font-size: 8px; text-align: right; text-transform: uppercase; }
 
@@ -802,6 +832,11 @@ footer > div:last-child { display: grid; justify-content: end; gap: 5px; color: 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .launch-intro { display: none; }
+  /* Not `display: none` like the intro above: reduced motion means no
+     animation, not no visuals, and unlike a timed sequence or a sweep line a
+     point field has a meaningful still state. The component paints exactly
+     one static frame and never starts its loop. */
+  .signal-field { opacity: 1; animation: none; }
   .mt-sweep { animation: none; visibility: hidden; }
 }
 .event-empty.unavailable { color: var(--amber); }
