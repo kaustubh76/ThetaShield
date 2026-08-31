@@ -17,7 +17,30 @@ export type LiveProofState = {
 // worst case (several sequential RPC rounds plus a lens fallback) is well inside
 // this budget.
 const REQUEST_TIMEOUT_MS = 20_000;
+// Bumped whenever the payload shape changes in a way the page cannot render.
+const SUPPORTED_SCHEMA = 2;
 const MAXIMUM_INTERVAL_MS = 10 * 60_000;
+
+// The previous check was `payload.ok === true`, so any JSON object equal to
+// {"ok": true} was stored as a complete reading and every downstream field
+// access became a TypeError. schemaVersion existed for exactly this and was
+// never read.
+function isRenderable(payload: unknown): payload is LiveProof {
+  if (typeof payload !== "object" || payload === null) return false;
+  const candidate = payload as Partial<LiveProof>;
+  if (candidate.ok !== true) return false;
+  if (candidate.schemaVersion !== SUPPORTED_SCHEMA) return false;
+  return (
+    typeof candidate.generatedAt === "string" &&
+    typeof candidate.poolId === "string" &&
+    typeof candidate.origin === "object" && candidate.origin !== null &&
+    typeof candidate.origin.buy?.feePips === "number" &&
+    typeof candidate.origin.sell?.feePips === "number" &&
+    typeof candidate.origin.blockNumber === "number" &&
+    typeof candidate.processor === "object" && candidate.processor !== null &&
+    typeof candidate.processor.blockNumber === "number"
+  );
+}
 
 function describe(requestError: unknown): string {
   if (requestError instanceof DOMException && requestError.name === "AbortError") {
@@ -55,9 +78,13 @@ export function useLiveProof(intervalMs = 60_000): LiveProofState {
 
     try {
       const response = await fetch("/api/live", { cache: "no-store", signal: controller.signal });
-      const payload = (await response.json()) as LiveProof | { message?: string };
-      if (!response.ok || !("ok" in payload) || payload.ok !== true) {
-        throw new Error("message" in payload && payload.message ? payload.message : "Testnet RPC unavailable.");
+      const payload: unknown = await response.json();
+      if (!isRenderable(payload)) {
+        const message =
+          typeof payload === "object" && payload !== null && "message" in payload
+            ? String((payload as { message?: unknown }).message ?? "")
+            : "";
+        throw new Error(message || "The testnet read returned a payload this page cannot render.");
       }
       if (ticket !== sequence.current) return;
       failures.current = 0;

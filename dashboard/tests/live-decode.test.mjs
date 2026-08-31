@@ -129,11 +129,9 @@ test("automation cycle result decodes its before/after counters", () => {
 });
 
 test("decoded output matches the recorded snapshot word for word", () => {
-  // The strongest guard available: any offset change that alters a value shows
-  // up here as a diff. Its honest limit is that several premiums and counters
-  // are 0 at cold start, so swapping two words that both hold 0 is invisible to
-  // a value comparison — the length assertions above and the offset map in
-  // decode.ts are what cover that case.
+  // Catches any offset change that alters a value against real chain data. It
+  // cannot catch a swap between two words that both hold 0 — which is most of
+  // them at cold start — so the synthetic tests below pin the offsets directly.
   const decoded = decode.words(fixtures.processorLensState);
   assert.deepEqual(decode.decodeRecommendation(fixtures.recommendation), snapshot.recommendation);
   assert.deepEqual(decode.decodePoolConfig(fixtures.poolConfig), snapshot.poolConfig);
@@ -146,4 +144,157 @@ test("decoded output matches the recorded snapshot word for word", () => {
     snapshot.referenceSource,
   );
   assert.deepEqual(decode.decodeCycleResult(fixtures.lastCycleResult), snapshot.lastCycle);
+});
+
+// ---------------------------------------------------------------------------
+// Offset pinning.
+//
+// Recorded responses prove the decoders work against real chain data, but they
+// cannot prove WHICH word each field read: at cold start most premiums, counters
+// and flags are 0, so two fields reading each other's offsets produce identical
+// output. These fixtures give every word a distinct value, so each decoded field
+// is traceable to exactly one offset and any swap fails.
+
+const WORD_BASE = 1000;
+
+function rampResponse(length) {
+  return `0x${Array.from({ length }, (_, index) =>
+    BigInt(WORD_BASE + index).toString(16).padStart(64, "0")).join("")}`;
+}
+
+// All words zero except one, so a boolean that reads the wrong offset is false.
+function singleWordResponse(length, hotIndex) {
+  return `0x${Array.from({ length }, (_, index) =>
+    (index === hotIndex ? "1" : "0").padStart(64, "0")).join("")}`;
+}
+
+test("recommendation fields read their declared word offsets", () => {
+  const value = decode.decodeRecommendation(rampResponse(8));
+  assert.equal(value.zeroForOneFeePips, WORD_BASE + 0);
+  assert.equal(value.oneForZeroFeePips, WORD_BASE + 1);
+  assert.equal(value.zeroForOneRiskWad, String(WORD_BASE + 2));
+  assert.equal(value.oneForZeroRiskWad, String(WORD_BASE + 3));
+  assert.equal(value.confidenceBps, WORD_BASE + 4);
+  assert.equal(value.validAfter, WORD_BASE + 5);
+  assert.equal(value.validUntil, WORD_BASE + 6);
+  assert.equal(value.sequence, WORD_BASE + 7);
+});
+
+test("pool configuration and fee fields read their declared word offsets", () => {
+  const config = decode.decodePoolConfig(rampResponse(7));
+  assert.equal(config.baselineFeePips, WORD_BASE + 0);
+  // poolPaused is word 6, not any of the five between it and the baseline.
+  assert.equal(decode.decodePoolConfig(singleWordResponse(7, 6)).poolPaused, true);
+  for (const index of [0, 1, 2, 3, 4, 5]) {
+    assert.equal(decode.decodePoolConfig(singleWordResponse(7, index)).poolPaused, false);
+  }
+
+  const fee = decode.decodeFee(rampResponse(2));
+  assert.equal(fee.feePips, WORD_BASE + 0);
+  assert.equal(decode.decodeFee(singleWordResponse(2, 1)).usedBaseline, true);
+  assert.equal(decode.decodeFee(singleWordResponse(2, 0)).usedBaseline, false);
+});
+
+test("every side-state field reads its declared word offset", () => {
+  const decoded = decode.words(rampResponse(98));
+  // buy ↔ oneForZero (offset 34), sell ↔ zeroForOne (offset 10).
+  for (const offset of [10, 34]) {
+    const side = decode.decodeSideState(decoded, offset);
+    const at = (delta) => WORD_BASE + offset + delta;
+    assert.equal(side.openEpochId, at(0));
+    assert.equal(side.lastFinalizedEpochId, at(1));
+    assert.equal(side.epochObservationCount, at(2));
+    assert.equal(side.persistenceBitmap, at(6));
+    assert.equal(side.latestCoverageRatioWad, String(at(12)));
+    assert.equal(side.latestRiskWad, String(at(14)));
+    assert.equal(side.latestConfidenceWad, String(at(15)));
+    assert.equal(side.latestCalculatedFeePips, at(16));
+    assert.equal(side.latestToxicPremiumPips, at(17));
+    assert.equal(side.latestCoveragePremiumPips, at(18));
+  }
+});
+
+test("side-state flags read their declared word offsets", () => {
+  const flags = [["persistenceActive", 19], ["fastPathActive", 20], ["epochOpen", 22]];
+  for (const offset of [10, 34]) {
+    for (const [field, delta] of flags) {
+      const side = decode.decodeSideState(decode.words(singleWordResponse(98, offset + delta)), offset);
+      assert.equal(side[field], true, `${field} does not read word ${offset + delta}`);
+      for (const [other] of flags) {
+        if (other !== field) assert.equal(side[other], false, `${other} also read word ${offset + delta}`);
+      }
+    }
+  }
+});
+
+test("every deployed-config field reads its declared word offset", () => {
+  const decoded = decode.words(rampResponse(98));
+  const config = decode.decodeDeployedConfig(decoded);
+  const scheduler = (delta) => WORD_BASE + 58 + delta;
+  const feeCurve = (delta) => WORD_BASE + 88 + delta;
+
+  assert.equal(config.scheduler.markoutHorizonSeconds, scheduler(0));
+  assert.equal(config.scheduler.observationLifetimeSeconds, scheduler(1));
+  assert.equal(config.scheduler.referenceSelectionWindowSeconds, scheduler(2));
+  assert.equal(config.scheduler.epochDurationSeconds, scheduler(3));
+  assert.equal(config.scheduler.recommendationLifetimeSeconds, scheduler(4));
+  assert.equal(config.scheduler.maximumPendingObservations, scheduler(7));
+  assert.equal(config.scheduler.maximumProcessPerCall, scheduler(8));
+  assert.equal(config.scheduler.maximumEpochObservations, scheduler(9));
+  assert.equal(config.scheduler.trailingWindow, scheduler(10));
+  assert.equal(config.scheduler.minimumTrailingObservations, scheduler(11));
+  assert.equal(config.scheduler.targetObservationCount, scheduler(12));
+  assert.equal(config.scheduler.requiredToxicEpochs, scheduler(13));
+  assert.equal(config.scheduler.persistenceWindow, scheduler(14));
+  assert.equal(config.scheduler.fastPathHoldEpochs, scheduler(15));
+  assert.equal(config.scheduler.maximumReferenceSamplesPerSource, scheduler(16));
+  assert.equal(config.scheduler.minimumReferenceSources, scheduler(17));
+  assert.equal(config.scheduler.deadBandKWad, String(scheduler(23)));
+  assert.equal(config.scheduler.maximumDispersionWad, String(scheduler(24)));
+  assert.equal(config.scheduler.confidenceCapWad, String(scheduler(25)));
+  assert.equal(config.scheduler.toxicThresholdWad, String(scheduler(26)));
+  assert.equal(config.scheduler.alphaWad, String(scheduler(27)));
+  assert.equal(config.scheduler.fastPathConfidenceFloorWad, String(scheduler(28)));
+  assert.equal(config.scheduler.fastPathToxicThresholdWad, String(scheduler(29)));
+
+  assert.equal(config.feeCurve.baseFeePips, feeCurve(0));
+  assert.equal(config.feeCurve.minimumFeePips, feeCurve(1));
+  assert.equal(config.feeCurve.maximumFeePips, feeCurve(2));
+  assert.equal(config.feeCurve.gainFeePips, feeCurve(3));
+  assert.equal(config.feeCurve.coverageGainFeePips, feeCurve(4));
+  assert.equal(config.feeCurve.maximumIncreasePips, feeCurve(5));
+  assert.equal(config.feeCurve.maximumDecreasePips, feeCurve(6));
+  assert.equal(config.feeCurve.confidenceFloorWad, String(feeCurve(7)));
+  assert.equal(config.feeCurve.targetCoverageWad, String(feeCurve(8)));
+  assert.equal(config.feeCurve.minimumEstimatedLossWad, String(feeCurve(9)));
+
+  // fastPathEnabled is word scheduler+18 and nothing else.
+  assert.equal(
+    decode.decodeDeployedConfig(decode.words(singleWordResponse(98, 58 + 18))).scheduler.fastPathEnabled,
+    true,
+  );
+  assert.equal(
+    decode.decodeDeployedConfig(decode.words(singleWordResponse(98, 58 + 19))).scheduler.fastPathEnabled,
+    false,
+  );
+});
+
+test("every automation cycle field reads its declared word offset", () => {
+  const cycle = decode.decodeCycleResult(rampResponse(15));
+  const counters = ["cycleId", "pendingBefore", "pendingAfter", "settledBefore", "settledAfter",
+    "expiredBefore", "expiredAfter", "recommendationBefore", "recommendationAfter",
+    "publishedSources", "syncedSources"];
+  counters.forEach((field, index) => {
+    assert.equal(cycle[field], WORD_BASE + index, `${field} does not read word ${index}`);
+  });
+
+  const flags = [["samplerSucceeded", 11], ["processSucceeded", 12],
+    ["recommendationDispatched", 13], ["reactiveTrigger", 14]];
+  for (const [field, index] of flags) {
+    const value = decode.decodeCycleResult(singleWordResponse(15, index));
+    assert.equal(value[field], true, `${field} does not read word ${index}`);
+    for (const [other] of flags) {
+      if (other !== field) assert.equal(value[other], false, `${other} also read word ${index}`);
+    }
+  }
 });

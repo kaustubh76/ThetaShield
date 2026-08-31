@@ -222,7 +222,6 @@ async function readOrigin() {
     circlePeerSealed: decodeBool(peerData),
     finalizedThreshold: decodeSingle(finalityData),
     baselineFeePips: config.baselineFeePips,
-    configured: true,
     globallyPaused: decodeBool(globallyPausedData),
     poolPaused: config.poolPaused,
     observationCount: decodeSingle(observationData),
@@ -262,7 +261,6 @@ async function readOriginLens() {
     circlePeerSealed: decodeBool(peerData),
     finalizedThreshold: decodeSingle(finalityData),
     baselineFeePips: unsigned(decoded[12]),
-    configured: unsigned(decoded[13]) !== 0,
     globallyPaused: unsigned(decoded[9]) !== 0,
     poolPaused: unsigned(decoded[10]) !== 0,
     observationCount: unsigned(decoded[11]),
@@ -598,7 +596,17 @@ export async function GET() {
       [origin, processorBundle] = await Promise.all([readOrigin(), readProcessor()]);
     }
     const [reactive, events] = await Promise.all([reactivePromise, eventsPromise]);
+    // Expiry is chain state, so it is read from the chain wherever possible.
+    // The origin lens computes secondsUntilExpiry against block.timestamp
+    // inside the contract; only the direct-getter fallback has to fall back to
+    // this host's clock, and the response says which was used so the page never
+    // presents a host-clock inference as a chain reading.
+    const expiryBasis = readPath === "lens" ? "chain" : "host-clock";
     const now = Math.floor(Date.now() / 1_000);
+    const recommendationExpired =
+      expiryBasis === "chain"
+        ? origin.recommendation.secondsUntilExpiry <= 0
+        : origin.recommendation.validUntil <= now;
 
     return NextResponse.json(
       {
@@ -613,7 +621,8 @@ export async function GET() {
         automation: processorBundle.automation,
         reactive,
         events,
-        recommendationExpired: origin.recommendation.validUntil <= now,
+        recommendationExpired,
+        expiryBasis,
       },
       { headers: { "cache-control": "no-store, max-age=0" } },
     );

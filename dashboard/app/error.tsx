@@ -1,7 +1,9 @@
 "use client";
 
-// Without this the whole page is one client tree: any throw below it renders a
-// blank document, taking the permanent receipt trail down with the live panel.
+// The whole page is one client tree, so without this any throw renders a blank
+// document. This boundary is route-scoped: it replaces every section including
+// the receipt trail, so what it buys is an explanation instead of a white
+// screen — not continuity of the trail.
 export default function DashboardError({ reset }: { error: Error; reset: () => void }) {
   return (
     <main className="route-error">

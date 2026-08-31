@@ -13,10 +13,13 @@ export default function TtlRing({
   secondsUntilExpiry,
   windowSeconds,
   baselineFeeBps,
+  confirmedExpired,
 }: {
   secondsUntilExpiry: number;
   windowSeconds: number;
   baselineFeeBps: string;
+  /** The read's own verdict. The local countdown may reach zero first. */
+  confirmedExpired: boolean;
 }) {
   const [baseline, setBaseline] = useState(secondsUntilExpiry);
   const [elapsed, setElapsed] = useState(0);
@@ -31,18 +34,25 @@ export default function TtlRing({
   }, []);
 
   const remaining = Math.max(0, secondsUntilExpiry - elapsed);
-  const expired = remaining <= 0;
-  const fraction = expired ? 0 : Math.min(1, remaining / Math.max(1, windowSeconds));
+  // The ring ticks every second but the page reads every 60, so the local
+  // countdown reaches zero up to a minute before any read confirms it. Until a
+  // read does, the window has only *elapsed* — asserting the fallback is live
+  // would contradict the fee the same panel is showing.
+  const elapsedLocally = remaining <= 0;
+  const expired = confirmedExpired;
+  const fraction = elapsedLocally ? 0 : Math.min(1, remaining / Math.max(1, windowSeconds));
 
   return (
-    <div className={expired ? "ttl-ring expired" : "ttl-ring"}>
+    <div className={expired || elapsedLocally ? "ttl-ring expired" : "ttl-ring"}>
       <svg
         viewBox="0 0 104 104"
         role="img"
         aria-label={
           expired
             ? `Recommendation window expired: both directions return the ${baselineFeeBps} bps baseline.`
-            : `Recommendation validity: ${clock(remaining)} remaining before the fee returns to the ${baselineFeeBps} bps baseline.`
+            : elapsedLocally
+              ? "Recommendation window has elapsed since the last read; the next read confirms whether the baseline is back."
+              : `Recommendation validity: ${clock(remaining)} remaining before the fee returns to the ${baselineFeeBps} bps baseline.`
         }
       >
         <circle className="ttl-track" cx="52" cy="52" r={RADIUS} />
@@ -54,10 +64,16 @@ export default function TtlRing({
           strokeDasharray={CIRCUMFERENCE}
           strokeDashoffset={CIRCUMFERENCE * (1 - fraction)}
         />
-        <text className="ttl-value" x="52" y="49">{expired ? "BASELINE" : clock(remaining)}</text>
-        <text className="ttl-caption" x="52" y="64">{expired ? `${baselineFeeBps} bps holds` : "until expiry"}</text>
+        <text className="ttl-value" x="52" y="49">
+          {expired ? "BASELINE" : elapsedLocally ? "00:00" : clock(remaining)}
+        </text>
+        <text className="ttl-caption" x="52" y="64">
+          {expired ? `${baselineFeeBps} bps holds` : elapsedLocally ? "awaiting read" : "until expiry"}
+        </text>
       </svg>
-      <span>{expired ? "expired → safe fallback" : "recommendation TTL"}</span>
+      <span>
+        {expired ? "expired → safe fallback" : elapsedLocally ? "window elapsed since last read" : "recommendation TTL"}
+      </span>
     </div>
   );
 }

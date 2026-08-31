@@ -119,6 +119,8 @@ export type LiveProof = {
   poolId: string;
   readPath: "lens" | "historical-direct";
   recommendationExpired: boolean;
+  /** Which clock decided `recommendationExpired`: the chain, or this host. */
+  expiryBasis: "chain" | "host-clock";
   origin: {
     chainId: number;
     blockNumber: number;
@@ -126,7 +128,6 @@ export type LiveProof = {
     circlePeerSealed: boolean;
     finalizedThreshold: number;
     baselineFeePips: number;
-    configured: boolean;
     globallyPaused: boolean;
     poolPaused: boolean;
     observationCount: number;

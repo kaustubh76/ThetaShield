@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import ChartScroll from "./components/charts/chart-scroll";
-import { formatInt } from "./components/format";
 // Autoplay stops when the visitor prefers reduced motion, but the transport
 // controls stay live so they can still opt into the animation deliberately.
 import { useReducedMotion } from "./components/use-reduced-motion";
@@ -81,13 +80,6 @@ function percent(value: number, digits = 1) {
 function quote(value: number, digits = 3) {
   const sign = value > 0 ? "+" : value < 0 ? "−" : "";
   return `${sign}${Math.abs(value).toFixed(digits)}`;
-}
-
-function selectInitialOption(
-  dimension: SimulatorData["sensitivity"][number],
-  expected: string,
-) {
-  return dimension.options.find((option) => option.label.startsWith(expected))?.id ?? dimension.options[0].id;
 }
 
 function ArchitectureAnimator({
@@ -396,18 +388,11 @@ function LPBenefitSimulator({
     setReplayPlaying(false);
   }
   const [activeDimension, setActiveDimension] = useState(data.sensitivity[0].id);
-  const [sensitivitySelections, setSensitivitySelections] = useState<Record<string, string>>(() => {
-    const expected: Record<string, string> = {
-      dead_band_k: String(data.defaults.deadBandK),
-      persistence_n_of_k: data.defaults.persistence,
-      ewma_alpha: data.defaults.alpha.toFixed(2),
-      maximum_fee: `${formatInt(Math.round(data.defaults.maximumFeeBps * 100))} pips`,
-    };
-    return Object.fromEntries(data.sensitivity.map((dimension) => [
-      dimension.id,
-      selectInitialOption(dimension, expected[dimension.id]),
-    ]));
-  });
+  // Each dimension's first option is its locked default (see the sensitivity
+  // builder in research-data.ts), so the initial selection is that option.
+  const [sensitivitySelections, setSensitivitySelections] = useState<Record<string, string>>(() =>
+    Object.fromEntries(data.sensitivity.map((dimension) => [dimension.id, dimension.options[0].id])),
+  );
 
   const scenario = data.scenarios.find((entry) => entry.id === scenarioId) ?? data.scenarios[0];
   const policy = data.policies.find((entry) => entry.id === policyId) ?? data.policies[0];
@@ -475,7 +460,7 @@ function LPBenefitSimulator({
 
       <div className="simulator-context">
         <div><span>STREAM</span><b>{scenario.label}</b><p>{scenario.description}</p></div>
-        <div><span>ACTIVE EXACT SENSITIVITY</span><b>{sensitivityDimension.label} · {sensitivity.label}</b><p>All other Phase 6 parameters remain at that experiment’s locked default.</p></div>
+        <div><span>ACTIVE EXACT SENSITIVITY</span><b>{sensitivityDimension.label} · {sensitivity.label}</b><p>All other Phase 6 parameters remain at that experiment’s locked default. Each dimension’s “· default” is the replay’s trace configuration, which the bundle records separately from the selected research config shown in the registry — the two are allowed to differ.</p></div>
       </div>
 
       <div className="replay-toolbar">

@@ -8,7 +8,15 @@ import SideStateCard from "./side-state-card";
 import TtlRing from "./ttl-ring";
 import type { LiveProofState } from "./use-live-proof";
 
+// Intl throws RangeError beyond ~8.64e12 seconds, and unsigned() only rejects
+// above MAX_SAFE_INTEGER — so a malformed word in that band would take the whole
+// route to the error boundary rather than rendering one odd cell.
+const MAXIMUM_RENDERABLE_SECONDS = 8_640_000_000_000;
+
 function formatChainTime(seconds: number) {
+  if (!Number.isFinite(seconds) || seconds < 0 || seconds > MAXIMUM_RENDERABLE_SECONDS) {
+    return "an out-of-range timestamp";
+  }
   return new Intl.DateTimeFormat("en", {
     day: "2-digit",
     month: "short",
@@ -74,23 +82,35 @@ export default function LiveProofPanel({
     }
     return `confidence ${recommendation.confidenceBps / 100}% · valid until ${formatChainTime(recommendation.validUntil)}`;
   };
+  // What the pool is charging is stated from the controller's own usedBaseline
+  // flags — the same words the fee numbers above come from — never from an
+  // expiry computation. Ordering it the other way round let a clock decide a
+  // sentence about a fee, and on the direct path that clock is this host's.
   const statusCopy = !proof
     ? error
       ? "Chain state unavailable"
       : "Reading chain state…"
-    : proof.recommendationExpired
-      ? "Safe baseline active · recommendation expired"
-      : safeBaseline
-        ? "Safe baseline active"
-        : "Live directional recommendation active";
+    : safeBaseline
+      ? proof.recommendationExpired
+        ? "Safe baseline active · recommendation expired"
+        : "Safe baseline active"
+      : "Live directional recommendation active";
+  const expiryNote =
+    proof && proof.expiryBasis === "host-clock"
+      ? " Expiry is inferred from this server's clock on the direct-getter path, not read from the chain."
+      : "";
   const statusDetail = !proof
     ? error
       ? "No claim is made about the current fee until a read succeeds. The verified receipt trail below is permanent."
       : "Reading both public testnets before stating a fee."
-    : proof.recommendationExpired
-      ? `Sequence ${proof.origin.lastSequence} remains auditable, but its validity window ended. Both swap directions safely return the configured ${feeBps(proof.origin.baselineFeePips)} bps baseline.`
-      : safeBaseline
-        ? "Refusing to overreact is the system's first live safety decision: without shared confidence, both directions hold the configured baseline by design."
+    : safeBaseline
+      ? proof.recommendationExpired
+        ? `Both swap directions return the configured ${feeBps(proof.origin.baselineFeePips)} bps baseline, as the controller reports. Sequence ${proof.origin.lastSequence} remains auditable, but its validity window has ended.${expiryNote}`
+        : "Refusing to overreact is the system's first live safety decision: without shared confidence, both directions hold the configured baseline by design."
+      : proof.recommendationExpired
+        // The chain still reports a premium applied while the window reads as
+        // ended. Saying "baseline" here would contradict the fees rendered above.
+        ? `The controller still reports a directional premium applied while sequence ${proof.origin.lastSequence} reads as past its validity window — the next swap settles which holds.${expiryNote}`
         : "A directional premium is installed. Under the operator-moved reference market this is a mechanism demonstration — not measured adverse selection.";
 
   return (
@@ -178,6 +198,7 @@ export default function LiveProofPanel({
             {proof.processor.deployedConfig ? (
               <TtlRing
                 baselineFeeBps={feeBps(proof.origin.baselineFeePips)}
+                confirmedExpired={proof.recommendationExpired}
                 secondsUntilExpiry={proof.recommendationExpired ? 0 : proof.origin.recommendation.secondsUntilExpiry}
                 windowSeconds={proof.processor.deployedConfig.scheduler.recommendationLifetimeSeconds}
               />
@@ -204,9 +225,43 @@ export default function LiveProofPanel({
 
       {proof && proof.readPath === "historical-direct" ? (
         <p className="path-note">
-          Direct getter path: per-side state, the deployed configuration, the reference table and the
-          recommendation TTL are aggregated by the processor lens and are not part of this read, so those
-          cards are withheld rather than guessed. Fees, counters and the receipt trail below are unaffected.
+          Direct getter path: per-side state, the deployed configuration, the reference table, the
+          automation cycle and the recommendation TTL are aggregated by the processor lens and are not part
+          of this read, so those cards are withheld rather than guessed. Fees, counters and the receipt
+          trail below are unaffected.
+        </p>
+      ) : null}
+
+      {proof && !proof.referenceSources && proof.readPath === "lens" ? (
+        <p className="path-note">
+          {proof.processor.referenceSourceCount
+            ? `The processor reports ${proof.processor.referenceSourceCount} registered reference source${proof.processor.referenceSourceCount === 1 ? "" : "s"}, but none returned a readable, configured state this cycle, so no table is shown rather than an empty one.`
+            : "The processor reports no registered reference sources, so there is no table to show."}
+        </p>
+      ) : null}
+
+      {proof && !proof.automation && proof.readPath === "lens" ? (
+        <p className="path-note">
+          The automation executor did not return a readable cycle this cycle, so the last-cycle card and the
+          Reactive agreement line are withheld. The receipt trail below is unaffected.
+        </p>
+      ) : null}
+
+      {proof && !proof.events ? (
+        <p className="path-note">
+          {/* The route documents that a failed scan is not the same finding as an
+              empty scan. That distinction lives in the per-lane `scanned` flags,
+              which do not exist when the whole scan fails — so it is stated here
+              instead of the section simply disappearing. */}
+          The bounded event scan did not complete this cycle, so no claim is made about recent on-chain
+          activity. This is not a finding that nothing happened. The receipt trail below is permanent.
+        </p>
+      ) : null}
+
+      {proof && !proof.reactive ? (
+        <p className="path-note">
+          The Reactive plane did not answer within the read budget, so its counters are withheld rather than
+          shown as zero.
         </p>
       ) : null}
 

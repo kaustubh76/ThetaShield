@@ -434,6 +434,11 @@ const researchScale = {
   ...bundle.experiment_dimensions,
 };
 
+// Reads `selected_research_config` — the candidate the study selected. The
+// replay's sensitivity defaults read `trace_configuration.research_config`
+// instead, and the shipped bundle's two blocks genuinely differ (dead band 1.0
+// vs 1.5, trailing window 16 vs 32, fast path off vs on). Both are honest; the
+// UI has to say which one it is showing, never silently mix them.
 const controllerConfig = {
   baselineFeeBps: pipsToBps(bundle.selected_research_config.base_fee_pips),
   confidenceCapPercent: bundle.selected_research_config.confidence_cap_wad / WAD_PER_PERCENT,
@@ -452,25 +457,51 @@ function scenarioLabel(scenario: string): string {
     .join(" ");
 }
 
+// One table of display names for every dimension the bundle can carry. The
+// simulator's curated shortlist below reads its labels from here, so a rename
+// cannot make the same dimension appear under two names on one page.
+const sensitivityDimensionLabels: Record<string, string> = {
+  confidence_threshold: "Confidence threshold",
+  dead_band_k: "Dead-band k",
+  epoch_duration: "Epoch duration",
+  ewma_alpha: "EWMA alpha",
+  fee_gain: "Fee gain",
+  fee_step_limits: "Fee step limits",
+  markout_horizon: "Horizon",
+  maximum_fee: "Fee cap",
+  persistence_n_of_k: "Persistence n/K",
+  toxicity_threshold: "Toxicity threshold",
+  trailing_window: "Trailing window",
+};
+
+function dimensionLabel(id: string): string {
+  return sensitivityDimensionLabels[id] ?? scenarioLabel(id);
+}
+
+// A deliberate 4-of-11 shortlist, in a curated order: these are the dimensions
+// the replay console exposes as controls. The full sweep renders all 11.
+// `defaultLabel` describes the trace configuration the replay runs under, which
+// is a different config block from `selected_research_config` and is allowed to
+// differ from it — see the note on controllerConfig.
 const sensitivityDimensions = [
   {
     id: "dead_band_k",
-    label: "Dead-band k",
+    label: dimensionLabel("dead_band_k"),
     defaultLabel: (bundle.trace_configuration.research_config.dead_band_k_wad / 1e18).toFixed(1),
   },
   {
     id: "persistence_n_of_k",
-    label: "Persistence n/K",
+    label: dimensionLabel("persistence_n_of_k"),
     defaultLabel: `${bundle.trace_configuration.research_config.required_toxic_epochs}-of-${bundle.trace_configuration.research_config.persistence_window}`,
   },
   {
     id: "ewma_alpha",
-    label: "EWMA alpha",
+    label: dimensionLabel("ewma_alpha"),
     defaultLabel: (bundle.trace_configuration.research_config.alpha_wad / 1e18).toFixed(2),
   },
   {
     id: "maximum_fee",
-    label: "Fee cap",
+    label: dimensionLabel("maximum_fee"),
     defaultLabel: `${formatInt(bundle.trace_configuration.research_config.maximum_fee_pips)} pips`,
   },
 ] as const;
@@ -579,12 +610,6 @@ const simulator = {
       ]),
     ),
   },
-  defaults: {
-    alpha: bundle.trace_configuration.research_config.alpha_wad / 1e18,
-    deadBandK: bundle.trace_configuration.research_config.dead_band_k_wad / 1e18,
-    maximumFeeBps: bundle.trace_configuration.research_config.maximum_fee_pips / 100,
-    persistence: `${bundle.trace_configuration.research_config.required_toxic_epochs}-of-${bundle.trace_configuration.research_config.persistence_window}`,
-  },
 };
 
 const heroTraceSource =
@@ -628,7 +653,7 @@ const hypothesisById = Object.fromEntries(bundle.hypotheses.map((row) => [row.id
 const holdoutStory = [
   {
     id: "H4",
-    title: "Detection trade-off",
+    title: hypothesisById.H4.title,
     metricLabel: "rank correlation",
     target: "pass ≤ −0.35",
     targetValue: -0.35,
@@ -649,7 +674,7 @@ const holdoutStory = [
   },
   {
     id: "H5",
-    title: "Manipulation resistance",
+    title: hypothesisById.H5.title,
     metricLabel: "toxic coverage retained",
     target: "pass ≥ 50%",
     targetValue: 50,
@@ -706,19 +731,6 @@ const trustBands = [
   },
 ];
 
-const sensitivityDimensionLabels: Record<string, string> = {
-  confidence_threshold: "Confidence threshold",
-  dead_band_k: "Dead-band k",
-  epoch_duration: "Epoch duration",
-  ewma_alpha: "EWMA alpha",
-  fee_gain: "Fee gain",
-  fee_step_limits: "Fee step limits",
-  markout_horizon: "Horizon",
-  maximum_fee: "Fee cap",
-  persistence_n_of_k: "Persistence n/K",
-  toxicity_threshold: "Toxicity threshold",
-  trailing_window: "Trailing window",
-};
 
 const sensitivityAll = {
   dimensions: [...new Set(
@@ -729,7 +741,7 @@ const sensitivityAll = {
     .sort()
     .map((dimension) => ({
       id: dimension,
-      label: sensitivityDimensionLabels[dimension] ?? scenarioLabel(dimension),
+      label: dimensionLabel(dimension),
       cases: Object.values(bundle.phase6_sensitivity)
         .filter((entry) => entry.dimension === dimension)
         .map((entry) => ({
