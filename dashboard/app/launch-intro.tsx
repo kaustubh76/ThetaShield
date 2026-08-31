@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useReducedMotion } from "./components/use-reduced-motion";
 import type { DeploymentView } from "./deployment-data";
 
 const INTRO_EXIT_MS = 2_200;
@@ -9,6 +10,7 @@ const INTRO_DONE_MS = 2_850;
 export default function LaunchIntro({ deployment }: { deployment: DeploymentView }) {
   const [visible, setVisible] = useState(true);
   const [exiting, setExiting] = useState(false);
+  const reducedMotion = useReducedMotion();
   const manualTimer = useRef<number | null>(null);
   const exitStarted = useRef(false);
 
@@ -22,9 +24,7 @@ export default function LaunchIntro({ deployment }: { deployment: DeploymentView
   useEffect(() => {
     if (!visible) return;
 
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      return;
-    }
+    if (reducedMotion) return;
 
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -45,9 +45,12 @@ export default function LaunchIntro({ deployment }: { deployment: DeploymentView
       window.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = previousOverflow;
     };
-  }, [close, visible]);
+  }, [close, reducedMotion, visible]);
 
-  if (!visible) return null;
+  // Derived, not set in an effect: a reduced-motion visitor gets no intro at all
+  // rather than a hidden aria-modal dialog left mounted for the life of the page
+  // (which is what the CSS display:none was quietly compensating for).
+  if (!visible || reducedMotion) return null;
 
   return (
     <div

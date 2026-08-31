@@ -97,7 +97,7 @@ export default function LiveProofPanel({
     <>
       <div className="live-toolbar">
         <div>
-          <span className={`live-status ${statusTone}`}><i />{statusLabel}</span>
+          <span aria-live="polite" className={`live-status ${statusTone}`}><i />{statusLabel}</span>
           <p>
             {proof
               ? `${proof.readPath === "lens" ? "Lens aggregate" : "Historical direct getters"} · read at ${new Date(lastSuccessAt ?? proof.generatedAt).toLocaleTimeString()}${
@@ -122,7 +122,10 @@ export default function LiveProofPanel({
         </div>
       ) : null}
 
-      <div className="live-grid" aria-live="polite">
+      {/* aria-live sat on the whole grid, so a screen reader re-read ~30 values
+          on every poll. The status line above is the part that changes
+          meaningfully; the cards are read on demand. */}
+      <div className="live-grid">
         <article className="live-card origin-card">
           <div className="live-card-header"><span>ORIGIN · {originName.toUpperCase()}</span><b>{proof ? `block ${formatInt(proof.origin.blockNumber)}` : "reading…"}</b></div>
           <div className="live-fees">

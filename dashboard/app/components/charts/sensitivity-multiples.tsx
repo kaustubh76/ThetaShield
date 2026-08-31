@@ -1,4 +1,5 @@
 import type { DashboardView } from "../../research-data";
+import ChartScroll from "./chart-scroll";
 
 type SensitivityAll = DashboardView["sensitivityAll"];
 type SensitivityCase = SensitivityAll["dimensions"][number]["cases"][number];
@@ -36,6 +37,7 @@ function ParetoFrontier({
     .join(" ");
 
   return (
+    <ChartScroll label="Phase 6 sensitivity cases: false positives against detection latency">
     <svg
       className="pareto-frontier"
       viewBox={`0 0 ${PARETO_WIDTH} ${PARETO_HEIGHT}`}
@@ -69,6 +71,7 @@ function ParetoFrontier({
         </circle>
       ))}
     </svg>
+    </ChartScroll>
   );
 }
 

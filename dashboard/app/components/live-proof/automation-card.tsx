@@ -21,7 +21,10 @@ export default function AutomationCard({ automation }: { automation: AutomationV
           <li className={check.ok ? "ok" : ""} key={check.label}>
             <i aria-hidden="true" />
             <b>{check.label}</b>
-            <span>{check.detail}</span>
+            {/* The dot is the only visual channel, so the state is also written
+                out for assistive tech and for anyone who cannot separate the
+                green from the grey. */}
+            <span><span className="sr-only">{check.ok ? "passed: " : "not completed: "}</span>{check.detail}</span>
           </li>
         ))}
       </ul>

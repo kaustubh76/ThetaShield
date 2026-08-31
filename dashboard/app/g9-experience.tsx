@@ -1,7 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState, useSyncExternalStore, type CSSProperties } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import ChartScroll from "./components/charts/chart-scroll";
 import { formatInt } from "./components/format";
+// Autoplay stops when the visitor prefers reduced motion, but the transport
+// controls stay live so they can still opt into the animation deliberately.
+import { useReducedMotion } from "./components/use-reduced-motion";
 import type { DeploymentView } from "./deployment-data";
 import { JOURNEY_PHASES, type JourneyPhaseId } from "./journey-phases";
 import type { DashboardView } from "./research-data";
@@ -69,24 +73,6 @@ const mechanismPhases = JOURNEY_PHASES.map((phase) => {
   }
   return { ...phase, firstStage, lastStage };
 });
-
-const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
-
-function subscribeReducedMotion(onChange: () => void) {
-  const query = window.matchMedia(REDUCED_MOTION_QUERY);
-  query.addEventListener("change", onChange);
-  return () => query.removeEventListener("change", onChange);
-}
-
-// Autoplay stops when the visitor prefers reduced motion, but the transport
-// controls stay live so they can still opt into the animation deliberately.
-function useReducedMotion() {
-  return useSyncExternalStore(
-    subscribeReducedMotion,
-    () => window.matchMedia(REDUCED_MOTION_QUERY).matches,
-    () => false,
-  );
-}
 
 function percent(value: number, digits = 1) {
   return `${value.toFixed(digits)}%`;
@@ -240,7 +226,7 @@ function ArchitectureAnimator({
         </div>
       </div>
 
-      <div className="mechanism-status" aria-live="polite">
+      <div className="mechanism-status" aria-live={playing ? "off" : "polite"}>
         <div><span>CONTROL JOURNEY</span><b>{activePhase.label}</b><p>{phaseNetwork(activePhase.network)} is carrying this stage. The trace advances in execution order without moving the reader between disconnected lanes.</p></div>
         <div className={failureMode === "healthy" ? "healthy" : "failed"}><span>SELECTED PATH</span><code>{failure.code}</code><p>{failure.result}</p></div>
       </div>
@@ -300,6 +286,7 @@ function FeeTimeline({
 
   return (
     <div className="fee-timeline">
+      <ChartScroll label="Directional fee replay across the selected scenario">
       <svg
         className="timeline-svg"
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
@@ -321,6 +308,7 @@ function FeeTimeline({
           <title>{`step ${active.step}: buy ${active.buyFeeBps.toFixed(2)} bps · sell ${active.sellFeeBps.toFixed(2)} bps`}</title>
         </circle>
       </svg>
+      </ChartScroll>
       <div className="timeline-legend"><span className="buy">ThetaShield buy</span><span className="sell">ThetaShield sell</span><span className="mean">Selected-policy pooled mean</span></div>
     </div>
   );
@@ -346,6 +334,7 @@ function FrontierPlot({
 
   return (
     <div className="frontier-plot">
+      <ChartScroll label="Detection frontier: recall against specificity">
       <svg
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
         role="img"
@@ -383,6 +372,7 @@ function FrontierPlot({
           );
         })}
       </svg>
+      </ChartScroll>
     </div>
   );
 }

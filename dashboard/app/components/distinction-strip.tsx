@@ -23,7 +23,10 @@ export default function DistinctionStrip({ policies }: { policies: PolicyRows })
     .filter((policy): policy is PolicyRows[number] => Boolean(policy));
 
   return (
-    <section className="distinction-strip" aria-label="Static, volatility-reactive, and directional fee policies compared">
+    <section className="distinction-strip" aria-labelledby="distinction-heading">
+      <h2 className="sr-only" id="distinction-heading">
+        Static, volatility-reactive, and directional fee policies compared
+      </h2>
       <div className="distinction-grid">
         {featured.map((policy) => (
           <article className={policy.id === "thetashield" ? "distinction-card active" : "distinction-card"} key={policy.id}>

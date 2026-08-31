@@ -1,4 +1,5 @@
 import type { DashboardView } from "../../research-data";
+import ChartScroll from "./chart-scroll";
 
 type HeroTrace = DashboardView["heroTrace"];
 
@@ -82,6 +83,7 @@ export default function MarkoutTrace({ trace }: { trace: HeroTrace }) {
   const toxicCount = points.reduce((total, point) => total + (point.toxic ? 1 : 0), 0);
 
   return (
+    <ChartScroll label={`Signed markout replay for the ${trace.label} stream`}>
     <svg
       className="markout-trace"
       viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
@@ -183,5 +185,6 @@ export default function MarkoutTrace({ trace }: { trace: HeroTrace }) {
         sell
       </text>
     </svg>
+    </ChartScroll>
   );
 }

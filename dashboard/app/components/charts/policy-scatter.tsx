@@ -1,4 +1,5 @@
 import type { DashboardView } from "../../research-data";
+import ChartScroll from "./chart-scroll";
 
 type PolicyRows = DashboardView["policyRows"];
 
@@ -38,6 +39,7 @@ export default function PolicyScatter({ policies }: { policies: PolicyRows }) {
   const fprTicks = [0, 20, 40, 60].filter((tick) => tick <= fprMax);
 
   return (
+    <ChartScroll label={"Policy separation: mean applied fee against benign false positives"}>
     <svg
       className="policy-scatter"
       viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
@@ -103,5 +105,6 @@ export default function PolicyScatter({ policies }: { policies: PolicyRows }) {
         );
       })}
     </svg>
+    </ChartScroll>
   );
 }

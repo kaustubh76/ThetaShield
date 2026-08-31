@@ -19,7 +19,9 @@ export default function Accordion({
     <details className="registry-accordion" id={id} open={defaultOpen}>
       <summary>
         <span className="acc-badge">{badge}</span>
-        <b>{title}</b>
+        {/* A <b> here made every registry accordion skip from the section h2
+            straight to the h4s inside it. */}
+        <h3>{title}</h3>
         {meta ? <small>{meta}</small> : null}
         <i aria-hidden="true">▸</i>
       </summary>

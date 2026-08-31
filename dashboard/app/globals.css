@@ -63,7 +63,7 @@ button { font: inherit; }
 .launch-intro-foot i { width: 5px; height: 5px; border-radius: 50%; background: var(--signal); box-shadow: 0 0 8px rgba(128,255,178,.5); }
 .launch-intro-skip { position: absolute; right: 28px; bottom: 54px; padding: 8px 10px; border: 1px solid transparent; color: var(--dim); background: transparent; cursor: pointer; font: 7px var(--font-geist-mono), monospace; letter-spacing: .1em; text-transform: uppercase; }
 .launch-intro-skip span { margin-left: 5px; color: var(--signal); }
-.launch-intro-skip:hover, .launch-intro-skip:focus-visible { color: var(--paper); border-color: rgba(128,255,178,.25); outline: 0; }
+.launch-intro-skip:hover, .launch-intro-skip:focus-visible { color: var(--paper); border-color: rgba(128,255,178,.25);  }
 
 @keyframes launch-intro-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes launch-intro-out { 0% { opacity: 1; } 35% { opacity: 1; } 100% { opacity: 0; } }
@@ -444,6 +444,18 @@ h1 em { color: var(--signal); font-style: normal; }
 .holdout-supporting { display: grid; gap: 3px; margin: 7px 0 0; padding: 0; list-style: none; color: var(--dim); font-family: var(--font-geist-mono), monospace; font-size: 8px; letter-spacing: .04em; text-transform: uppercase; }
 .holdout-supporting li { padding-left: 11px; text-indent: -11px; }
 .holdout-supporting li::before { margin-right: 6px; color: var(--signal); content: "·"; }
+/* Above the mobile breakpoint these are inert: the charts still size to 100%.
+   Below it the min-width keeps the viewBox at a legible scale and the container
+   scrolls, instead of shrinking 7px axis labels to 3px. */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+/* Unstyled controls (selects, the replay range, the journey buttons) previously
+   relied entirely on the UA ring against a near-black ground. */
+:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+.chart-scroll { min-width: 0; overflow-x: auto; }
+.chart-scroll:focus-visible { outline: 1px solid var(--signal); outline-offset: 2px; }
+/* Grid and flex items default to min-width:auto, so a min-width on the chart
+   inside would push the whole track wider instead of scrolling within it. */
+.signal-stage, .chart-panel, .fee-timeline, .frontier-plot, .sensitivity-multiples { min-width: 0; }
 .route-error { max-width: 620px; margin: 0 auto; padding: 120px 24px; }
 .route-error h1 { margin: 0; font-size: 26px; letter-spacing: -.03em; }
 .route-error p { margin: 16px 0 24px; color: var(--muted); font-size: 13px; line-height: 1.7; }
@@ -493,7 +505,7 @@ h1 em { color: var(--signal); font-style: normal; }
 .registry-accordion > summary::-webkit-details-marker { display: none; }
 .registry-accordion > summary:hover, .registry-accordion > summary:focus-visible { background: rgba(128,255,178,.04); }
 .registry-accordion > summary .acc-badge { color: var(--signal); font-family: var(--font-geist-mono), monospace; font-size: 9px; }
-.registry-accordion > summary b { flex: 1; font-size: 15px; font-weight: 600; }
+.registry-accordion > summary h3 { flex: 1; margin: 0; font-size: 15px; font-weight: 600; }
 .registry-accordion > summary small { color: var(--dim); font-family: var(--font-geist-mono), monospace; font-size: 8px; letter-spacing: .06em; text-transform: uppercase; }
 .registry-accordion > summary i { color: var(--dim); font-style: normal; transition: rotate .18s ease; }
 .registry-accordion[open] > summary i { rotate: 90deg; }
@@ -716,8 +728,13 @@ footer > div:last-child { display: grid; justify-content: end; gap: 5px; color: 
   .launch-intro-foot > span:first-child { display: none; }
   .launch-intro-foot > span:last-child { margin-left: auto; }
   .launch-intro-skip { right: auto; bottom: 45px; left: 50%; transform: translateX(-50%); }
-  .site-header { height: 62px; }
-  nav { display: none; }
+  /* The primary navigation used to be deleted below 760px with no replacement,
+     leaving scroll as the only way to reach six of the seven sections. */
+  .site-header { flex-wrap: wrap; height: auto; padding-top: 10px; padding-bottom: 4px; }
+  nav { order: 3; gap: 18px; width: 100%; overflow-x: auto; padding: 4px 0 6px; font-size: 11px; }
+  nav a { white-space: nowrap; }
+  .chart-scroll > svg { min-width: 620px; }
+  .frontier-plot .chart-scroll > svg { min-width: 420px; }
   .release-state { font-size: 8px; }
   .hero { min-height: auto; padding-top: 80px; }
   h1 { font-size: clamp(52px, 17vw, 76px); }
@@ -765,7 +782,14 @@ footer > div:last-child { display: grid; justify-content: end; gap: 5px; color: 
   .note-side { grid-column: 1 / -1; justify-items: start; }
   .live-side-grid { grid-template-columns: 1fr; }
   .reference-row { grid-template-columns: 1.4fr 1fr .9fr; }
-  .reference-row span:nth-child(4), .reference-row span:nth-child(5) { display: none; }
+  .reference-table { overflow-x: auto; }
+  .reference-row { min-width: 520px; }
+  /* Two- and three-column grids that had no breakpoint and ran to ~105px per
+     cell at 390px, several of them holding a full sentence. */
+  .processor-counts, .live-fees, .direction-readout, .fee-pair, .side-facts,
+  .transport-panel dl { grid-template-columns: 1fr; }
+  .param-rows > div { grid-template-columns: 1fr; }
+  .param-rows dt code { overflow-wrap: anywhere; }
   .component-row { grid-template-columns: 1fr 1fr; }
   .param-columns, .glossary, .event-lanes { grid-template-columns: 1fr; }
   .gas-row { grid-template-columns: 1fr; gap: 6px; }

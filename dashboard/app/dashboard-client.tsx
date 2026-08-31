@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type CSSProperties } from "react";
+import { useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
 import Accordion from "./components/accordion";
 import HoldoutPaired from "./components/charts/holdout-paired";
 import MarkoutTrace from "./components/charts/markout-trace";
@@ -57,6 +57,25 @@ export default function DashboardClient({
         ? "error"
         : "loading";
   const [selectedId, setSelectedId] = useState(scenarios[0].id);
+  // The tablist roles were declared without arrow-key support, a tabpanel or a
+  // roving tabIndex, so the ARIA described an interaction the page did not
+  // implement. Completing the pattern is better than dropping the roles: these
+  // really are tabs over one panel.
+  const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const onTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    const last = scenarios.length - 1;
+    const next =
+      event.key === "ArrowRight" ? (index + 1) % scenarios.length
+        : event.key === "ArrowLeft" ? (index + last) % scenarios.length
+          : event.key === "Home" ? 0
+            : event.key === "End" ? last
+              : null;
+    if (next === null) return;
+    event.preventDefault();
+    const nextId = scenarios[next].id;
+    setSelectedId(nextId);
+    tabRefs.current[nextId]?.focus();
+  };
   const selected = scenarios.find((scenario) => scenario.id === selectedId) ?? scenarios[0];
   const sensitivityCaseCount = sensitivityAll.dimensions.reduce(
     (total, dimension) => total + dimension.cases.length,
@@ -158,13 +177,20 @@ export default function DashboardClient({
         </div>
 
         <div className="scenario-tabs" role="tablist" aria-label="Choose a market scenario">
-          {scenarios.map((scenario) => (
+          {scenarios.map((scenario, index) => (
             <button
+              aria-controls="lab-panel"
               aria-selected={scenario.id === selectedId}
               className={scenario.id === selectedId ? "active" : ""}
+              id={`lab-tab-${scenario.id}`}
               key={scenario.id}
               onClick={() => setSelectedId(scenario.id)}
+              onKeyDown={(event) => onTabKeyDown(event, index)}
+              ref={(node) => {
+                tabRefs.current[scenario.id] = node;
+              }}
               role="tab"
+              tabIndex={scenario.id === selectedId ? 0 : -1}
               type="button"
             >
               <span>{scenario.eyebrow}</span>{scenario.label}
@@ -172,7 +198,7 @@ export default function DashboardClient({
           ))}
         </div>
 
-        <div className="lab-grid">
+        <div aria-labelledby={`lab-tab-${selected.id}`} className="lab-grid" id="lab-panel" role="tabpanel" tabIndex={0}>
           <article className="scenario-card">
             <div className="scenario-intro"><span>SELECTED STREAM</span><b>{selected.label}</b><p>{selected.summary}</p></div>
             <div className="fee-pair">
