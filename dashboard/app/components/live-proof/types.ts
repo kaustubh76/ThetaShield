@@ -1,4 +1,4 @@
-export type FeeState = { feePips: number; usedBaseline: boolean };
+type FeeState = { feePips: number; usedBaseline: boolean };
 
 export type SideStateView = {
   openEpochId: number;

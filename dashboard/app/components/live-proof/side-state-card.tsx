@@ -1,16 +1,6 @@
 import type { CSSProperties } from "react";
-import { formatInt } from "../format";
+import { bitmapBits, feeBps as bps, formatInt, signedFixed } from "../format";
 import { wadToBpsNumber, wadToNumber, type DeployedConfigView, type SideStateView } from "./types";
-
-function bitmapBits(bitmap: number, window: number): number[] {
-  return Array.from({ length: window }, (_, index) =>
-    Math.floor(bitmap / 2 ** (window - index - 1)) % 2,
-  );
-}
-
-function bps(pips: number): string {
-  return (pips / 100).toFixed(2);
-}
 
 export default function SideStateCard({
   label,
@@ -109,7 +99,7 @@ export default function SideStateCard({
         ) : null}
       </div>
       <dl className="side-facts">
-        <div><dt>signed risk</dt><dd>{`${riskBps >= 0 ? "+" : "−"}${Math.abs(riskBps).toFixed(2)} bps`}</dd></div>
+        <div><dt>signed risk</dt><dd>{`${signedFixed(riskBps)} bps`}</dd></div>
         <div>
           <dt>coverage ratio</dt>
           <dd className={coverageRatioPercent < targetCoveragePercent ? "warn" : ""}>

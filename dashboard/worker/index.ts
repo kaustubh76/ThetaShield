@@ -1,6 +1,14 @@
-/** Cloudflare Worker entry point for the vinext-starter template. */
+/** Cloudflare Worker entry point for the ThetaShield dashboard. */
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
+
+// Declared here rather than pulling in @cloudflare/workers-types, matching how
+// this file already hand-declares ExecutionContext and the IMAGES binding. The
+// worker was previously excluded from tsconfig entirely, so none of it was
+// typechecked.
+interface Fetcher {
+  fetch(request: Request): Promise<Response>;
+}
 
 interface Env {
   ASSETS: Fetcher;
@@ -17,12 +25,6 @@ interface ExecutionContext {
   waitUntil(promise: Promise<unknown>): void;
   passThroughOnException(): void;
 }
-
-// Image security config. SVG sources with .svg extension auto-skip the
-// optimization endpoint on the client side (served directly, no proxy).
-// To route SVGs through the optimizer (with security headers), set
-// dangerouslyAllowSVG: true in next.config.js and uncomment below:
-// const imageConfig: ImageConfig = { dangerouslyAllowSVG: true };
 
 const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {

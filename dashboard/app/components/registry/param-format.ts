@@ -1,6 +1,8 @@
 // The deployed and research columns sit side by side and exist to be compared,
 // so both are rendered through these functions. A divergence between the two
 // columns must mean the values differ, never that the formatters do.
+import { feeBps } from "../format";
+
 const WAD = 1e18;
 const WAD_PER_BASIS_POINT = 1e14;
 
@@ -13,7 +15,7 @@ export function formatParamWad(value: number): string {
 }
 
 export function formatParamPips(value: number): string {
-  return `${value.toLocaleString("en-US")} pips (${Math.round((value / 100) * 100) / 100} bps)`;
+  return `${value.toLocaleString("en-US")} pips (${feeBps(value)} bps)`;
 }
 
 export function formatParamSeconds(value: number): string {

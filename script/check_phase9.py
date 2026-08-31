@@ -88,12 +88,16 @@ def main() -> None:
     page_shell = read_required("dashboard/app/page.tsx")
     page_client = read_required("dashboard/app/dashboard-client.tsx")
     g9_experience = read_required("dashboard/app/g9-experience.tsx")
+    # The control-journey phase labels (including the Circle transport lane) were
+    # split out of g9-experience so the receipt trail could key on them, so this
+    # module is part of the page's display copy.
+    journey_phases = read_required("dashboard/app/journey-phases.ts")
     components_dir = ROOT / "dashboard/app/components"
     component_sources = [
         path.read_text(encoding="utf-8")
         for path in sorted(components_dir.rglob("*.tsx"))
     ] if components_dir.is_dir() else []
-    page = "\n".join([page_shell, page_client, g9_experience, *component_sources])
+    page = "\n".join([page_shell, page_client, g9_experience, journey_phases, *component_sources])
     research_data = read_required("dashboard/app/research-data.ts")
     deployment_data = read_required("dashboard/app/deployment-data.ts")
     layout = read_required("dashboard/app/layout.tsx")

@@ -1,4 +1,5 @@
 import bundleJson from "../data/dashboard_bundle.json";
+import { bitmapBits, feeBps as pipsToBps, formatInt, signedFixed } from "./components/format";
 import {
   formatParamBool,
   formatParamCount,
@@ -248,29 +249,12 @@ function mean(metrics: PolicyMetrics, key: string): number {
   return metrics[key]?.mean ?? 0;
 }
 
-function signedFixed(value: number, digits: number): string {
-  const formatted = Math.abs(value).toFixed(digits);
-  if (value > 0) return `+${formatted}`;
-  if (value < 0) return `−${formatted}`;
-  return formatted;
-}
-
 function wadToBps(value: number): string {
   return `${signedFixed(value / WAD_PER_BASIS_POINT, 2)} bps`;
 }
 
 function wadToPercent(value: number, digits = 2): string {
   return `${(value / WAD_PER_PERCENT).toFixed(digits)}%`;
-}
-
-function pipsToBps(value: number): string {
-  return (value / 100).toFixed(2);
-}
-
-function bitmapBits(bitmap: number, window: number): number[] {
-  return Array.from({ length: window }, (_, index) =>
-    Math.floor(bitmap / 2 ** (window - index - 1)) % 2,
-  );
 }
 
 function traceSnapshot(trace: RepresentativeTrace): TraceStep {
@@ -313,7 +297,7 @@ function presentationFor<T>(map: Record<string, T>, key: string, kind: string): 
   return entry;
 }
 
-export const scenarios = Object.values(bundle.representative_traces).map((trace) => {
+const scenarios = Object.values(bundle.representative_traces).map((trace) => {
   const selected = traceSnapshot(trace);
   const evidence = selected.evidence.find((entry) => entry.epoch_complete) ?? selected.evidence[0];
   const presentation = presentationFor(scenarioPresentation, trace.scenario, "scenario");
@@ -381,7 +365,7 @@ function hypothesisEvidence(hypothesis: Hypothesis): string {
   return `${wadToPercent(value)} directional advantage`;
 }
 
-export const hypotheses = bundle.hypotheses.map((hypothesis) => {
+const hypotheses = bundle.hypotheses.map((hypothesis) => {
   const holdout = holdoutById[hypothesis.id];
   return {
     id: hypothesis.id,
@@ -424,7 +408,7 @@ function scatterPoint(metrics: PolicyMetrics) {
   };
 }
 
-export const policyRows = Object.entries(bundle.policy_metrics).map(([policy, metrics]) => ({
+const policyRows = Object.entries(bundle.policy_metrics).map(([policy, metrics]) => ({
   id: policy,
   ...presentationFor(policyPresentation, policy, "policy"),
   meanFeeBps: pipsToBps(mean(metrics, "mean_applied_fee_pips")),
@@ -436,7 +420,7 @@ export const policyRows = Object.entries(bundle.policy_metrics).map(([policy, me
 const h4Holdout = holdoutById.H4.holdout_evidence;
 const h5Holdout = holdoutById.H5.holdout_evidence;
 
-export const evidenceStats = {
+const evidenceStats = {
   h4Correlation: signedFixed(valueAt(h4Holdout, ["rank_correlation_wad"]) / 1e18, 3),
   paretoPoints: valueAt(h4Holdout, ["pareto_point_count"]),
   latencySpan: valueAt(h4Holdout, ["latency_span_steps"]),
@@ -445,12 +429,12 @@ export const evidenceStats = {
   h5OscillationReduction: valueAt(h5Holdout, ["oscillation_reduction_mean_pips"]),
 };
 
-export const researchScale = {
+const researchScale = {
   ...bundle.research_scale,
   ...bundle.experiment_dimensions,
 };
 
-export const controllerConfig = {
+const controllerConfig = {
   baselineFeeBps: pipsToBps(bundle.selected_research_config.base_fee_pips),
   confidenceCapPercent: bundle.selected_research_config.confidence_cap_wad / WAD_PER_PERCENT,
   evidenceDelaySeconds:
@@ -487,7 +471,7 @@ const sensitivityDimensions = [
   {
     id: "maximum_fee",
     label: "Fee cap",
-    defaultLabel: `${bundle.trace_configuration.research_config.maximum_fee_pips.toLocaleString()} pips`,
+    defaultLabel: `${formatInt(bundle.trace_configuration.research_config.maximum_fee_pips)} pips`,
   },
 ] as const;
 
@@ -506,7 +490,7 @@ function sensitivityOption(entry: SensitivityCase, label = entry.value_label) {
   };
 }
 
-export const simulator = {
+const simulator = {
   policies: Object.entries(bundle.policy_metrics).map(([policy, metrics]) => ({
     id: policy,
     label: presentationFor(policyPresentation, policy, "policy").label,
@@ -641,7 +625,7 @@ const h5Historical = bundle.hypotheses.find((entry) => entry.id === "H5")?.evide
 
 const hypothesisById = Object.fromEntries(bundle.hypotheses.map((row) => [row.id, row]));
 
-export const holdoutStory = [
+const holdoutStory = [
   {
     id: "H4",
     title: "Detection trade-off",
@@ -672,7 +656,7 @@ export const holdoutStory = [
     passRule: hypothesisById.H5.pass_rule,
     supporting: [
       `false-positive reduction ${wadToPercent(valueAt(h5Holdout, ["fpr_reduction_ci95_low_wad"]))}–${wadToPercent(valueAt(h5Holdout, ["fpr_reduction_ci95_high_wad"]))} (95% interval above zero required)`,
-      `oscillation reduction ${valueAt(h5Holdout, ["oscillation_reduction_ci95_low_pips"]).toLocaleString()}–${valueAt(h5Holdout, ["oscillation_reduction_ci95_high_pips"]).toLocaleString()} fee pips (95% interval above zero required)`,
+      `oscillation reduction ${formatInt(valueAt(h5Holdout, ["oscillation_reduction_ci95_low_pips"]))}–${formatInt(valueAt(h5Holdout, ["oscillation_reduction_ci95_high_pips"]))} fee pips (95% interval above zero required)`,
     ],
     historicalStatus: holdoutById.H5.historical_status.toUpperCase(),
     holdoutStatus: holdoutById.H5.holdout_status.toUpperCase(),
@@ -685,7 +669,7 @@ export const holdoutStory = [
   },
 ];
 
-export const trustBands = [
+const trustBands = [
   {
     id: "proven",
     badge: "PROVEN · LOCAL",
@@ -702,7 +686,7 @@ export const trustBands = [
     badge: "SIMULATED · REPRODUCIBLE",
     title: "Economic evidence boundary",
     items: [
-      `${bundle.experiment_dimensions.phase5_runs.toLocaleString()} locked policy runs`,
+      `${formatInt(bundle.experiment_dimensions.phase5_runs)} locked policy runs`,
       `${bundle.experiment_dimensions.phase5_scenarios} scenarios × ${bundle.experiment_dimensions.phase5_seeds} seeds`,
       `${Object.keys(bundle.representative_traces).length} deterministic control traces`,
       "Coverage feedback with fee-elastic flow",
@@ -736,7 +720,7 @@ const sensitivityDimensionLabels: Record<string, string> = {
   trailing_window: "Trailing window",
 };
 
-export const sensitivityAll = {
+const sensitivityAll = {
   dimensions: [...new Set(
     Object.values(bundle.phase6_sensitivity)
       .filter((entry) => entry.dimension !== "default")
@@ -776,11 +760,11 @@ function formatConfigValue(key: string, value: number | boolean): string {
   return formatParamCount(value);
 }
 
-export const researchConfigRows = Object.entries(bundle.selected_research_config)
+const researchConfigRows = Object.entries(bundle.selected_research_config)
   .sort(([left], [right]) => left.localeCompare(right))
   .map(([key, value]) => ({ key, value: formatConfigValue(key, value) }));
 
-export const bundleMeta = {
+const bundleMeta = {
   id: bundle.bundle_id,
   boundary: bundle.interpretation_boundary,
   sourceCount: bundle.source_artifacts.length,

@@ -1,5 +1,6 @@
 import type { DashboardView } from "../../research-data";
 import ChartScroll from "./chart-scroll";
+import { round2 } from "../format";
 
 type HeroTrace = DashboardView["heroTrace"];
 
@@ -24,10 +25,6 @@ function ticksFor(minimum: number, maximum: number, count: number): number[] {
   const ticks: number[] = [];
   for (let value = first; value <= maximum + 1e-9; value += step) ticks.push(round2(value));
   return ticks;
-}
-
-function round2(value: number): number {
-  return Math.round(value * 100) / 100;
 }
 
 export default function MarkoutTrace({ trace }: { trace: HeroTrace }) {

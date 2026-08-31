@@ -40,6 +40,9 @@ export async function generateMetadata(): Promise<Metadata> {
     applicationName: "ThetaShield",
     keywords: ["Uniswap v4", "Circle CCTP", "dynamic fees", "LP protection", "markout"],
     alternates: { canonical: origin },
+    // public/favicon.svg shipped unreferenced, in a lime that is not the
+    // project's palette. Recoloured and wired, so the product has a tab identity.
+    icons: { icon: [{ url: "/favicon.svg", type: "image/svg+xml" }] },
     openGraph: {
       title: "ThetaShield — Protect LPs from signal, not noise.",
       description: "Persistent, directional fee protection for Uniswap v4 liquidity providers.",

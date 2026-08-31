@@ -1,5 +1,6 @@
 import type { DashboardView } from "../../research-data";
 import ChartScroll from "./chart-scroll";
+import { round2 } from "../format";
 
 type PolicyRows = DashboardView["policyRows"];
 
@@ -9,10 +10,6 @@ const PLOT_LEFT = 48;
 const PLOT_RIGHT = 624;
 const PLOT_TOP = 18;
 const PLOT_BOTTOM = 282;
-
-function round2(value: number): number {
-  return Math.round(value * 100) / 100;
-}
 
 export default function PolicyScatter({ policies }: { policies: PolicyRows }) {
   // research-data collapses a missing interval bound to the mean, so these are

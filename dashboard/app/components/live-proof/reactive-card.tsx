@@ -21,7 +21,10 @@ export default function ReactiveCard({
   return (
     <article className="reactive-card">
       <div className="card-title">
-        <span>{`REACTIVE PLANE · ${deployment.automation.networkName.toUpperCase()}`}</span>
+        {/* Names the protocol and the deployment mode. The journey names the
+            chain (Reactive Lasna) from the same manifest — protocol and chain
+            are different things, and the page should be able to say both. */}
+        <span>{`REACTIVE NETWORK · ${deployment.automation.mode.toUpperCase()}`}</span>
         <b>{deployment.automation.cronName}</b>
       </div>
       <p className={rvm ? "rvm-source" : "rvm-source degraded"}>

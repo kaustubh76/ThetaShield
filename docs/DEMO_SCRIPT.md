@@ -21,7 +21,20 @@ sequenced recommendation back through Circle. The Unichain controller accepts
 only the configured transmitter, domain, sealed processor, and bounded data.”
 
 Clarify that Circle authenticates transport but does not schedule delayed work.
-The keeper does that, and keeper failure cannot stop swaps.
+
+## Reactive automation
+
+“Reactive Network is the scheduling plane. Its RSC watches the authenticated
+processor queue and a cron topic, waits for the markout horizon, and issues
+bounded wake-ups; the official callback proxy delivers them to our executor on
+Ethereum Sepolia. Both G10 wakes produced public authenticated callbacks.”
+
+State the boundary: Reactive schedules, Circle authenticates, neither computes a
+fee. Independent keepers can call the same bounded executor, so a Reactive
+outage degrades automation without stopping swaps or forging a recommendation.
+
+The dashboard reads the RSC's own counters from the deployer's ReactiveVM, so
+the wake and cycle counts on the page are the RSC's state, not a chain-side copy.
 
 ## Signal lab
 
@@ -40,8 +53,11 @@ points. These are deterministic synthetic results, not profit claims.
 
 "The real public-testnet PoolManager-to-Circle-to-processor-to-Circle-to-
 controller lifecycle passes, including a later swap whose PoolManager fee
-matched the controller. The contracts are unaudited, the demo feed is
-centralized, and the hook has not been submitted."
+matched the controller. The contracts are unaudited and the hook has not been
+submitted. The RESEARCH_V1 release path reads a permissionless, liquidity-filtered
+three-pool median sampler — but that reference market is a self-contained
+project-issued pair moved by the operator, so live markout demonstrates the
+mechanism rather than measuring real adverse selection."
 
 Optional proof:
 
