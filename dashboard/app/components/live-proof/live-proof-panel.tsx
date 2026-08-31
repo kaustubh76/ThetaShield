@@ -1,5 +1,5 @@
 import type { DeploymentView } from "../../deployment-data";
-import { formatInt } from "../format";
+import { feeBps, formatInt, shortHex } from "../format";
 import AutomationCard from "./automation-card";
 import EventsTicker from "./events-ticker";
 import ReactiveCard from "./reactive-card";
@@ -7,14 +7,6 @@ import ReferenceSources from "./reference-sources";
 import SideStateCard from "./side-state-card";
 import TtlRing from "./ttl-ring";
 import type { LiveProofState } from "./use-live-proof";
-
-function shortHex(value: string, left = 8, right = 6) {
-  return `${value.slice(0, left)}…${value.slice(-right)}`;
-}
-
-function feeBps(feePips: number) {
-  return (feePips / 100).toFixed(2);
-}
 
 function formatChainTime(seconds: number) {
   return new Intl.DateTimeFormat("en", {
@@ -38,17 +30,38 @@ export default function LiveProofPanel({
     deployment.networks.find((network) => network.role === "processor")?.name ?? "Processor";
   const { proof, error, loading, refresh } = live;
 
-  const safeBaseline = proof ? proof.origin.buy.usedBaseline && proof.origin.sell.usedBaseline : true;
-  const statusCopy = proof?.recommendationExpired
-    ? "Safe baseline active · recommendation expired"
-    : safeBaseline
-      ? "Safe baseline active"
-      : "Live directional recommendation active";
-  const statusDetail = proof?.recommendationExpired
-    ? `Sequence ${proof.origin.lastSequence} remains auditable, but its validity window ended. Both swap directions safely return the configured ${feeBps(proof.origin.baselineFeePips)} bps baseline.`
-    : safeBaseline
-      ? "Refusing to overreact is the system's first live safety decision: without shared confidence, both directions hold the configured baseline by design."
-      : "A directional premium is installed. Under the operator-moved reference market this is a mechanism demonstration — not measured adverse selection.";
+  const paused = Boolean(proof && (proof.origin.globallyPaused || proof.origin.poolPaused));
+  const pauseLabel = !proof
+    ? "—"
+    : proof.origin.globallyPaused && proof.origin.poolPaused
+      ? "globally + pool paused"
+      : proof.origin.globallyPaused
+        ? "globally paused"
+        : proof.origin.poolPaused
+          ? "pool paused"
+          : "active";
+
+  // Every branch below is a factual claim about live chain state, so none of
+  // them may render until a read has actually returned.
+  const safeBaseline = proof ? proof.origin.buy.usedBaseline && proof.origin.sell.usedBaseline : false;
+  const statusCopy = !proof
+    ? error
+      ? "Chain state unavailable"
+      : "Reading chain state…"
+    : proof.recommendationExpired
+      ? "Safe baseline active · recommendation expired"
+      : safeBaseline
+        ? "Safe baseline active"
+        : "Live directional recommendation active";
+  const statusDetail = !proof
+    ? error
+      ? "No claim is made about the current fee until a read succeeds. The verified receipt trail below is permanent."
+      : "Reading both public testnets before stating a fee."
+    : proof.recommendationExpired
+      ? `Sequence ${proof.origin.lastSequence} remains auditable, but its validity window ended. Both swap directions safely return the configured ${feeBps(proof.origin.baselineFeePips)} bps baseline.`
+      : safeBaseline
+        ? "Refusing to overreact is the system's first live safety decision: without shared confidence, both directions hold the configured baseline by design."
+        : "A directional premium is installed. Under the operator-moved reference market this is a mechanism demonstration — not measured adverse selection.";
 
   return (
     <>
@@ -77,6 +90,11 @@ export default function LiveProofPanel({
             <div><dt>Read path</dt><dd>{proof ? (proof.readPath === "lens" ? "ThetaShieldLens" : "direct fallback") : "—"}</dd></div>
             <div><dt>Contract code</dt><dd className={proof?.origin.contractsHealthy ? "healthy" : ""}>{proof ? (proof.origin.contractsHealthy ? "verified present" : "missing") : "—"}</dd></div>
             <div><dt>Circle peer</dt><dd className={proof?.origin.circlePeerSealed ? "healthy" : ""}>{proof ? (proof.origin.circlePeerSealed ? "sealed" : "open") : "—"}</dd></div>
+            <div>
+              <dt>Pause state</dt>
+              <dd className={proof ? (paused ? "warn" : "healthy") : ""}>{proof ? pauseLabel : "—"}</dd>
+            </div>
+            <div><dt>Pool</dt><dd>{proof ? <code>{shortHex(proof.poolId, 10, 6)}</code> : "—"}</dd></div>
           </dl>
         </article>
 
@@ -90,7 +108,7 @@ export default function LiveProofPanel({
           <dl className="live-facts">
             <div><dt>Last observation</dt><dd>{proof?.processor.lastObservationId ?? "—"}</dd></div>
             <div><dt>Recommendation sequence</dt><dd>{proof?.processor.recommendationSequence ?? "—"}</dd></div>
-            <div><dt>Reference sources</dt><dd>{proof ? (proof.processor.referenceSourceCount ?? "historical") : "—"}</dd></div>
+            <div><dt>Dropped observations</dt><dd className={proof && proof.processor.droppedCount === 0 ? "healthy" : ""}>{proof ? (proof.processor.droppedCount ?? "historical") : "—"}</dd></div>
             <div><dt>Contract code</dt><dd className={proof?.processor.contractHealthy ? "healthy" : ""}>{proof ? (proof.processor.contractHealthy ? "verified present" : "missing") : "—"}</dd></div>
             <div><dt>Chain ID</dt><dd>{proof?.processor.chainId ?? "—"}</dd></div>
           </dl>
@@ -102,11 +120,13 @@ export default function LiveProofPanel({
         <div><b>{statusCopy}</b><p>{statusDetail}</p></div>
         {proof ? (
           <div className="note-side">
-            <TtlRing
-              baselineFeeBps={feeBps(proof.origin.baselineFeePips)}
-              secondsUntilExpiry={proof.recommendationExpired ? 0 : proof.origin.recommendation.secondsUntilExpiry}
-              windowSeconds={proof.processor.deployedConfig?.scheduler.recommendationLifetimeSeconds ?? 3_600}
-            />
+            {proof.processor.deployedConfig ? (
+              <TtlRing
+                baselineFeeBps={feeBps(proof.origin.baselineFeePips)}
+                secondsUntilExpiry={proof.recommendationExpired ? 0 : proof.origin.recommendation.secondsUntilExpiry}
+                windowSeconds={proof.processor.deployedConfig.scheduler.recommendationLifetimeSeconds}
+              />
+            ) : null}
             <span>
               {proof.origin.recommendation.sequence === 0
                 ? "no recommendation installed yet"
@@ -116,10 +136,14 @@ export default function LiveProofPanel({
         ) : null}
       </div>
 
-      {proof?.processor.sides && proof.processor.deployedConfig ? (
+      {proof && (proof.processor.sides || proof.automation || proof.reactive) ? (
         <div className="live-side-grid">
-          <SideStateCard config={proof.processor.deployedConfig} label="BUY-BASE" side={proof.processor.sides.buy} />
-          <SideStateCard config={proof.processor.deployedConfig} label="SELL-BASE" side={proof.processor.sides.sell} />
+          {proof.processor.sides && proof.processor.deployedConfig ? (
+            <>
+              <SideStateCard config={proof.processor.deployedConfig} label="BUY-BASE" side={proof.processor.sides.buy} />
+              <SideStateCard config={proof.processor.deployedConfig} label="SELL-BASE" side={proof.processor.sides.sell} />
+            </>
+          ) : null}
           {proof.automation ? <AutomationCard automation={proof.automation} /> : null}
           {proof.reactive ? <ReactiveCard deployment={deployment} reactive={proof.reactive} /> : null}
         </div>
@@ -142,11 +166,9 @@ export default function LiveProofPanel({
         ))}
       </div>
 
-      <div className="address-strip">
-        {deployment.coreAddresses.map((entry) => (
-          <a href={entry.explorerUrl} key={entry.name} rel="noreferrer" target="_blank"><span>{entry.label}</span><code>{shortHex(entry.address)}</code><b>↗</b></a>
-        ))}
-      </div>
+      <p className="registry-pointer">
+        <a href="#registry">{`Read the contracts → all ${deployment.components.length} deployed components, with block, verification status and explorer links`}</a>
+      </p>
       <p className="proof-disclosure">Read-only proof. Refreshing performs public RPC reads; it never connects a wallet, signs a message, or spends testnet funds.</p>
       <p className="proof-disclosure">{proof?.readPath === "lens" ? "G10 state is aggregated through the deployed stateless ThetaShield lenses." : "Direct audited getters are used only when the paired G10 lenses are explicitly disabled."}</p>
     </>

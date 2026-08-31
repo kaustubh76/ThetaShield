@@ -54,7 +54,7 @@ export default function EventsTicker({
 
   return (
     <div className="events-ticker">
-      <div className="card-title"><span>RECENT ON-CHAIN EVENTS</span><b>{`bounded ${formatInt(events.window.processor)}-block scan · read-only`}</b></div>
+      <div className="card-title"><span>RECENT ON-CHAIN EVENTS</span><b>{`bounded scan · ${formatInt(events.window.origin)} / ${formatInt(events.window.processor)} blocks · read-only`}</b></div>
       <div className="event-lanes">
         <EventLane
           events={events.origin}

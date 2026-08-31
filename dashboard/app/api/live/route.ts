@@ -495,8 +495,10 @@ async function readProcessorLens() {
   if (decoded.length !== 98) throw new Error("Unexpected processor lens response");
   const zeroForOneSideOffset = 10;
   const oneForZeroSideOffset = 34;
+  // The UI calls these "liquidity-qualified", so an unconfigured source must
+  // not be counted among them.
   const configuredReferences = references.filter(
-    (entry): entry is NonNullable<typeof entry> => entry !== null,
+    (entry): entry is NonNullable<typeof entry> => entry !== null && entry.configured,
   );
 
   return {

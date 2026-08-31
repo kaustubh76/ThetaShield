@@ -182,18 +182,19 @@ if (!observationMessage || !recommendationMessage) {
 const acceptance = manifest.acceptance;
 
 const receiptSpecs = [
-  ["Swap observed", "origin", acceptance.initial_swap_transaction_hash],
-  ["Circle observation received", "processor", observationMessage.relay_transaction_hash],
-  ["Authenticated processing callback", "processor", acceptance.reactive_callback_transaction_hash],
-  ["Recommendation sent", "processor", recommendationMessage.send_transaction_hash],
-  ["Recommendation installed", "origin", recommendationMessage.relay_transaction_hash],
-  ["Hook fee proven", "origin", acceptance.later_swap_transaction_hash],
+  ["Swap observed", "origin", acceptance.initial_swap_transaction_hash, "Swap path"],
+  ["Circle observation received", "processor", observationMessage.relay_transaction_hash, "Evidence outbound"],
+  ["Authenticated processing callback", "processor", acceptance.reactive_callback_transaction_hash, "Autonomous wake"],
+  ["Second callback · recommendation sent", "processor", recommendationMessage.send_transaction_hash, "Recommendation return"],
+  ["Recommendation installed", "origin", recommendationMessage.relay_transaction_hash, "Apply next fee"],
+  ["Hook fee proven", "origin", acceptance.later_swap_transaction_hash, "Apply next fee"],
 ] as const;
 
-const receipts = receiptSpecs.map(([title, role, hash], index) => ({
+const receipts = receiptSpecs.map(([title, role, hash, phase], index) => ({
   index: String(index + 1).padStart(2, "0"),
   title,
   role,
+  phase,
   chainName: networkByRole[role].name,
   hash,
   url: txUrl(role, hash),

@@ -86,6 +86,35 @@ test("server-renders the complete ThetaShield research dashboard", async () => {
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton/i);
 });
 
+test("renders each canonical metric in exactly one widget", async () => {
+  const response = await render();
+  const html = await response.text();
+  // Strip the RSC payload: client-component props are serialised there, so
+  // scanning raw HTML would match values the page never renders.
+  const markup = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, "");
+
+  // A metric may appear several times inside ONE widget (visible label, svg
+  // <title> tooltip, aria-label). It must not appear in a second widget.
+  const widgetsRendering = (value) => {
+    let index = -1;
+    let count = 0;
+    while ((index = markup.indexOf(value, index + 1)) !== -1) {
+      const before = markup.slice(Math.max(0, index - 260), index);
+      const isAria = /aria-label="[^"]*$/.test(before);
+      const isTitle = /<title>[^<]*$/.test(before);
+      if (!isAria && !isTitle) count += 1;
+    }
+    return count;
+  };
+
+  for (const value of ["−0.727", "59.70%", "0.49 bps"]) {
+    assert.ok(
+      widgetsRendering(value) <= 1,
+      `${value} is rendered in ${widgetsRendering(value)} widgets; it should have exactly one canonical home`,
+    );
+  }
+});
+
 test("removes the disposable starter preview", async () => {
   await assert.rejects(access(new URL("app/_sites-preview", root)));
 });

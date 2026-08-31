@@ -17,13 +17,7 @@ const storyline: Record<string, { eyebrow: string; line: string }> = {
   },
 };
 
-export default function DistinctionStrip({
-  policies,
-  calibrationSpreadBps,
-}: {
-  policies: PolicyRows;
-  calibrationSpreadBps: string;
-}) {
+export default function DistinctionStrip({ policies }: { policies: PolicyRows }) {
   const featured = ["fixed_fee", "volatility_only", "thetashield"]
     .map((id) => policies.find((policy) => policy.id === id))
     .filter((policy): policy is PolicyRows[number] => Boolean(policy));
@@ -36,16 +30,12 @@ export default function DistinctionStrip({
             <span>{storyline[policy.id]?.eyebrow}</span>
             <h3>{policy.label}</h3>
             <div className="distinction-fee"><strong>{policy.meanFeeBps}</strong><small>bps mean fee</small></div>
-            <dl>
-              <div><dt>benign flow taxed</dt><dd>{`${policy.scatter.fprPercent}%`}</dd></div>
-              <div><dt>toxicity missed</dt><dd>{`${policy.scatter.fnrPercent}%`}</dd></div>
-            </dl>
             <p>{storyline[policy.id]?.line}</p>
           </article>
         ))}
       </div>
       <div className="distinction-caption">
-        <b>{`Same streams · dynamic fee budgets calibrated within ${calibrationSpreadBps} bps`}</b>
+        <b>Same streams · identical event counts</b>
         <span>Trailing — a trade cannot widen its own noise band</span>
         <span>Persistent — one neutral epoch cannot erase toxic history</span>
         <span>Directional — buy and sell fees evolve independently</span>

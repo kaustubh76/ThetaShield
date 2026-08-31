@@ -73,7 +73,7 @@ export default function RegistrySection({
         </p>
       </div>
 
-      <Accordion badge="01" id="registry-components" meta={`${deployment.components.length} components · 3 networks`} title="Deployment registry">
+      <Accordion badge="01" id="registry-components" meta={`${deployment.components.length} components · ${deployment.networks.length} networks`} title="Deployment registry">
         {roles.map((role) => {
           const rows = deployment.components.filter((component) => component.role === role);
           const network = deployment.networks.find((entry) => entry.role === role);
@@ -123,11 +123,11 @@ export default function RegistrySection({
         </p>
       </Accordion>
 
-      <Accordion badge="03" id="registry-parameters" meta={`${researchConfig.length} research keys · deployed values read live`} title="Deployed parameters">
+      <Accordion badge="03" defaultOpen id="registry-parameters" meta={`${researchConfig.length} research keys · deployed values read live`} title="Deployed parameters">
         <DeployedParameters config={deployedConfig} researchConfig={researchConfig} status={liveStatus} />
       </Accordion>
 
-      <Accordion badge="04" id="registry-cost" meta="owner approved · actuals under estimate" title="Deployment cost">
+      <Accordion badge="04" id="registry-cost" meta={`${deployment.cost.every((entry) => entry.approvedByOwner) ? "owner approved" : "approval incomplete"} · ${deployment.cost.every((entry) => Number.parseFloat(entry.actual) <= Number.parseFloat(entry.estimatedMaximum)) ? "actuals under estimate" : "an actual exceeded its estimate"}`} title="Deployment cost">
         <div className="cost-rows">
           {deployment.cost.map((entry) => {
             const actual = Number.parseFloat(entry.actual);

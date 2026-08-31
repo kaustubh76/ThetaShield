@@ -21,23 +21,23 @@ function Dumbbell({ row }: { row: HoldoutStory[number] }) {
       className="holdout-dumbbell"
       viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
       role="img"
-      aria-label={`${row.title}: ${row.metricLabel} moved from ${row.historicalValue}${row.unit} (historical, ${row.historicalStatus}) to ${row.holdoutValue}${row.unit} on reserved holdout (${row.holdoutStatus}); ${row.target}.`}
+      aria-label={`${row.title}: ${row.metricLabel} moved from ${row.historicalLabel} (historical, ${row.historicalStatus}) to ${row.holdoutLabel} on reserved holdout (${row.holdoutStatus}); ${row.target}.`}
     >
       <line className="hd-track" x1={TRACK_LEFT} x2={TRACK_RIGHT} y1={TRACK_Y} y2={TRACK_Y} />
       <line className="hd-target" x1={targetX} x2={targetX} y1={TRACK_Y - 12} y2={TRACK_Y + 12} />
       <text className="hd-target-label" x={targetX} y={TRACK_Y - 15}>{row.target}</text>
       <line className="hd-link" x1={historicalX} x2={holdoutX} y1={TRACK_Y} y2={TRACK_Y} />
       <circle className="hd-historical" cx={historicalX} cy={TRACK_Y} r={5}>
-        <title>{`historical: ${row.historicalValue}${row.unit} · ${row.historicalStatus}`}</title>
+        <title>{`historical: ${row.historicalLabel} · ${row.historicalStatus}`}</title>
       </circle>
       <circle className="hd-holdout" cx={holdoutX} cy={TRACK_Y} r={6}>
-        <title>{`reserved holdout: ${row.holdoutValue}${row.unit} · ${row.holdoutStatus}`}</title>
+        <title>{`reserved holdout: ${row.holdoutLabel} · ${row.holdoutStatus}`}</title>
       </circle>
       <text className="hd-value hd-value-historical" x={historicalX} y={TRACK_Y + 21}>
-        {`${row.historicalValue}${row.unit}`}
+        {row.historicalLabel}
       </text>
       <text className="hd-value hd-value-holdout" x={holdoutX} y={TRACK_Y + 21}>
-        {`${row.holdoutValue}${row.unit}`}
+        {row.holdoutLabel}
       </text>
     </svg>
   );

@@ -36,7 +36,6 @@ export default function DashboardClient({
     bundleMeta,
     controllerConfig,
     evidenceStats,
-    heroScenario,
     heroTrace,
     holdoutStory,
     hypotheses,
@@ -84,7 +83,16 @@ export default function DashboardClient({
           <a href="#evidence">Evidence</a>
           <a href="#trust">Trust</a>
         </nav>
-        <span className="release-state"><i /> Live testnet · research</span>
+        <span className={`release-state ${liveStatus}`}>
+          <i />
+          {liveStatus === "ready"
+            ? live.proof?.recommendationExpired
+              ? "Testnet · baseline held"
+              : "Testnet · recommendation live"
+            : liveStatus === "error"
+              ? "Testnet · chain read unavailable"
+              : "Testnet · reading chain"}
+        </span>
       </header>
 
       <section className="hero" id="top">
@@ -110,18 +118,18 @@ export default function DashboardClient({
           <div className="stage-label"><span>POST-TRADE SIGNAL</span><b>{controllerConfig.evidenceDelaySeconds}s evidence delay</b></div>
           <MarkoutTrace trace={heroTrace} />
           <div className="direction-readout">
-            <div><span>BUY-BASE FEE</span><strong>{heroScenario.buyFee}</strong><small>bps · protected</small></div>
-            <div><span>SELL-BASE FEE</span><strong>{heroScenario.sellFee}</strong><small>bps · baseline</small></div>
+            <div><span>BUY-BASE FEE</span><strong>{heroTrace.finalBuyBps}</strong><small>bps · protected</small></div>
+            <div><span>SELL-BASE FEE</span><strong>{heroTrace.finalSellBps}</strong><small>bps · baseline</small></div>
           </div>
           <div className="stage-foot">
             <span>{`${heroTrace.label} stream · ${heroTrace.eventCount} events · seed ${heroTrace.seed}`}</span>
-            <span>{controllerConfig.persistenceRequired} / {controllerConfig.persistenceWindow} toxic epochs</span>
+            <span>end of replay</span>
           </div>
           <p className="stage-simnote">Research replay from the locked evidence bundle — not live chain state.</p>
         </div>
       </section>
 
-      <DistinctionStrip calibrationSpreadBps={bundleMeta.calibrationSpreadBps} policies={policyRows} />
+      <DistinctionStrip policies={policyRows} />
 
       <G9Experience data={data} deployment={deployment} />
 
@@ -205,13 +213,6 @@ export default function DashboardClient({
           <p>Phase 6 failed H4 and H5. Phase 6.1 introduced a versioned change, locked parameters on training streams, and evaluated reserved holdout seeds.</p>
         </div>
 
-        <div className="evidence-banner">
-          <div><span>H4 HOLDOUT</span><strong>{evidenceStats.h4Correlation}</strong><p>rank correlation</p></div>
-          <div><span>PARETO FRONTIER</span><strong>{evidenceStats.paretoPoints}</strong><p>points · {evidenceStats.latencySpan}-step span</p></div>
-          <div><span>H5 HOLDOUT</span><strong>{evidenceStats.h5RetainedCoverage}</strong><p>toxic coverage retained</p></div>
-          <div><span>NOISE REDUCTION</span><strong>{evidenceStats.h5NoiseReduction}</strong><p>raw-minus-filtered FPR</p></div>
-        </div>
-
         <div className="evidence-charts">
           <article className="chart-panel">
             <div className="card-title"><span>POLICY SEPARATION</span><b>Signal-blind fees tax everyone.</b></div>
@@ -236,7 +237,6 @@ export default function DashboardClient({
           <article className="pareto-card">
             <div className="card-title"><span>DETECTION TRADE-OFF</span><b>Reserved holdout audit</b></div>
             <div className="tradeoff-audit">
-              <div><span>Rank correlation</span><strong>{evidenceStats.h4Correlation}</strong></div>
               <div><span>Pareto points</span><strong>{evidenceStats.paretoPoints}</strong></div>
               <div><span>Latency span</span><strong>{evidenceStats.latencySpan}</strong><small>steps</small></div>
               <div><span>Oscillation reduction</span><strong>{formatInt(evidenceStats.h5OscillationReduction)}</strong><small>fee pips</small></div>
@@ -248,8 +248,7 @@ export default function DashboardClient({
             <p className="kicker">Reproducible scope</p>
             <div><strong>{formatInt(researchScale.phase6_raw_runs)}</strong><span>Phase 6 sensitivity runs</span></div>
             <div><strong>{formatInt(researchScale.phase61_training_cases)}</strong><span>training-only remediation candidates</span></div>
-            <div><strong>{researchScale.phase5_scenarios} × {researchScale.phase5_seeds}</strong><span>scenarios × repeated seeds</span></div>
-            <div><strong>{formatInt(researchScale.hook_gas_per_swap)}</strong><span>measured Circle hook gas per swap</span></div>
+            <div><strong>{formatInt(researchScale.phase61_holdout_cases)}</strong><span>reserved holdout cases</span></div>
           </article>
         </div>
 
@@ -262,7 +261,7 @@ export default function DashboardClient({
         </div>
 
         <div className="policy-table" role="region" aria-label="Baseline comparison" tabIndex={0}>
-          <div className="table-heading"><span>POLICY COMPARISON</span><b>{`Dynamic-policy fee budgets calibrated within ${bundleMeta.calibrationSpreadBps} bps`}</b></div>
+          <div className="table-heading"><span>POLICY COMPARISON</span><b>exact pooled values</b></div>
           <table>
             <thead><tr><th>Policy</th><th>Mean fee · bps</th><th>False positives</th><th>Detection · steps</th><th>Signed</th><th>Persistent</th><th>Behavior</th></tr></thead>
             <tbody>{policyRows.map((row) => <tr key={row.id}><td>{row.label}</td><td>{row.meanFeeBps}</td><td>{row.falsePositiveRate}</td><td>{row.detectionLatency ?? "—"}</td><td>{row.signed}</td><td>{row.persistent}</td><td>{row.behavior}</td></tr>)}</tbody>
@@ -298,13 +297,6 @@ export default function DashboardClient({
 
       <section className="section system" id="system">
         <div className="section-heading"><p className="kicker">Autonomous system</p><h2>One delayed control loop. Bounded everywhere.</h2></div>
-        <div className="system-flow">
-          <article><span>ORIGIN · UNISWAP V4</span><h3>ThetaShield Hook</h3><p>Select fee · emit observation</p></article>
-          <i>→</i>
-          <article><span>ETHEREUM SEPOLIA · CIRCLE</span><h3>Bounded processor</h3><p>Relay · mature · score · persist</p></article>
-          <i>→</i>
-          <article><span>FINALIZED CCTP MESSAGE</span><h3>Origin controller</h3><p>Domain · peer · sequence · store</p></article>
-        </div>
         <div className="boundary-grid">
           <article><span>SAFE FALLBACK</span><h3>Expired recommendation → {controllerConfig.baselineFeeBps} bps</h3><p>Stale state cannot keep a premium alive. Pause and missing-data paths return to the configured baseline.</p></article>
           <article><span>MESSAGE SECURITY</span><h3>Transmitter + domain + peer</h3><p>Only finalized Circle messages from the sealed processor peer are accepted; replays and malformed recommendations revert.</p></article>

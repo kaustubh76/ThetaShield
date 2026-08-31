@@ -33,7 +33,7 @@ export default function ReferenceSources({
         <div className="reference-row head" role="row">
           <span role="columnheader">source</span>
           <span role="columnheader">latest price</span>
-          <span role="columnheader">confidence</span>
+          <span role="columnheader">confidence (constant)</span>
           <span role="columnheader">sequence</span>
           <span role="columnheader">observed</span>
         </div>
@@ -56,6 +56,8 @@ export default function ReferenceSources({
         })}
       </div>
       <p className="card-caption">
+        The sampler publishes a fixed confidence of 1.0 per reading — it does not attenuate for depth,
+        spread or age, so that column is a constant, not a quality score.
         One self-contained pair of project-issued tokens across three fee tiers, moved by the operator. It
         exercises the permissionless multi-source median, liquidity-floor, and dispersion path — it is not
         independent price discovery, and agreement between these sources is structural, not evidential.

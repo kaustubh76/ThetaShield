@@ -358,13 +358,8 @@ function hypothesisEvidence(hypothesis: Hypothesis): string {
   if (hypothesis.id === "H3") {
     return `${wadToPercent(valueAt(hypothesis.evidence, ["raw_minus_thetashield_false_positive_rate_wad", "mean"]))} fewer false positives`;
   }
-  if (hypothesis.id === "H4") {
-    const value = valueAt(holdoutById.H4.holdout_evidence, ["rank_correlation_wad"]);
-    return `${signedFixed(value / 1e18, 3)} rank correlation on holdout`;
-  }
-  if (hypothesis.id === "H5") {
-    const value = valueAt(holdoutById.H5.holdout_evidence, ["retained_coverage_ratio_wad"]);
-    return `${wadToPercent(value)} toxic coverage retained on holdout`;
+  if (hypothesis.id === "H4" || hypothesis.id === "H5") {
+    return "re-scored on reserved holdout — see the chart";
   }
   const value = valueAt(hypothesis.evidence, [
     "thetashield_minus_volatility_directional_rate_wad",
@@ -443,10 +438,8 @@ export const researchScale = {
 };
 
 export const controllerConfig = {
-  alpha: bundle.selected_research_config.alpha_wad / 1e18,
   baselineFeeBps: pipsToBps(bundle.selected_research_config.base_fee_pips),
   confidenceCapPercent: bundle.selected_research_config.confidence_cap_wad / WAD_PER_PERCENT,
-  deadBandK: bundle.selected_research_config.dead_band_k_wad / 1e18,
   evidenceDelaySeconds:
     bundle.selected_research_config.markout_delay_steps *
     bundle.representative_traces.benign_noise.step_seconds,
@@ -597,21 +590,11 @@ export const simulator = {
   },
 };
 
-export const heroScenario = scenarios.find(
-  (scenario) => scenario.id === "persistent_informed_buying",
-) ?? scenarios[0];
-
 const heroTraceSource =
   bundle.representative_traces.persistent_informed_buying ??
   Object.values(bundle.representative_traces)[0];
 
-export const heroTrace = {
-  scenario: heroTraceSource.scenario,
-  label: scenarioPresentation[heroTraceSource.scenario]?.label ?? heroTraceSource.scenario,
-  stepSeconds: heroTraceSource.step_seconds,
-  eventCount: heroTraceSource.event_count,
-  seed: heroTraceSource.seed,
-  points: heroTraceSource.steps
+const heroTracePoints = heroTraceSource.steps
     .filter((step) => step.evidence.length > 0)
     .map((step) => {
       const evidence = step.evidence[0];
@@ -624,7 +607,20 @@ export const heroTrace = {
         sellFeeBps: round(step.fee_by_direction_pips.sell / 100),
         toxic: step.trade?.toxic_label ?? false,
       };
-    }),
+    });
+
+const heroFinal = heroTracePoints[heroTracePoints.length - 1];
+
+// The readout reports the end of the very series the chart draws. Deriving it
+// any other way (e.g. a max-spread snapshot step) makes the number under the
+// chart disagree with where the chart's line stops.
+const heroTrace = {
+  label: scenarioPresentation[heroTraceSource.scenario]?.label ?? heroTraceSource.scenario,
+  eventCount: heroTraceSource.event_count,
+  seed: heroTraceSource.seed,
+  finalBuyBps: heroFinal.buyFeeBps.toFixed(2),
+  finalSellBps: heroFinal.sellFeeBps.toFixed(2),
+  points: heroTracePoints,
 };
 
 const h4Historical = bundle.hypotheses.find((entry) => entry.id === "H4")?.evidence ?? {};
@@ -641,6 +637,8 @@ export const holdoutStory = [
     holdoutStatus: holdoutById.H4.holdout_status.toUpperCase(),
     historicalValue: round(valueAt(h4Historical, ["rank_correlation_wad"]) / 1e18, 3),
     holdoutValue: round(valueAt(h4Holdout, ["rank_correlation_wad"]) / 1e18, 3),
+    historicalLabel: signedFixed(valueAt(h4Historical, ["rank_correlation_wad"]) / 1e18, 3),
+    holdoutLabel: signedFixed(valueAt(h4Holdout, ["rank_correlation_wad"]) / 1e18, 3),
     unit: "",
     domain: [-1, 1] as const,
   },
@@ -654,6 +652,8 @@ export const holdoutStory = [
     holdoutStatus: holdoutById.H5.holdout_status.toUpperCase(),
     historicalValue: round(valueAt(h5Historical, ["retained_coverage_ratio_wad"]) / WAD_PER_PERCENT),
     holdoutValue: round(valueAt(h5Holdout, ["retained_coverage_ratio_wad"]) / WAD_PER_PERCENT),
+    historicalLabel: wadToPercent(valueAt(h5Historical, ["retained_coverage_ratio_wad"])),
+    holdoutLabel: wadToPercent(valueAt(h5Holdout, ["retained_coverage_ratio_wad"])),
     unit: "%",
     domain: [0, 100] as const,
   },
@@ -770,7 +770,6 @@ export const dashboardView = {
   bundleMeta,
   controllerConfig,
   evidenceStats,
-  heroScenario,
   heroTrace,
   holdoutStory,
   hypotheses,

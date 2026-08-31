@@ -7,9 +7,6 @@ import type { DashboardView } from "./research-data";
 
 type SimulatorData = DashboardView["simulator"];
 
-// Which control-journey phase each acceptance receipt proves (by receipt order).
-const receiptPhaseIndex = [0, 1, 3, 5, 6, 6] as const;
-
 type FailureMode = "healthy" | "cctp" | "stale" | "replay" | "capacity";
 
 const failureModes: Record<FailureMode, { label: string; code: string; result: string }> = {
@@ -139,7 +136,7 @@ function ArchitectureAnimator({
   const activePhaseStages = mechanismStages.slice(activePhase.firstStage, activePhase.lastStage + 1);
   const failure = failureModes[failureMode];
   const phaseReceipts = deployment.receipts.filter(
-    (_, index) => receiptPhaseIndex[index] === Math.max(0, activePhaseIndex),
+    (receipt) => receipt.phase === activePhase.label,
   );
 
   return (
@@ -577,7 +574,7 @@ function LPBenefitSimulator({
           <div className="panel-heading"><span>05 · TRANSPORT HEALTH</span><b>{scenario.operationalMode}</b></div>
           <div className="transport-score"><strong>{percent(deliveryPercent, 0)}</strong><span>callbacks applied</span></div>
           <dl><div><dt>Applied</dt><dd>{scenario.finalTransport.callbacks_applied}</dd></div><div><dt>Missing</dt><dd>{scenario.finalTransport.callbacks_missing}</dd></div><div><dt>Rejected</dt><dd>{scenario.finalTransport.callbacks_rejected}</dd></div><div><dt>Expired references</dt><dd>{scenario.finalTransport.expired_references}</dd></div></dl>
-          <div className={failureMode === "healthy" ? "transport-path healthy" : "transport-path failed"}><code>{failure.code}</code><p>{failure.result}</p></div>
+          <div className={failureMode === "healthy" ? "transport-path healthy" : "transport-path failed"}><code>{failure.label}</code></div>
         </article>
 
         <article className="sim-panel retained-panel">
