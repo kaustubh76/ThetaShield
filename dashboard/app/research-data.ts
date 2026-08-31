@@ -1,4 +1,10 @@
 import bundleJson from "../data/dashboard_bundle.json";
+import {
+  formatParamBool,
+  formatParamCount,
+  formatParamPips,
+  formatParamWad,
+} from "./components/registry/param-format";
 
 type Interval = {
   count: number;
@@ -63,6 +69,7 @@ type Hypothesis = {
   id: string;
   title: string;
   status: string;
+  pass_rule: string;
   evidence: Record<string, unknown>;
 };
 
@@ -626,6 +633,8 @@ const heroTrace = {
 const h4Historical = bundle.hypotheses.find((entry) => entry.id === "H4")?.evidence ?? {};
 const h5Historical = bundle.hypotheses.find((entry) => entry.id === "H5")?.evidence ?? {};
 
+const hypothesisById = Object.fromEntries(bundle.hypotheses.map((row) => [row.id, row]));
+
 export const holdoutStory = [
   {
     id: "H4",
@@ -633,6 +642,12 @@ export const holdoutStory = [
     metricLabel: "rank correlation",
     target: "pass ≤ −0.35",
     targetValue: -0.35,
+    passRule: hypothesisById.H4.pass_rule,
+    supporting: [
+      `${valueAt(h4Holdout, ["pareto_point_count"])} Pareto points (≥ 3 required)`,
+      `${wadToPercent(valueAt(h4Holdout, ["false_positive_span_wad"]))} false-positive span (≥ 5.00% required)`,
+      `${valueAt(h4Holdout, ["latency_span_steps"])} step latency span (≥ 5 required)`,
+    ],
     historicalStatus: holdoutById.H4.historical_status.toUpperCase(),
     holdoutStatus: holdoutById.H4.holdout_status.toUpperCase(),
     historicalValue: round(valueAt(h4Historical, ["rank_correlation_wad"]) / 1e18, 3),
@@ -648,6 +663,11 @@ export const holdoutStory = [
     metricLabel: "toxic coverage retained",
     target: "pass ≥ 50%",
     targetValue: 50,
+    passRule: hypothesisById.H5.pass_rule,
+    supporting: [
+      `false-positive reduction ${wadToPercent(valueAt(h5Holdout, ["fpr_reduction_ci95_low_wad"]))}–${wadToPercent(valueAt(h5Holdout, ["fpr_reduction_ci95_high_wad"]))} (95% interval above zero required)`,
+      `oscillation reduction ${valueAt(h5Holdout, ["oscillation_reduction_ci95_low_pips"]).toLocaleString()}–${valueAt(h5Holdout, ["oscillation_reduction_ci95_high_pips"]).toLocaleString()} fee pips (95% interval above zero required)`,
+    ],
     historicalStatus: holdoutById.H5.historical_status.toUpperCase(),
     holdoutStatus: holdoutById.H5.holdout_status.toUpperCase(),
     historicalValue: round(valueAt(h5Historical, ["retained_coverage_ratio_wad"]) / WAD_PER_PERCENT),
@@ -741,18 +761,13 @@ export const sensitivityAll = {
   })(),
 };
 
+// Shared with the deployed column so the two are comparable by construction.
 function formatConfigValue(key: string, value: number | boolean): string {
-  if (typeof value === "boolean") return value ? "enabled" : "disabled";
-  if (key.endsWith("_wad")) {
-    const scaled = value / 1e18;
-    if (scaled !== 0 && Math.abs(scaled) < 0.01) {
-      return `${scaled} (${round(value / WAD_PER_BASIS_POINT)} bps)`;
-    }
-    return `${round(scaled, 4)}`;
-  }
-  if (key.endsWith("_pips")) return `${value.toLocaleString()} pips (${round(value / 100)} bps)`;
+  if (typeof value === "boolean") return formatParamBool(value);
+  if (key.endsWith("_wad")) return formatParamWad(value);
+  if (key.endsWith("_pips")) return formatParamPips(value);
   if (key.endsWith("_steps")) return `${value} steps`;
-  return value.toLocaleString();
+  return formatParamCount(value);
 }
 
 export const researchConfigRows = Object.entries(bundle.selected_research_config)

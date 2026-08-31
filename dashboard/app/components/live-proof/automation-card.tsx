@@ -2,11 +2,15 @@ import type { AutomationView } from "./types";
 
 export default function AutomationCard({ automation }: { automation: AutomationView }) {
   const cycle = automation.lastCycle;
+  // Each check reports the counter it actually moved, so "advanced" is a
+  // reading rather than a claim: a cycle that settled nothing shows 1→1.
   const checks = [
     { label: "sampler published", ok: cycle.samplerSucceeded, detail: `${cycle.publishedSources} sources` },
     { label: "references synced", ok: cycle.syncedSources > 0, detail: `${cycle.syncedSources} synced` },
-    { label: "processor advanced", ok: cycle.processSucceeded, detail: `${cycle.pendingBefore}→${cycle.pendingAfter} pending` },
-    { label: "recommendation dispatched", ok: cycle.recommendationDispatched, detail: `seq ${cycle.recommendationAfter}` },
+    { label: "pending drained", ok: cycle.processSucceeded, detail: `${cycle.pendingBefore}→${cycle.pendingAfter}` },
+    { label: "observations settled", ok: cycle.settledAfter >= cycle.settledBefore, detail: `${cycle.settledBefore}→${cycle.settledAfter}` },
+    { label: "observations expired", ok: cycle.expiredAfter === cycle.expiredBefore, detail: `${cycle.expiredBefore}→${cycle.expiredAfter}` },
+    { label: "recommendation dispatched", ok: cycle.recommendationDispatched, detail: `seq ${cycle.recommendationBefore}→${cycle.recommendationAfter}` },
   ];
 
   return (

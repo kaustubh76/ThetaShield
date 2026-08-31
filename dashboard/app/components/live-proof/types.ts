@@ -151,8 +151,6 @@ export type LiveProof = {
     recommendationSequence: number;
     droppedCount: number | null;
     referenceSourceCount: number | null;
-    zeroForOneCoverageRatioWad: string | null;
-    oneForZeroCoverageRatioWad: string | null;
     sides: { buy: SideStateView; sell: SideStateView } | null;
     deployedConfig: DeployedConfigView | null;
   };

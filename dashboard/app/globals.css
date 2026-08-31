@@ -431,6 +431,29 @@ h1 em { color: var(--signal); font-style: normal; }
 .conf-track .floor-mark { left: var(--floor); background: var(--amber); }
 .conf-track .cap-mark { left: var(--cap); background: var(--violet); }
 .conf-gauge > b { display: inline-block; margin-top: 6px; color: var(--signal); font-family: var(--font-geist-mono), monospace; font-size: 12px; }
+.pf-default line { stroke: var(--violet); stroke-dasharray: 3 3; stroke-width: 1; opacity: .65; }
+.pf-default text { fill: var(--violet); font-family: var(--font-geist-mono), monospace; font-size: 7px; letter-spacing: .04em; text-transform: uppercase; }
+.mt-truth-track { stroke: var(--line); stroke-width: 1; }
+.mt-truth { fill: var(--danger); opacity: .85; }
+.holdout-rule { margin: 8px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.holdout-supporting { display: grid; gap: 3px; margin: 7px 0 0; padding: 0; list-style: none; color: var(--dim); font-family: var(--font-geist-mono), monospace; font-size: 8px; letter-spacing: .04em; text-transform: uppercase; }
+.holdout-supporting li { padding-left: 11px; text-indent: -11px; }
+.holdout-supporting li::before { margin-right: 6px; color: var(--signal); content: "·"; }
+.side-epochs { margin: 12px 0 0; color: var(--dim); font-family: var(--font-geist-mono), monospace; font-size: 7.5px; letter-spacing: .05em; text-transform: uppercase; }
+.fee-stack { margin-top: 16px; }
+.fee-stack > span { display: block; color: var(--dim); font-family: var(--font-geist-mono), monospace; font-size: 7.5px; letter-spacing: .06em; text-transform: uppercase; }
+.fee-stack-bar { display: flex; height: 10px; margin-top: 8px; border: 1px solid var(--line); background: rgba(7,16,14,.6); }
+.fee-stack-bar i.seg-base { background: rgba(141,163,154,.45); }
+.fee-stack-bar i.seg-toxic { background: var(--danger); }
+.fee-stack-bar i.seg-coverage { background: var(--violet); }
+.fee-stack-key { display: grid; gap: 3px; margin: 8px 0 0; padding: 0; list-style: none; color: var(--dim); font-family: var(--font-geist-mono), monospace; font-size: 7.5px; letter-spacing: .05em; text-transform: uppercase; }
+.fee-stack-key li { display: flex; align-items: baseline; gap: 6px; }
+.fee-stack-key li::before { width: 7px; height: 7px; content: ""; }
+.fee-stack-key li.seg-base::before { background: rgba(141,163,154,.45); }
+.fee-stack-key li.seg-toxic::before { background: var(--danger); }
+.fee-stack-key li.seg-coverage::before { background: var(--violet); }
+.fee-stack-key b { color: var(--paper); font-size: 10px; letter-spacing: -.01em; }
+.fee-stack-clamp { margin: 8px 0 0; color: var(--amber); font-family: var(--font-geist-mono), monospace; font-size: 7.5px; letter-spacing: .05em; text-transform: uppercase; }
 .side-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px 0 0; }
 .side-facts dt { color: var(--dim); font-family: var(--font-geist-mono), monospace; font-size: 7.5px; letter-spacing: .06em; text-transform: uppercase; }
 .side-facts dd { margin: 3px 0 0; font-size: 13px; }

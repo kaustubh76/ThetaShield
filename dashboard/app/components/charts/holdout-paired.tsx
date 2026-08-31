@@ -57,6 +57,13 @@ export default function HoldoutPaired({ story }: { story: HoldoutStory }) {
             </span>
           </div>
           <Dumbbell row={row} />
+          {/* The marker plots the one threshold that shares the metric's axis;
+              the gate is a conjunction, so the pipeline's own rule is stated in
+              full and its remaining terms are listed with their readings. */}
+          <p className="holdout-rule">{`Gate: ${row.passRule}.`}</p>
+          <ul className="holdout-supporting">
+            {row.supporting.map((item) => <li key={item}>{item}</li>)}
+          </ul>
           <p>{row.metricLabel} · versioned remediation locked on training streams, then scored once on reserved holdout seeds.</p>
         </article>
       ))}

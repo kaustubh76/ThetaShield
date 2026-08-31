@@ -8,7 +8,9 @@ const PLOT_LEFT = 40;
 const PLOT_RIGHT = 712;
 const SIGNAL_TOP = 12;
 const SIGNAL_BOTTOM = 214;
-const FEE_TOP = 240;
+const TRUTH_Y = 222;
+const TRUTH_HEIGHT = 5;
+const FEE_TOP = 246;
 const FEE_BOTTOM = 310;
 
 function ticksFor(minimum: number, maximum: number, count: number): number[] {
@@ -70,13 +72,17 @@ export default function MarkoutTrace({ trace }: { trace: HeroTrace }) {
       .join(" ");
 
   const lastPoint = points[points.length - 1];
+  // The bars show what the filter did; this strip shows what was actually true.
+  // Together they make the chart legible as "the filter being right or wrong"
+  // rather than only "the filter reacting".
+  const toxicCount = points.reduce((total, point) => total + (point.toxic ? 1 : 0), 0);
 
   return (
     <svg
       className="markout-trace"
       viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
       role="img"
-      aria-label={`Signed markout replay for the ${trace.label} research stream: raw markout bars against the trailing dead band, with the directional fee response below.`}
+      aria-label={`Signed markout replay for the ${trace.label} research stream: raw markout bars against the trailing dead band, a ground-truth strip marking the ${toxicCount} genuinely toxic trades of ${points.length}, and the directional fee response below.`}
     >
       <text className="mt-panel-label" x={PLOT_LEFT} y={SIGNAL_TOP - 2}>
         signed markout · bps
@@ -102,7 +108,7 @@ export default function MarkoutTrace({ trace }: { trace: HeroTrace }) {
         const edge = survives ? yMarkout(adverse ? point.bandBps : -point.bandBps) : null;
         const label = `event ${point.step}: markout ${adverse ? "+" : "−"}${Math.abs(point.markoutBps)} bps · dead band ±${point.bandBps} bps · ${
           survives ? `${Math.abs(point.filteredBps)} bps survives filtering` : "filtered as noise"
-        }`;
+        } · trade was ${point.toxic ? "toxic" : "benign"}`;
         return (
           <g key={point.step}>
             <rect
@@ -128,6 +134,27 @@ export default function MarkoutTrace({ trace }: { trace: HeroTrace }) {
           </g>
         );
       })}
+      <text className="mt-tick" x={PLOT_LEFT - 5} y={TRUTH_Y + TRUTH_HEIGHT}>truth</text>
+      <line className="mt-truth-track" x1={PLOT_LEFT} x2={PLOT_RIGHT} y1={TRUTH_Y + TRUTH_HEIGHT / 2} y2={TRUTH_Y + TRUTH_HEIGHT / 2} />
+      {points.map((point, index) =>
+        point.toxic ? (
+          <rect
+            className="mt-truth"
+            key={`t-${point.step}`}
+            x={round2(x(index) - barWidth / 2)}
+            y={TRUTH_Y}
+            width={round2(barWidth)}
+            height={TRUTH_HEIGHT}
+          >
+            <title>{`event ${point.step}: informed trade (ground truth)`}</title>
+          </rect>
+        ) : null,
+      )}
+      {/* Sits above the strip: on the strip's own baseline it overprints the
+          marks at the dense right-hand end. */}
+      <text className="mt-legend" x={PLOT_RIGHT} y={TRUTH_Y - 3}>
+        {`ground truth · ${toxicCount} of ${points.length} trades informed`}
+      </text>
       <line className="mt-sweep" x1={PLOT_LEFT} x2={PLOT_LEFT} y1={SIGNAL_TOP} y2={FEE_BOTTOM} aria-hidden="true" />
 
       <text className="mt-panel-label" x={PLOT_LEFT} y={FEE_TOP - 6}>

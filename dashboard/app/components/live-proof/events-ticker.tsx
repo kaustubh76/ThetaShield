@@ -1,5 +1,5 @@
 import type { DeploymentView } from "../../deployment-data";
-import { formatInt } from "../format";
+import { age, formatInt } from "../format";
 import type { EventsView, LiveEvent } from "./types";
 
 function EventLane({
@@ -8,12 +8,14 @@ function EventLane({
   explorerBase,
   windowBlocks,
   scanned,
+  generatedAt,
 }: {
   label: string;
   events: LiveEvent[];
   explorerBase: string;
   windowBlocks: number;
   scanned: boolean;
+  generatedAt: string;
 }) {
   return (
     <div className="event-lane">
@@ -25,7 +27,9 @@ function EventLane({
               <i aria-hidden="true" />
               <b>{event.summary}</b>
               <a href={`${explorerBase}/tx/${event.txHash}`} rel="noreferrer" target="_blank">
-                {`block ${formatInt(event.blockNumber)} ↗`}
+                {event.observedAt
+                  ? `${age(generatedAt, event.observedAt)} · block ${formatInt(event.blockNumber)} ↗`
+                  : `block ${formatInt(event.blockNumber)} ↗`}
               </a>
             </li>
           ))}
@@ -44,9 +48,11 @@ function EventLane({
 export default function EventsTicker({
   events,
   deployment,
+  generatedAt,
 }: {
   events: EventsView;
   deployment: DeploymentView;
+  generatedAt: string;
 }) {
   const origin = deployment.networks.find((network) => network.role === "origin");
   const processor = deployment.networks.find((network) => network.role === "processor");
@@ -59,6 +65,7 @@ export default function EventsTicker({
         <EventLane
           events={events.origin}
           explorerBase={origin.explorerBase}
+          generatedAt={generatedAt}
           label={`${origin.name.toUpperCase()} · SWAPS OBSERVED`}
           scanned={events.scanned.origin}
           windowBlocks={events.window.origin}
@@ -66,6 +73,7 @@ export default function EventsTicker({
         <EventLane
           events={events.processor}
           explorerBase={processor.explorerBase}
+          generatedAt={generatedAt}
           label={`${processor.name.toUpperCase()} · EPOCHS + AUTOMATION`}
           scanned={events.scanned.processor}
           windowBlocks={events.window.processor}

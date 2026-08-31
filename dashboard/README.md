@@ -55,5 +55,14 @@ The public panel defaults to the paired G10 `ThetaShieldLens` deployments on
 Unichain Sepolia and Ethereum Sepolia. Both addresses may be overridden with
 `THETASHIELD_ORIGIN_LENS_ADDRESS` and
 `THETASHIELD_PROCESSOR_LENS_ADDRESS`; the API rejects a one-sided override and
-never silently mixes lens and direct state. The named `historical-direct` path
-remains only as an explicit code-level fallback.
+never silently mixes lens and direct state.
+
+The `historical-direct` path reads the audited getters on the hook, controller
+and processor instead. It is selected explicitly with `THETASHIELD_READ_PATH=direct`,
+and it is also used automatically when a lens read fails: the lenses are a
+convenience aggregate, the getters are the contract of record, so a lens fault
+degrades the read rather than the panel. Both lanes fall back together so the
+response never mixes the two, and the `readPath` field in `/api/live` reports
+which one actually answered. The direct path carries less state — per-side
+detail, the deployed configuration and the reference table are returned as
+`null` — and the panel degrades those cards rather than inventing values.

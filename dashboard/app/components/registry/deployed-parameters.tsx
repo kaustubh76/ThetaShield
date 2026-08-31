@@ -1,13 +1,13 @@
-import { formatInt } from "../format";
-import { wadToNumber, type DeployedConfigView } from "../live-proof/types";
+import type { DeployedConfigView } from "../live-proof/types";
+import {
+  formatParamBool,
+  formatParamCount,
+  formatParamPips,
+  formatParamSeconds,
+  formatParamWad,
+} from "./param-format";
 
 type ConfigRow = { key: string; value: string };
-
-function formatWadValue(value: string): string {
-  const scaled = wadToNumber(value);
-  if (scaled !== 0 && Math.abs(scaled) < 0.01) return `${scaled} (${(Number(value) / 1e14).toFixed(2)} bps)`;
-  return `${Math.round(scaled * 10_000) / 10_000}`;
-}
 
 function deployedRows(config: DeployedConfigView): ConfigRow[] {
   const rows: ConfigRow[] = [];
@@ -16,14 +16,12 @@ function deployedRows(config: DeployedConfigView): ConfigRow[] {
       key: `scheduler.${key}`,
       value:
         typeof value === "boolean"
-          ? value
-            ? "enabled"
-            : "disabled"
+          ? formatParamBool(value)
           : typeof value === "string"
-            ? formatWadValue(value)
+            ? formatParamWad(Number(value))
             : key.endsWith("Seconds")
-              ? `${formatInt(value)} s`
-              : formatInt(value),
+              ? formatParamSeconds(value)
+              : formatParamCount(value),
     });
   }
   for (const [key, value] of Object.entries(config.feeCurve)) {
@@ -31,10 +29,10 @@ function deployedRows(config: DeployedConfigView): ConfigRow[] {
       key: `feeCurve.${key}`,
       value:
         typeof value === "string"
-          ? formatWadValue(value)
+          ? formatParamWad(Number(value))
           : key.endsWith("Pips")
-            ? `${formatInt(value)} pips (${formatInt(value / 100)} bps)`
-            : formatInt(value),
+            ? formatParamPips(value)
+            : formatParamCount(value),
     });
   }
   return rows;

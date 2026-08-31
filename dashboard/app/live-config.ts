@@ -47,7 +47,8 @@ export const REFERENCE_SOURCE_IDS = manifest.reference_sampler.sources.map(
   (source) => source.source_id,
 );
 
-// Direct audited getters are used only when the paired G10 lenses are explicitly disabled.
+// Selects the default read path. The audited getters are also used without
+// this setting when a lens read fails — see the fallback in the live route.
 export const READ_PATH: "lens" | "historical-direct" =
   env("THETASHIELD_READ_PATH") === "direct" ? "historical-direct" : "lens";
 

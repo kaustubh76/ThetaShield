@@ -442,8 +442,6 @@ async function readProcessor() {
       recommendationSequence: decodeSingle(sequenceData),
       droppedCount: null,
       referenceSourceCount: null,
-      zeroForOneCoverageRatioWad: null,
-      oneForZeroCoverageRatioWad: null,
       sides: null,
       deployedConfig: null,
     },
@@ -513,8 +511,6 @@ async function readProcessorLens() {
       lastObservationId: unsigned(decoded[2]),
       recommendationSequence: unsigned(decoded[6]),
       referenceSourceCount: unsigned(decoded[9]),
-      zeroForOneCoverageRatioWad: BigInt(`0x${decoded[zeroForOneSideOffset + 12]}`).toString(),
-      oneForZeroCoverageRatioWad: BigInt(`0x${decoded[oneForZeroSideOffset + 12]}`).toString(),
       sides: {
         // buy ↔ oneForZero side, sell ↔ zeroForOne side — see TokenConfig note above.
         buy: decodeSideState(decoded, oneForZeroSideOffset),
@@ -690,14 +686,29 @@ export async function GET() {
     if (Boolean(originLensOverride) !== Boolean(processorLensOverride)) {
       throw new Error("Both ThetaShield lens addresses must be configured together");
     }
-    const useLens = READ_PATH === "lens";
     // Supplementary telemetry must never hold the proof panel open: a slow log
     // scan or a third-chain hiccup degrades that card to null instead.
     const reactivePromise = optional(readReactive(), 5_000);
     const eventsPromise = optional(readEvents(), 5_000);
-    const [origin, processorBundle] = await Promise.all(
-      useLens ? [readOriginLens(), readProcessorLens()] : [readOrigin(), readProcessor()],
-    );
+    // The lenses are a convenience aggregate; the audited getters on the hook,
+    // controller and processor are the contract of record. A lens fault
+    // therefore degrades the read to those getters rather than the whole panel,
+    // and readPath reports which one actually answered.
+    let readPath: "lens" | "historical-direct" = READ_PATH;
+    let origin: Awaited<ReturnType<typeof readOriginLens>> | Awaited<ReturnType<typeof readOrigin>>;
+    let processorBundle:
+      | Awaited<ReturnType<typeof readProcessorLens>>
+      | Awaited<ReturnType<typeof readProcessor>>;
+    if (readPath === "lens") {
+      try {
+        [origin, processorBundle] = await Promise.all([readOriginLens(), readProcessorLens()]);
+      } catch {
+        readPath = "historical-direct";
+        [origin, processorBundle] = await Promise.all([readOrigin(), readProcessor()]);
+      }
+    } else {
+      [origin, processorBundle] = await Promise.all([readOrigin(), readProcessor()]);
+    }
     const [reactive, events] = await Promise.all([reactivePromise, eventsPromise]);
     const now = Math.floor(Date.now() / 1_000);
 
@@ -707,7 +718,7 @@ export async function GET() {
         schemaVersion: 2,
         generatedAt: new Date().toISOString(),
         poolId: POOL_ID,
-        readPath: useLens ? "lens" : "historical-direct",
+        readPath,
         origin,
         processor: processorBundle.processor,
         referenceSources: processorBundle.referenceSources,

@@ -64,7 +64,9 @@ test("server-renders the complete ThetaShield research dashboard", async () => {
   assert.match(html, /ObservationTransportFailed/i);
   assert.match(html, /DropReason\.EpochCapacity/i);
   assert.match(html, /Interrogate the trade-offs/i);
-  assert.match(html, /Direct audited getters are used only when the paired G10 lenses are explicitly disabled/i);
+  // Before any read returns, the page names the declared paths without claiming
+  // which one answered. The lens/direct claims themselves are client-side.
+  assert.match(html, /with the audited getters as the declared fallback path/i);
   assert.match(html, /Public Circle lifecycle/);
   assert.match(html, /Authenticated processing callback/);
 
@@ -126,6 +128,9 @@ test("live API defaults to the paired G10 lenses with a named direct fallback", 
   assert.match(route, /Both ThetaShield lens addresses must be configured together/);
   assert.match(route, /readOriginLens/);
   assert.match(route, /readProcessorLens/);
+  // The fallback the README promises has to exist, not just be named: a lens
+  // fault must degrade to the audited getters and say so in readPath.
+  assert.match(route, /readPath = "historical-direct";\n\s*\[origin, processorBundle\] = await Promise\.all\(\[readOrigin\(\), readProcessor\(\)\]\);/);
   assert.match(route, /from "\.\.\/\.\.\/live-config"/);
 
   const config = await readFile(new URL("app/live-config.ts", root), "utf8");

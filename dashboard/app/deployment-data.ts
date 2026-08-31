@@ -252,11 +252,9 @@ export const deploymentView = {
     cronName: manifest.reactive_automation.cron_name,
     cronTopic: manifest.reactive_automation.cron_topic,
     callbackProxy: manifest.reactive_automation.callback_proxy,
-    rscAddress: manifest.reactive_automation.rsc_address,
-    executorAddress: manifest.reactive_automation.executor_address,
-    rscTxUrl: txUrl("reactive", manifest.reactive_automation.rsc_transaction_hash),
-    executorTxUrl: txUrl("processor", manifest.reactive_automation.executor_transaction_hash),
-    callbackTxUrl: txUrl("processor", manifest.reactive_automation.callback_transaction_hash),
+    // The executor and RSC addresses, their deploy transactions and the proven
+    // callback all have a home already: the component registry lists both
+    // contracts, and the callback is receipt 03. They are not restated here.
     status: manifest.reactive_automation.status,
   },
   cost: manifest.cost.map((entry) => ({

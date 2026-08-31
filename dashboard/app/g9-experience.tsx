@@ -425,11 +425,9 @@ function LPBenefitSimulator({
     Math.round((12 + ((value - zoomWindow.worst) / zoomSpan) * 88) * 10) / 10;
   const trueScale = Math.max(Math.abs(policy.inventoryPnlQuote), Math.abs(policy.feeRevenueQuote), 0.000001);
   const transportTotal =
-    scenario.finalTransport.callbacks_applied +
-    scenario.finalTransport.callbacks_missing +
-    scenario.finalTransport.callbacks_rejected;
+    replayPoint.callbacksApplied + replayPoint.callbacksMissing + replayPoint.callbacksRejected;
   const deliveryPercent = transportTotal
-    ? (scenario.finalTransport.callbacks_applied * 100) / transportTotal
+    ? (replayPoint.callbacksApplied * 100) / transportTotal
     : 100;
   const coverage = data.closedLoop.coverage[data.closedLoop.coveragePolicyId];
   const failure = failureModes[failureMode];
@@ -520,7 +518,7 @@ function LPBenefitSimulator({
 
       <div className="simulator-grid">
         <article className="sim-panel timeline-panel">
-          <div className="panel-heading"><span>01 · FEE BY DIRECTION</span><b>{scenario.eventCount} events · {scenario.stepSeconds}s steps</b></div>
+          <div className="panel-heading"><span>01 · FEE BY DIRECTION</span><b>{`${scenario.eventCount} events · ${scenario.stepSeconds}s steps · every ${scenario.stride}th plotted`}</b></div>
           <FeeTimeline activeIndex={safeReplayIndex} meanFeeBps={policy.meanFeeBps} points={scenario.points} />
           <p>Directional lines are the ThetaShield control replay; the dotted guide is the selected policy’s pooled mean.</p>
         </article>
@@ -571,9 +569,9 @@ function LPBenefitSimulator({
         </article>
 
         <article className="sim-panel transport-panel">
-          <div className="panel-heading"><span>05 · TRANSPORT HEALTH</span><b>{scenario.operationalMode}</b></div>
+          <div className="panel-heading"><span>05 · TRANSPORT HEALTH</span><b>{`${scenario.operationalMode} · at event ${safeReplayIndex + 1}`}</b></div>
           <div className="transport-score"><strong>{percent(deliveryPercent, 0)}</strong><span>callbacks applied</span></div>
-          <dl><div><dt>Applied</dt><dd>{scenario.finalTransport.callbacks_applied}</dd></div><div><dt>Missing</dt><dd>{scenario.finalTransport.callbacks_missing}</dd></div><div><dt>Rejected</dt><dd>{scenario.finalTransport.callbacks_rejected}</dd></div><div><dt>Expired references</dt><dd>{scenario.finalTransport.expired_references}</dd></div></dl>
+          <dl><div><dt>Applied</dt><dd>{replayPoint.callbacksApplied}</dd></div><div><dt>Missing</dt><dd>{replayPoint.callbacksMissing}</dd></div><div><dt>Rejected</dt><dd>{replayPoint.callbacksRejected}</dd></div><div><dt>Expired references · run total</dt><dd>{scenario.finalTransport.expired_references}</dd></div></dl>
           <div className={failureMode === "healthy" ? "transport-path healthy" : "transport-path failed"}><code>{failure.label}</code></div>
         </article>
 

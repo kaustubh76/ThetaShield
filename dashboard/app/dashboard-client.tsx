@@ -54,6 +54,14 @@ export default function DashboardClient({
     (total, dimension) => total + dimension.cases.length,
     0,
   );
+  // Derived from the frozen acceptance record, not asserted: a manifest that
+  // ever records a failed run must not keep rendering a completed checklist.
+  // The manifest's own verdict decides the marker; the automation status is
+  // reported verbatim rather than compared against a string typed here.
+  const acceptanceComplete = deployment.acceptance.passed;
+  const acceptanceSummary = acceptanceComplete
+    ? `Circle return, Reactive Legacy callbacks (${deployment.automation.status}), and the ${deployment.receipts.length}-receipt later-fee trail preserved`
+    : `acceptance not recorded as passed · automation ${deployment.automation.status}`;
   const bands = trustBands.map((band) =>
     band.id === "live"
       ? {
@@ -345,7 +353,10 @@ export default function DashboardClient({
           <p><i className="done" /><span><b>Public Circle lifecycle</b> · Unichain → Ethereum → Unichain, later-fee proof</span></p>
           <p><i className="done" /><span><b>Research regression suite</b> · golden vectors and reproducible artifacts</span></p>
           <p><i className="done" /><span><b>Security gates</b> · dependency lock, secret scan, gas ceilings</span></p>
-          <p><i className="done" /><span><b>G10 live acceptance</b> · Circle return, Reactive Legacy callbacks, and later-fee receipt trail preserved</span></p>
+          <p>
+            <i className={acceptanceComplete ? "done" : "pending"} />
+            <span><b>G10 live acceptance</b> · {acceptanceSummary}</span>
+          </p>
         </div>
       </section>
 

@@ -44,6 +44,31 @@ export default function LiveProofPanel({
   // Every branch below is a factual claim about live chain state, so none of
   // them may render until a read has actually returned.
   const safeBaseline = proof ? proof.origin.buy.usedBaseline && proof.origin.sell.usedBaseline : false;
+  // buy ↔ oneForZero, sell ↔ zeroForOne (see the direction note in the live route).
+  const recommendedFor = (direction: "buy" | "sell"): string => {
+    if (!proof) return "—";
+    const recommendation = proof.origin.recommendation;
+    if (recommendation.sequence === 0) return "no recommendation installed";
+    const recommended = feeBps(
+      direction === "buy" ? recommendation.oneForZeroFeePips : recommendation.zeroForOneFeePips,
+    );
+    const usedBaseline = direction === "buy" ? proof.origin.buy.usedBaseline : proof.origin.sell.usedBaseline;
+    return usedBaseline ? `recommended ${recommended} · baseline applied` : `recommendation ${recommended} applied`;
+  };
+  // A recommendation can be installed and not yet valid; rendering it as live
+  // would overstate what the hook is currently charging.
+  const validityLabel = (): string => {
+    if (!proof) return "—";
+    const recommendation = proof.origin.recommendation;
+    if (recommendation.sequence === 0) return "no recommendation installed yet";
+    if (proof.recommendationExpired) return `expired · sequence ${recommendation.sequence} remains auditable`;
+    // Compared against the read's own timestamp, not the visitor's clock: the
+    // validity window is chain state, so a skewed browser must not restate it.
+    if (Math.floor(new Date(proof.generatedAt).getTime() / 1_000) < recommendation.validAfter) {
+      return `installed · not yet valid, starts ${formatChainTime(recommendation.validAfter)}`;
+    }
+    return `confidence ${recommendation.confidenceBps / 100}% · valid until ${formatChainTime(recommendation.validUntil)}`;
+  };
   const statusCopy = !proof
     ? error
       ? "Chain state unavailable"
@@ -81,8 +106,14 @@ export default function LiveProofPanel({
         <article className="live-card origin-card">
           <div className="live-card-header"><span>ORIGIN · {originName.toUpperCase()}</span><b>{proof ? `block ${formatInt(proof.origin.blockNumber)}` : "reading…"}</b></div>
           <div className="live-fees">
-            <div><span>BUY-BASE FEE</span><strong>{proof ? feeBps(proof.origin.buy.feePips) : "—"}</strong><small>bps</small></div>
-            <div><span>SELL-BASE FEE</span><strong>{proof ? feeBps(proof.origin.sell.feePips) : "—"}</strong><small>bps</small></div>
+            <div>
+              <span>BUY-BASE FEE</span><strong>{proof ? feeBps(proof.origin.buy.feePips) : "—"}</strong><small>bps</small>
+              <em>{recommendedFor("buy")}</em>
+            </div>
+            <div>
+              <span>SELL-BASE FEE</span><strong>{proof ? feeBps(proof.origin.sell.feePips) : "—"}</strong><small>bps</small>
+              <em>{recommendedFor("sell")}</em>
+            </div>
           </div>
           <dl className="live-facts">
             <div><dt>Hook observations</dt><dd>{proof?.origin.observationCount ?? "—"}</dd></div>
@@ -95,6 +126,7 @@ export default function LiveProofPanel({
               <dd className={proof ? (paused ? "warn" : "healthy") : ""}>{proof ? pauseLabel : "—"}</dd>
             </div>
             <div><dt>Pool</dt><dd>{proof ? <code>{shortHex(proof.poolId, 10, 6)}</code> : "—"}</dd></div>
+            <div><dt>Chain ID</dt><dd>{proof?.origin.chainId ?? "—"}</dd></div>
           </dl>
         </article>
 
@@ -127,11 +159,7 @@ export default function LiveProofPanel({
                 windowSeconds={proof.processor.deployedConfig.scheduler.recommendationLifetimeSeconds}
               />
             ) : null}
-            <span>
-              {proof.origin.recommendation.sequence === 0
-                ? "no recommendation installed yet"
-                : `confidence ${proof.origin.recommendation.confidenceBps / 100}% · valid until ${formatChainTime(proof.origin.recommendation.validUntil)}`}
-            </span>
+            <span>{validityLabel()}</span>
           </div>
         ) : null}
       </div>
@@ -150,10 +178,17 @@ export default function LiveProofPanel({
       ) : null}
 
       {proof?.referenceSources ? (
-        <ReferenceSources deployment={deployment} generatedAt={proof.generatedAt} sources={proof.referenceSources} />
+        <ReferenceSources
+          deployment={deployment}
+          generatedAt={proof.generatedAt}
+          registeredCount={proof.processor.referenceSourceCount}
+          sources={proof.referenceSources}
+        />
       ) : null}
 
-      {proof?.events ? <EventsTicker deployment={deployment} events={proof.events} /> : null}
+      {proof?.events ? (
+        <EventsTicker deployment={deployment} events={proof.events} generatedAt={proof.generatedAt} />
+      ) : null}
 
       <div className="receipt-heading"><span>LIVE RECEIPT TRAIL</span><b>{`${deployment.receipts.length} public transactions · open any receipt`}</b></div>
       <div className="receipt-rail">
@@ -170,7 +205,16 @@ export default function LiveProofPanel({
         <a href="#registry">{`Read the contracts → all ${deployment.components.length} deployed components, with block, verification status and explorer links`}</a>
       </p>
       <p className="proof-disclosure">Read-only proof. Refreshing performs public RPC reads; it never connects a wallet, signs a message, or spends testnet funds.</p>
-      <p className="proof-disclosure">{proof?.readPath === "lens" ? "G10 state is aggregated through the deployed stateless ThetaShield lenses." : "Direct audited getters are used only when the paired G10 lenses are explicitly disabled."}</p>
+      {/* Three states, because the direct path is now reachable two ways: the
+          lenses can be disabled by configuration, or they can fail and be
+          fallen back from. Neither may be asserted before a read returns. */}
+      <p className="proof-disclosure">
+        {!proof
+          ? "State is read through the deployed stateless ThetaShield lenses, with the audited getters as the declared fallback path."
+          : proof.readPath === "lens"
+            ? "G10 state is aggregated through the deployed stateless ThetaShield lenses."
+            : "Read through the audited getters directly this cycle: the paired G10 lenses are either disabled by configuration or did not answer, and the read fell back."}
+      </p>
     </>
   );
 }
