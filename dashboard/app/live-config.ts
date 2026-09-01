@@ -3,6 +3,16 @@ import manifestJson from "../data/deployment_manifest.json";
 type ManifestShape = {
   components: { name: string; address: string }[];
   reference_sampler: { sources: { source_id: string }[] };
+  circle_messages: {
+    kind: string;
+    send_transaction_hash: string;
+    relay_transaction_hash: string;
+  }[];
+  acceptance: {
+    initial_swap_transaction_hash: string;
+    later_swap_transaction_hash: string;
+    reactive_callback_transaction_hash: string;
+  };
   reactive_automation: {
     rsc_address: string;
     chain_id: number;
@@ -47,6 +57,26 @@ export const REACTIVE_RVM_ID = manifest.reactive_automation.deployer_rvm_id;
 // and the page checks them rather than restating them from this manifest.
 export const REACTIVE_CALLBACK_TX = manifest.reactive_automation.callback_transaction_hash;
 export const REACTIVE_CALLBACK_PROXY = manifest.reactive_automation.callback_proxy;
+
+function circleMessage(kind: string) {
+  const entry = manifest.circle_messages.find((candidate) => candidate.kind === kind);
+  if (!entry) throw new Error(`deployment manifest is missing circle message: ${kind}`);
+  return entry;
+}
+
+// The six transactions of the proven run, in execution order. Read back from
+// their chains they are not six links but a measured sequence: the gaps between
+// them are what Circle's transport and Reactive's wake actually cost. The order
+// and the phase keys mirror `deployment-data.ts`'s receiptSpecs, so a receipt
+// cannot drift away from the timeline step that dates it.
+export const RUN_RECEIPTS = [
+  { role: "origin", hash: manifest.acceptance.initial_swap_transaction_hash },
+  { role: "processor", hash: circleMessage("observation").relay_transaction_hash },
+  { role: "processor", hash: manifest.acceptance.reactive_callback_transaction_hash },
+  { role: "processor", hash: circleMessage("recommendation").send_transaction_hash },
+  { role: "origin", hash: circleMessage("recommendation").relay_transaction_hash },
+  { role: "origin", hash: manifest.acceptance.later_swap_transaction_hash },
+] as const;
 
 // The pool id is not part of deployment manifest schema v3; this is the single
 // permitted identifier fallback in dashboard app code.

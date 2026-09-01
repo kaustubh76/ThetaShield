@@ -253,3 +253,19 @@ export function decodeReactiveCallback(raw: RawTransaction) {
     observedAt: raw.blockTimestamp ? unsigned(raw.blockTimestamp.slice(2)) : null,
   };
 }
+
+// A run-timeline gap belongs to exactly one pair of ADJACENT steps, and is
+// stated only when both ends came back dated. Carrying the last known time
+// forward across an undated step would label a connector with an interval that
+// skips a step the reader can see it skipping — a measurement of something
+// other than what it sits between.
+export function fillTimelineGaps<T extends { observedAt: number | null; gapSeconds: number | null }>(
+  steps: T[],
+): T[] {
+  for (let index = 1; index < steps.length; index += 1) {
+    const previous = steps[index - 1].observedAt;
+    const current = steps[index].observedAt;
+    steps[index].gapSeconds = previous !== null && current !== null ? current - previous : null;
+  }
+  return steps;
+}

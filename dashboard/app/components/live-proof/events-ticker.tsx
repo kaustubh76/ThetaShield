@@ -7,6 +7,7 @@ function EventLane({
   events,
   explorerBase,
   windowBlocks,
+  windowSeconds,
   scanned,
   generatedAt,
 }: {
@@ -14,9 +15,20 @@ function EventLane({
   events: LiveEvent[];
   explorerBase: string;
   windowBlocks: number;
+  windowSeconds: number | null;
   scanned: boolean;
   generatedAt: string;
 }) {
+  // The origin chain caps eth_getLogs at 10,000 blocks, which on a one-second
+  // chain is under three hours — so an empty lane is a statement about the
+  // window, not about whether the system has ever run. Saying only "10,000
+  // blocks" left that to be inferred, and it was inferred wrongly.
+  const span =
+    windowSeconds === null
+      ? ""
+      : windowSeconds < 5_400
+        ? ` (~${Math.round(windowSeconds / 60)} minutes)`
+        : ` (~${(windowSeconds / 3_600).toFixed(1)} hours)`;
   return (
     <div className="event-lane">
       <span className="event-lane-label">{label}</span>
@@ -37,7 +49,7 @@ function EventLane({
       ) : (
         <p className={scanned ? "event-empty" : "event-empty unavailable"}>
           {scanned
-            ? `no events in the last ${formatInt(windowBlocks)} blocks — this is a bounded scan, not the full history; the receipt trail below is permanent`
+            ? `no events in the last ${formatInt(windowBlocks)} blocks${span} — this is a bounded scan, not the full history. The proven run is dated in the trail below.`
             : "log scan unavailable this cycle — no claim is made about recent activity; the receipt trail below is permanent"}
         </p>
       )}
@@ -49,10 +61,13 @@ export default function EventsTicker({
   events,
   deployment,
   generatedAt,
+  blockSeconds,
 }: {
   events: EventsView;
   deployment: DeploymentView;
   generatedAt: string;
+  /** Measured seconds per block per chain, or null when not derivable. */
+  blockSeconds: { origin: number | null; processor: number | null };
 }) {
   const origin = deployment.networks.find((network) => network.role === "origin");
   const processor = deployment.networks.find((network) => network.role === "processor");
@@ -69,6 +84,7 @@ export default function EventsTicker({
           label={`${origin.name.toUpperCase()} · SWAPS OBSERVED`}
           scanned={events.scanned.origin}
           windowBlocks={events.window.origin}
+          windowSeconds={blockSeconds.origin === null ? null : blockSeconds.origin * events.window.origin}
         />
         <EventLane
           events={events.processor}
@@ -77,6 +93,7 @@ export default function EventsTicker({
           label={`${processor.name.toUpperCase()} · EPOCHS + AUTOMATION`}
           scanned={events.scanned.processor}
           windowBlocks={events.window.processor}
+          windowSeconds={blockSeconds.processor === null ? null : blockSeconds.processor * events.window.processor}
         />
       </div>
     </div>

@@ -7,6 +7,7 @@ import AutomationCard from "./automation-card";
 import EventsTicker from "./events-ticker";
 import ReactivePanel from "./reactive-panel";
 import ReferenceSources from "./reference-sources";
+import RunTimeline from "./run-timeline";
 import SideStateCard from "./side-state-card";
 import TtlRing from "./ttl-ring";
 import { wadToBpsNumber } from "./types";
@@ -62,6 +63,23 @@ export default function LiveProofPanel({
   const untilNextRead =
     nextPollAt === null || nowMs === null ? null : Math.max(0, Math.ceil((nextPollAt - nowMs) / 1_000));
   const backingOff = untilNextRead !== null && untilNextRead > 75;
+
+  // Seconds per block, measured rather than assumed: a dated block from the run
+  // timeline against the head the scan actually used. Chain block intervals
+  // drift and differ by orders of magnitude between these two chains, so a
+  // hardcoded constant would misstate how far back the window reaches.
+  const blockSecondsFor = (role: "origin" | "processor"): number | null => {
+    if (!proof?.events || !proof.runTimeline) return null;
+    const dated = proof.runTimeline.steps.find(
+      (step) => step.role === role && step.observedAt !== null && step.blockNumber !== null,
+    );
+    if (!dated) return null;
+    const head = proof.events.head[role];
+    const blocks = head - (dated.blockNumber as number);
+    const seconds = Math.floor(new Date(proof.generatedAt).getTime() / 1_000) - (dated.observedAt as number);
+    return blocks > 0 && seconds > 0 ? seconds / blocks : null;
+  };
+  const blockSeconds = { origin: blockSecondsFor("origin"), processor: blockSecondsFor("processor") };
 
   const withheld: string[] = [];
   if (proof) {
@@ -282,6 +300,7 @@ export default function LiveProofPanel({
           automation={proof.automation}
           deployment={deployment}
           generatedAt={proof.generatedAt}
+          lastRunAt={proof.runTimeline?.steps[proof.runTimeline.steps.length - 1]?.observedAt ?? null}
           pendingCount={proof.processor.pendingCount}
           pendingMaturity={proof.pendingMaturity}
           reactive={proof.reactive}
@@ -324,34 +343,17 @@ export default function LiveProofPanel({
       ) : null}
 
       {proof?.events ? (
-        <EventsTicker deployment={deployment} events={proof.events} generatedAt={proof.generatedAt} />
+        <EventsTicker
+          blockSeconds={blockSeconds}
+          deployment={deployment}
+          events={proof.events}
+          generatedAt={proof.generatedAt}
+        />
       ) : null}
         </Accordion>
       ) : null}
 
-      <div className="receipt-heading"><span>LIVE RECEIPT TRAIL</span><b>{`${deployment.receipts.length} public transactions · walk the trail, or open any receipt`}</b></div>
-      {/* Each receipt names the journey phase it evidences, so the trail is
-          navigable in two directions: into the loop, or out to the explorer.
-          Two interactive children rather than one, because an anchor cannot
-          legally nest inside a button. */}
-      <div className="receipt-rail">
-        {deployment.receipts.map((receipt) => (
-          <div className="receipt-step" key={receipt.hash}>
-            <button className="receipt-jump" onClick={() => onOpenPhase(receipt.phase)} type="button">
-              <span className="receipt-index">{receipt.index}</span>
-              <span className="receipt-copy">
-                <b>{receipt.title}</b>
-                <small>{receipt.chainName}</small>
-                <em>{`show this step in the loop →`}</em>
-              </span>
-            </button>
-            <a className="receipt-open" href={receipt.url} rel="noreferrer" target="_blank">
-              <code>{shortHex(receipt.hash)}</code>
-              <span aria-hidden="true">↗</span>
-            </a>
-          </div>
-        ))}
-      </div>
+      <RunTimeline deployment={deployment} onOpenPhase={onOpenPhase} timeline={proof?.runTimeline ?? null} />
 
       <p className="registry-pointer">
         <a href="#registry">{`Read the contracts → all ${deployment.components.length} deployed components, with block, verification status and explorer links`}</a>

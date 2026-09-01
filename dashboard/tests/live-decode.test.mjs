@@ -379,3 +379,22 @@ test("the callback decoder degrades when the provider omits block metadata", () 
   assert.equal(callback.observedAt, null);
   assert.equal(callback.rvmArg, "0x33189c643774ed2713ebff5a6923e5fa42b96ee8");
 });
+
+// The run timeline's connectors are its content, so the rule for when a gap may
+// be stated is worth a gate of its own: only between two adjacent steps that
+// both came back dated.
+test("timeline gaps are stated only between adjacent dated steps", () => {
+  const step = (observedAt) => ({ observedAt, gapSeconds: null });
+  const filled = decode.fillTimelineGaps([step(100), step(160), step(null), step(400), step(410)]);
+  assert.deepEqual(filled.map((entry) => entry.gapSeconds), [null, 60, null, null, 10]);
+
+  // Carrying the last known time across the hole would have produced 240 here,
+  // labelling the 3rd→4th connector with an interval that spans three steps.
+  assert.equal(filled[3].gapSeconds, null);
+
+  // A stale gap from an earlier pass must be cleared, not left standing.
+  const stale = [{ observedAt: 1, gapSeconds: 5 }, { observedAt: null, gapSeconds: 99 }];
+  assert.deepEqual(decode.fillTimelineGaps(stale).map((entry) => entry.gapSeconds), [5, null]);
+
+  assert.deepEqual(decode.fillTimelineGaps([]), []);
+});

@@ -1,4 +1,4 @@
-// Interactive regression suite: 23 checks over the controls the SSR tests cannot
+// Interactive regression suite: 26 checks over the controls the SSR tests cannot
 // reach — the failure-mode switches, the mechanism player, the journey phases,
 // the scenario/policy/sensitivity selects, the replay transport, the signal-lab
 // tabs, the registry accordions, the live refresh and the nav anchors.
@@ -122,6 +122,12 @@ if (authRows) {
   );
 }
 check("cross-plane agreement states which planes it compared", /pending/.test((await evaluate(`__txt('.plane-agreement')`)) ?? ""), (await evaluate(`__txt('.plane-agreement')`))?.slice(0, 60));
+
+const runSteps = await evaluate(`document.querySelectorAll('.run-step').length`);
+const runGaps = await evaluate(`JSON.stringify([...document.querySelectorAll('.run-gap span')].map(e => e.textContent))`);
+check("run timeline renders every step dated", runSteps === 6 && (await evaluate(`[...document.querySelectorAll('.run-body > time')].every(t => t.textContent !== '—')`)) === true, `${runSteps} steps`);
+check("run timeline measures the interval between steps", JSON.parse(runGaps).length === 5 && !JSON.parse(runGaps).includes("interval not read"), runGaps);
+check("run timeline states the end-to-end figure once", /end to end/i.test((await evaluate(`__txt('.receipt-heading')`)) ?? ""), (await evaluate(`__txt('.receipt-heading b')`))?.slice(0, 40));
 
 await evaluate(`document.querySelectorAll('.receipt-jump')[2].click(); true;`); await wait(700);
 check(

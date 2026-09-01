@@ -19,6 +19,21 @@ function chainTime(seconds: number): string {
   return new Date(seconds * 1_000).toLocaleTimeString();
 }
 
+// Coarse elapsed time for a span measured in days, where seconds would be noise.
+// Rounded, not floored: the run timeline states the run's date a few lines away,
+// and flooring 2d22h to "2 days" contradicts the date a reader can subtract.
+function elapsed(seconds: number): string {
+  if (seconds >= 86_400) {
+    const days = Math.round(seconds / 86_400);
+    return `${days} day${days === 1 ? "" : "s"}`;
+  }
+  if (seconds >= 3_600) {
+    const hours = Math.round(seconds / 3_600);
+    return `${hours} hour${hours === 1 ? "" : "s"}`;
+  }
+  return `${Math.max(1, Math.round(seconds / 60))} minutes`;
+}
+
 function countdown(seconds: number): string {
   const whole = Math.max(0, Math.floor(seconds));
   const minutes = Math.floor(whole / 60);
@@ -31,6 +46,7 @@ export default function ReactivePanel({
   authentication,
   pendingMaturity,
   pendingCount,
+  lastRunAt,
   deployment,
   generatedAt,
 }: {
@@ -39,6 +55,8 @@ export default function ReactivePanel({
   authentication: AuthenticationView | null;
   pendingMaturity: PendingMaturityView | null;
   pendingCount: number;
+  /** Unix seconds of the last completed run's final step, or null. */
+  lastRunAt: number | null;
   deployment: DeploymentView;
   generatedAt: string;
 }) {
@@ -107,6 +125,15 @@ export default function ReactivePanel({
             : "RVM read unavailable — the chain-side copy react() never writes"}
         </span>
       </div>
+
+      {rvm && reactive.phase === 0 ? (
+        <p className="reactive-rest">
+          {`Idle is the resting state, not a fault: the scheduler is subscribed and wakes on swap
+          traffic, and this pool has had none since it last completed a full run`}
+          {lastRunAt !== null ? ` ${elapsed(now - lastRunAt)} ago` : ""}
+          {`. The run below is dated from its own transactions.`}
+        </p>
+      ) : null}
 
       {/* The state machine. This is what makes Reactive legible: it is a
           scheduler with a position, not a black box that occasionally fires. */}

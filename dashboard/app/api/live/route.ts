@@ -6,6 +6,7 @@ import {
   READ_PATH,
   REACTIVE_CALLBACK_TX,
   REACTIVE_RVM_ID,
+  RUN_RECEIPTS,
   REFERENCE_SOURCE_IDS,
   RPC,
 } from "../../live-config";
@@ -22,6 +23,7 @@ import {
   decodeReferenceSource,
   decodeSideState,
   decodeSingle,
+  fillTimelineGaps,
   unsigned,
   words,
 } from "./decode";
@@ -466,6 +468,149 @@ function getLogs(
   return rpc<RpcLog[]>(url, "eth_getLogs", [logsCall(address, topic, fromBlock, toBlock).params[0]]);
 }
 
+// One decoder for the hook's SwapObserved log, shared by the recent-window scan
+// and by the pinned historical scan that dates the run timeline — so the two can
+// never describe the same swap differently.
+function mapSwapLog(log: RpcLog) {
+  const body = words(log.data);
+  const zeroForOne = BigInt(log.topics[3]) !== BigInt(0);
+  return {
+    kind: "swap" as const,
+    blockNumber: Number(BigInt(log.blockNumber)),
+    logIndex: Number(BigInt(log.logIndex ?? "0x0")),
+    txHash: log.transactionHash,
+    summary: `Swap ${Number(BigInt(log.topics[2]))} observed · ${zeroForOne ? "sell" : "buy"} side · ${(unsigned(body[3]) / 100).toFixed(2)} bps applied${unsigned(body[4]) !== 0 ? " (baseline)" : ""}`,
+    observedAt: unsigned(body[5]),
+  };
+}
+
+// The proven run, read back from its own transactions. The six receipts are
+// already on the page as links; their timestamps turn them into a measured
+// sequence, and the gaps are the only quantitative statement the page can make
+// about what the Reactive integration buys: Circle's finality-2000 transport
+// costs tens of minutes each way, the scheduler's wake costs seconds.
+//
+// eth_getTransactionByHash, never eth_getTransactionReceipt — public Sepolia
+// providers prune the receipt index and answer null for the callback hash while
+// still returning the full mined transaction.
+type TimelineStep = {
+  index: number;
+  role: "origin" | "processor";
+  hash: string;
+  blockNumber: number | null;
+  observedAt: number | null;
+  gapSeconds: number | null;
+  /** Decoded specifics from the step's own log, where the chain still has it. */
+  detail: string | null;
+};
+
+let runTimelineCache: Promise<{
+  steps: TimelineStep[];
+  endToEndSeconds: number | null;
+  complete: boolean;
+} | null> | null = null;
+
+async function loadRunTimeline() {
+  const byRole = { origin: ORIGIN_RPC, processor: PROCESSOR_RPC } as const;
+  const steps: TimelineStep[] = RUN_RECEIPTS.map((receipt, index) => ({
+    index,
+    role: receipt.role,
+    hash: receipt.hash,
+    blockNumber: null,
+    observedAt: null,
+    gapSeconds: null,
+    detail: null,
+  }));
+
+  // One batch per chain for the transactions, then one batch per chain for the
+  // blocks still missing a timestamp. Ethereum Sepolia via publicnode returns a
+  // non-standard `blockTimestamp` on the transaction; Unichain does not, so the
+  // block read is required rather than an optimisation.
+  await Promise.all(
+    (["origin", "processor"] as const).map(async (role) => {
+      const mine = steps.filter((step) => step.role === role);
+      if (!mine.length) return;
+      const url = byRole[role];
+      const transactions = (await batchOrSingle(
+        url,
+        mine.map((step) => ({ method: "eth_getTransactionByHash", params: [step.hash] })),
+      )) as ({ blockNumber?: string | null; blockTimestamp?: string | null } | null)[];
+
+      const needBlock: TimelineStep[] = [];
+      transactions.forEach((transaction, position) => {
+        const step = mine[position];
+        if (!transaction?.blockNumber) return;
+        step.blockNumber = unsigned(transaction.blockNumber.slice(2));
+        if (transaction.blockTimestamp) {
+          step.observedAt = unsigned(transaction.blockTimestamp.slice(2));
+        } else {
+          needBlock.push(step);
+        }
+      });
+      if (!needBlock.length) return;
+
+      const blocks = (await batchOrSingle(
+        url,
+        needBlock.map((step) => ({
+          method: "eth_getBlockByNumber",
+          params: [`0x${(step.blockNumber as number).toString(16)}`, false],
+        })),
+      )) as ({ timestamp?: string } | null)[];
+      blocks.forEach((block, position) => {
+        if (block?.timestamp) needBlock[position].observedAt = unsigned(block.timestamp.slice(2));
+      });
+    }),
+  );
+
+  // The recent-window scan can never reach these blocks — Unichain caps
+  // eth_getLogs at 10,000 blocks, about 2.8 hours, and the run is days back — so
+  // the swap steps are re-read with the range pinned to their own block. That
+  // costs one narrow query each and gives the timeline the observation id, side
+  // and applied fee that a bare transaction hash does not carry.
+  const originSwapSteps = steps.filter((step) => step.role === "origin" && step.blockNumber !== null);
+  if (originSwapSteps.length) {
+    try {
+      const pinned = (await batchOrSingle(
+        ORIGIN_RPC,
+        originSwapSteps.map((step) =>
+          logsCall(HOOK, eventTopics.swapObserved, step.blockNumber as number, step.blockNumber as number),
+        ),
+      )) as RpcLog[][];
+      pinned.forEach((logs, position) => {
+        const step = originSwapSteps[position];
+        const match = logs?.find((log) => log.transactionHash.toLowerCase() === step.hash.toLowerCase());
+        if (match) step.detail = mapSwapLog(match).summary;
+      });
+    } catch {
+      // Enrichment only. A provider that will not answer the pinned query leaves
+      // the steps dated but undescribed, which is still the whole point.
+    }
+  }
+
+  fillTimelineGaps(steps);
+  const first = steps[0]?.observedAt ?? null;
+  const last = steps[steps.length - 1]?.observedAt ?? null;
+  const complete = steps.every((step) => step.observedAt !== null);
+  return {
+    steps,
+    endToEndSeconds: first !== null && last !== null ? last - first : null,
+    complete,
+  };
+}
+
+// Memoised for the life of the server process: these transactions are immutable
+// history, so re-reading them on every 60s poll would be waste. They are still
+// read from the chains rather than restated from the manifest.
+function readRunTimeline() {
+  if (!runTimelineCache) {
+    runTimelineCache = loadRunTimeline().catch(() => {
+      runTimelineCache = null;
+      return null;
+    });
+  }
+  return runTimelineCache;
+}
+
 async function readEvents() {
   const [originBlockHex, processorBlockHex] = (await Promise.all([
     rpc<string>(ORIGIN_RPC, "eth_blockNumber", []),
@@ -532,18 +677,33 @@ async function readEvents() {
   ]);
   const [epochLogs, cycleLogs] = processorLogs as RpcLog[][];
 
-  const origin = swapLogs.slice(-6).map((log) => {
-    const body = words(log.data);
-    const zeroForOne = BigInt(log.topics[3]) !== BigInt(0);
-    return {
-      kind: "swap" as const,
-      blockNumber: Number(BigInt(log.blockNumber)),
-      logIndex: Number(BigInt(log.logIndex ?? "0x0")),
-      txHash: log.transactionHash,
-      summary: `Swap ${Number(BigInt(log.topics[2]))} observed · ${zeroForOne ? "sell" : "buy"} side · ${(unsigned(body[3]) / 100).toFixed(2)} bps applied${unsigned(body[4]) !== 0 ? " (baseline)" : ""}`,
-      observedAt: unsigned(body[5]),
-    };
-  });
+  // EpochFinalized and AutomationCycleCompleted carry no timestamp, so every
+  // processor event shipped as observedAt: null and rendered undated. One
+  // batched block read per distinct block fills them in; a failure leaves them
+  // null, which the ticker already handles.
+  const processorTimes = new Map<number, number>();
+  const distinctBlocks = [
+    ...new Set([...epochLogs, ...cycleLogs].map((log) => Number(BigInt(log.blockNumber)))),
+  ];
+  if (distinctBlocks.length) {
+    try {
+      const blocks = (await batchOrSingle(
+        PROCESSOR_RPC,
+        distinctBlocks.map((blockNumber) => ({
+          method: "eth_getBlockByNumber",
+          params: [`0x${blockNumber.toString(16)}`, false],
+        })),
+      )) as ({ timestamp?: string } | null)[];
+      blocks.forEach((block, position) => {
+        if (block?.timestamp) processorTimes.set(distinctBlocks[position], unsigned(block.timestamp.slice(2)));
+      });
+    } catch {
+      // Undated events are still events; a wrong time would be worse.
+    }
+  }
+  const timeOf = (log: RpcLog) => processorTimes.get(Number(BigInt(log.blockNumber))) ?? null;
+
+  const origin = swapLogs.slice(-6).map(mapSwapLog);
 
   const processor = [
     ...epochLogs.slice(-4).map((log) => {
@@ -555,7 +715,7 @@ async function readEvents() {
         logIndex: Number(BigInt(log.logIndex ?? "0x0")),
         txHash: log.transactionHash,
         summary: `Epoch ${Number(BigInt(log.topics[2]))} finalized · ${zeroForOne ? "sell" : "buy"} side · fee ${(unsigned(body[6]) / 100).toFixed(2)} bps`,
-        observedAt: null,
+        observedAt: timeOf(log),
       };
     }),
     ...cycleLogs.slice(-4).map((log) => ({
@@ -564,7 +724,7 @@ async function readEvents() {
       logIndex: Number(BigInt(log.logIndex ?? "0x0")),
       txHash: log.transactionHash,
       summary: `Automation cycle ${Number(BigInt(log.topics[1]))} · ${BigInt(log.topics[3]) !== BigInt(0) ? "Reactive callback" : "permissionless keeper"}`,
-      observedAt: null,
+      observedAt: timeOf(log),
     })),
   ]
     .sort((left, right) => right.blockNumber - left.blockNumber)
@@ -573,7 +733,11 @@ async function readEvents() {
   return {
     origin: origin.reverse(),
     processor,
+    // The heads travel with the window so the page can state the scan's span in
+    // wall-clock time as well as blocks — derived against a dated block from the
+    // run timeline rather than an assumed block interval.
     window: { origin: ORIGIN_EVENT_WINDOW, processor: PROCESSOR_EVENT_WINDOW },
+    head: { origin: originHead, processor: processorHead },
     scanned: { origin: originScanned, processor: processorScanned },
   };
 }
@@ -685,6 +849,9 @@ export async function GET() {
     // Supplementary telemetry must never hold the proof panel open: a slow log
     // scan or a third-chain hiccup degrades that card to null instead.
     const reactivePromise = optional(readReactive(), 5_000);
+    // Immutable history, memoised after the first read, so this resolves
+    // instantly on every poll but the second.
+    const timelinePromise = optional(readRunTimeline(), 6_000);
     const eventsPromise = optional(readEvents(), 5_000);
     // The lenses are a convenience aggregate; the audited getters on the hook,
     // controller and processor are the contract of record. A lens fault
@@ -705,7 +872,11 @@ export async function GET() {
     } else {
       [origin, processorBundle] = await Promise.all([readOrigin(), readProcessor()]);
     }
-    const [reactive, events] = await Promise.all([reactivePromise, eventsPromise]);
+    const [reactive, events, runTimeline] = await Promise.all([
+      reactivePromise,
+      eventsPromise,
+      timelinePromise,
+    ]);
     // The sharper cross-plane check only exists when there is work outstanding:
     // with an empty queue both planes read zero and agree about nothing. So the
     // 32-slot scan is spent only when the processor says a slot is occupied.
@@ -737,6 +908,7 @@ export async function GET() {
         authentication: processorBundle.authentication,
         reactive,
         pendingMaturity,
+        runTimeline,
         events,
         recommendationExpired,
         expiryBasis,

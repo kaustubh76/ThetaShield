@@ -145,6 +145,27 @@ export type ReactiveView = {
   networkConfig: ReactiveNetworkConfigView | null;
 };
 
+// The proven run, read back from its own six transactions. The gaps between
+// them are the page's only quantitative statement about what the integration
+// costs in wall-clock time.
+export type RunTimelineStep = {
+  index: number;
+  role: "origin" | "processor";
+  hash: string;
+  blockNumber: number | null;
+  observedAt: number | null;
+  /** Seconds since the previous dated step; null where either end is missing. */
+  gapSeconds: number | null;
+  detail: string | null;
+};
+
+export type RunTimelineView = {
+  steps: RunTimelineStep[];
+  endToEndSeconds: number | null;
+  /** False when any step failed to come back dated, so the total is partial. */
+  complete: boolean;
+};
+
 export type LiveEvent = {
   kind: "swap" | "epoch" | "cycle";
   blockNumber: number;
@@ -158,6 +179,7 @@ export type EventsView = {
   origin: LiveEvent[];
   processor: LiveEvent[];
   window: { origin: number; processor: number };
+  head: { origin: number; processor: number };
   scanned: { origin: boolean; processor: boolean };
 };
 
@@ -214,6 +236,7 @@ export type LiveProof = {
   authentication: AuthenticationView | null;
   reactive: ReactiveView | null;
   pendingMaturity: PendingMaturityView | null;
+  runTimeline: RunTimelineView | null;
   events: EventsView | null;
 };
 

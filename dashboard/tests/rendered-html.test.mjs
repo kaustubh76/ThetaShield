@@ -87,6 +87,7 @@ test("server-renders the complete ThetaShield research dashboard", async () => {
   assert.match(html, /Read directly from deployed contracts/i);
   assert.match(html, /Refresh on-chain state/i);
   assert.match(html, /LIVE RECEIPT TRAIL/i);
+  assert.match(html, /THE PROVEN RUN/i);
   // The trail is navigable in both directions: into the loop phase a receipt
   // evidences, and out to the explorer.
   assert.match(html, /show this step in the loop/i);
@@ -151,14 +152,21 @@ test("live API defaults to the paired G10 lenses with a named direct fallback", 
   // receipt index and answer null for this hash.
   assert.match(route, /reactiveRvmId: "0x0c41fb9a"/);
   assert.match(route, /reactiveCallbackProxy: "0x566353ab"/);
-  assert.match(route, /eth_getTransactionByHash/);
-  assert.doesNotMatch(route, /eth_getTransactionReceipt/);
+  assert.match(route, /"eth_getTransactionByHash"/);
+  // Matched as a quoted method name so this catches a call, not the comment
+  // that documents why the receipt read must never be used here.
+  assert.doesNotMatch(route, /"eth_getTransactionReceipt"/);
   // The RSC's own view of the deployment, which is the Lasna side of the
   // cross-plane agreement.
   assert.match(route, /rscNetworkConfig: "0x90ced421"/);
   // The 32-slot maturity scan must stay gated on the queue being non-empty:
   // ungated it spends a 32-entry batch on every read to compare zero to zero.
   assert.match(route, /pendingCount > 0 \? await optional\(readPendingMaturity/);
+  // The run timeline is immutable history, so it is memoised rather than
+  // re-read on every 60s poll; and the pinned scan exists because the recent
+  // window can never reach those blocks.
+  assert.match(route, /runTimelineCache/);
+  assert.match(route, /RUN_RECEIPTS/);
   assert.match(route, /from "\.\.\/\.\.\/live-config"/);
 
   const config = await readFile(new URL("app/live-config.ts", root), "utf8");

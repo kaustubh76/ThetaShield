@@ -429,15 +429,28 @@ h1 em { color: var(--signal); font-style: normal; }
 .live-proof-note p { margin: 6px 0 0; color: var(--muted); font-size: 10px; line-height: 1.45; }
 .live-proof-note > span { color: var(--dim); font-family: var(--font-geist-mono), monospace; font-size: 8px; text-align: right; text-transform: uppercase; }
 .receipt-heading { margin: 50px 0 15px; }
-.receipt-rail { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
-.receipt-step { display: grid; grid-template-rows: minmax(0, 1fr) auto; min-height: 145px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); background: rgba(13,24,21,.72); }
-.receipt-step:hover, .receipt-step:focus-within { background: rgba(128,255,178,.06); box-shadow: inset 0 0 0 1px rgba(128,255,178,.45); }
-.receipt-jump { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 13px; padding: 20px 20px 12px; border: 0; color: inherit; background: none; font: inherit; text-align: left; cursor: pointer; }
-.receipt-open { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 20px 14px; }
+/* A vertical sequence rather than a grid of cards: the intervals between the
+   steps are the content, and they live on the connectors. */
+.run-verdict { margin: 0 0 18px; color: var(--muted); font-size: 11.5px; line-height: 1.6; }
+.run-verdict b { color: var(--paper); font-weight: 500; }
+.run-timeline { display: grid; margin: 0; padding: 0; list-style: none; }
+.run-step { display: grid; }
+.run-gap { display: grid; grid-template-columns: 96px minmax(0, 1fr); align-items: center; gap: 14px; }
+.run-gap > i { justify-self: end; width: 1px; height: 26px; margin-right: 12px; background: linear-gradient(180deg, var(--line), var(--signal-2)); }
+.run-gap.unknown > i { background: var(--line); }
+.run-gap > span { color: var(--signal-2); font-family: var(--font-geist-mono), monospace; font-size: 9px; letter-spacing: .04em; }
+.run-gap.unknown > span { color: var(--dim); }
+.run-body { display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; align-items: center; gap: 14px; border: 1px solid var(--line); background: rgba(13,24,21,.72); }
+.run-body:hover, .run-body:focus-within { background: rgba(128,255,178,.06); box-shadow: inset 0 0 0 1px rgba(128,255,178,.45); }
+.run-body > time { justify-self: end; padding-right: 4px; color: var(--paper); font-family: var(--font-geist-mono), monospace; font-size: 11px; }
+.receipt-jump { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 13px; padding: 13px 0; border: 0; color: inherit; background: none; font: inherit; text-align: left; cursor: pointer; }
+.receipt-open { display: flex; align-items: center; gap: 8px; padding: 0 18px; }
+.reactive-rest { margin: 14px 0 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
 .receipt-open code { overflow: hidden; color: var(--dim); font-family: var(--font-geist-mono), monospace; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
 .receipt-open span { color: var(--signal); font-size: 13px; }
 .receipt-open:hover code { color: var(--paper); }
-.receipt-copy em { display: block; margin-top: 12px; color: var(--signal); font-size: 9px; font-style: normal; }
+.receipt-copy em { display: block; margin-top: 8px; color: var(--signal); font-size: 9px; font-style: normal; }
+.receipt-copy u { display: block; margin-top: 6px; color: var(--dim); font-size: 9.5px; text-decoration: none; }
 .receipt-index { display: grid; place-items: center; width: 26px; height: 26px; border: 1px solid var(--line); color: var(--signal); font-family: var(--font-geist-mono), monospace; font-size: 8px; }
 .receipt-copy { min-width: 0; }
 .receipt-copy b, .receipt-copy small { display: block; }
@@ -879,7 +892,6 @@ footer > div:last-child { display: grid; justify-content: end; gap: 5px; color: 
   .live-side-grid { grid-template-columns: 1fr 1fr; }
   .lab-grid { grid-template-columns: 1fr 1fr; }
   .confidence-card { grid-column: 1 / -1; }
-  .receipt-rail { grid-template-columns: 1fr 1fr; }
   .simulator-controls { grid-template-columns: repeat(3, 1fr); }
   .simulator-controls label:nth-child(3) { border-right: 0; }
   .simulator-controls label:nth-child(-n+3) { border-bottom: 1px solid var(--line); }
@@ -954,7 +966,10 @@ footer > div:last-child { display: grid; justify-content: end; gap: 5px; color: 
   .confidence-card { grid-column: auto; }
   .live-toolbar, .live-toolbar > div { align-items: stretch; flex-direction: column; }
   .refresh-button { width: 100%; }
-  .live-grid, .receipt-rail { grid-template-columns: 1fr; }
+  .live-grid { grid-template-columns: 1fr; }
+  .run-body { grid-template-columns: 64px minmax(0, 1fr); gap: 10px; padding-right: 14px; }
+  .run-body > .receipt-open { grid-column: 2; padding: 0 0 12px; }
+  .run-gap { grid-template-columns: 72px minmax(0, 1fr); }
   .live-card { min-height: auto; padding: 22px; }
   .live-proof-note { grid-template-columns: auto 1fr; }
   .live-proof-note > span { grid-column: 2; text-align: left; }
