@@ -111,6 +111,10 @@ export const EVENT_TOPICS = {
   // DropReason (Capacity / InvalidMarkout / EpochCapacity) and increments a
   // different counter.
   observationQueued: "0x3c00657d2abaf2a33e5bd0568e574d4fda181cecb1ac1b1524f9031d98453b59",
+  // The authoritative per-observation success signal. Inferring success from
+  // EpochFinalized was wrong: a single observation settles into an OPEN epoch
+  // without finalising one, so a scored observation reported as still pending.
+  observationSettled: "0x6b0464bc76df1b9d76932ec219a0c3da23be1cdee2875551df0c1fe06db86aec",
   observationExpired: "0xd1cda8bb552cac0e73af6f810771f56ec47056ca195d0ad624f0cf0fd441285e",
   observationDropped: "0xcd61f148f206b063c348139e06f3f958b4056a91d35d96031c16ff7b3561c05e",
 } as const;

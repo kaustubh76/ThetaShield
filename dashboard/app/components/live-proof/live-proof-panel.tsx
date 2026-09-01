@@ -8,6 +8,7 @@ import EventsTicker from "./events-ticker";
 import ReactivePanel from "./reactive-panel";
 import LatestAttempt from "./latest-attempt";
 import RunConsole from "./run-console";
+import { schedulerHealth } from "./scheduler-health";
 import ReferenceSources from "./reference-sources";
 import RunTimeline from "./run-timeline";
 import SideStateCard from "./side-state-card";
@@ -356,7 +357,7 @@ export default function LiveProofPanel({
         </Accordion>
       ) : null}
 
-      <RunConsole deployment={deployment} onRan={() => void refresh()} />
+      <RunConsole deployment={deployment} health={schedulerHealth(proof)} onRan={() => void refresh()} />
 
       <LatestAttempt
         attempt={proof?.events?.latestAttempt ?? null}

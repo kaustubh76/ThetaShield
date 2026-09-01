@@ -668,6 +668,7 @@ async function readEvents() {
       logsCall(PROCESSOR, eventTopics.observationQueued, processorFrom, processorHead),
       logsCall(PROCESSOR, eventTopics.observationExpired, processorFrom, processorHead),
       logsCall(PROCESSOR, eventTopics.observationDropped, processorFrom, processorHead),
+      logsCall(PROCESSOR, eventTopics.observationSettled, processorFrom, processorHead),
     ];
     const read = () => batchOrSingle(PROCESSOR_RPC, calls) as Promise<RpcLog[][]>;
     let logs = await read();
@@ -687,7 +688,8 @@ async function readEvents() {
       return [[], []] as RpcLog[][];
     }),
   ]);
-  const [epochLogs, cycleLogs, queuedLogs, expiredLogs, droppedLogs] = processorLogs as RpcLog[][];
+  const [epochLogs, cycleLogs, queuedLogs, expiredLogs, droppedLogs, settledLogs] =
+    processorLogs as RpcLog[][];
 
   // EpochFinalized and AutomationCycleCompleted carry no timestamp, so every
   // processor event shipped as observedAt: null and rendered undated. One
@@ -696,7 +698,7 @@ async function readEvents() {
   const processorTimes = new Map<number, number>();
   const distinctBlocks = [
     ...new Set(
-      [...epochLogs, ...cycleLogs, ...queuedLogs, ...expiredLogs, ...droppedLogs].map((log) =>
+      [...epochLogs, ...cycleLogs, ...queuedLogs, ...expiredLogs, ...droppedLogs, ...settledLogs].map((log) =>
         Number(BigInt(log.blockNumber)),
       ),
     ),
@@ -747,6 +749,14 @@ async function readEvents() {
         observedAt: timeOf(log),
       };
     }),
+    ...settledLogs.slice(-4).map((log) => ({
+      kind: "settled" as const,
+      blockNumber: Number(BigInt(log.blockNumber)),
+      logIndex: Number(BigInt(log.logIndex ?? "0x0")),
+      txHash: log.transactionHash,
+      summary: `Observation ${Number(BigInt(log.topics[1]))} scored · ${BigInt(log.topics[2]) !== BigInt(0) ? "sell" : "buy"} side`,
+      observedAt: timeOf(log),
+    })),
     ...expiredLogs.slice(-4).map((log) => ({
       kind: "expired" as const,
       blockNumber: Number(BigInt(log.blockNumber)),
@@ -799,11 +809,11 @@ async function readEvents() {
     const sameId = (log: RpcLog) => Number(BigInt(log.topics[1])) === observationId;
     const expired = expiredLogs.find(sameId) ?? null;
     const dropped = droppedLogs.find(sameId) ?? null;
-    // An epoch finalising after the queue is the success signal available from
-    // logs alone; the settled counter is a total, not a per-observation fact.
-    const settled = epochLogs.find(
-      (log) => Number(BigInt(log.blockNumber)) >= Number(BigInt(latestQueued.blockNumber)),
-    ) ?? null;
+    // ObservationSettled names the observation directly. Inferring success from
+    // EpochFinalized was wrong: one observation settles into an OPEN epoch
+    // without finalising one, so a scored observation reported as still pending
+    // — seen live on 2026-09-01 with observation 4.
+    const settled = settledLogs.find(sameId) ?? null;
     const outcomeLog = expired ?? dropped ?? settled;
     const sweep = outcomeLog
       ? cycleLogs.find(

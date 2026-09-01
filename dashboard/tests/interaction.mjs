@@ -134,7 +134,13 @@ check(
     /READ-ONLY/i.test((await evaluate(`__txt('.console-state')`)) ?? ""),
   await evaluate(`__txt('.console-state')`),
 );
-check("latest attempt reports the queue outcome", /expired|scored|dropped|in flight/i.test((await evaluate(`__txt('.latest-attempt h3')`)) ?? ""), await evaluate(`__txt('.attempt-verdict')`));
+const attemptVerdict = (await evaluate(`__txt('.attempt-verdict')`)) ?? "";
+check(
+  "latest attempt reports the queue outcome",
+  /^(SCORED|EXPIRED UNSCORED|DROPPED|IN FLIGHT)$/.test(attemptVerdict) &&
+    (await evaluate(`document.querySelectorAll('.attempt-steps li').length`)) >= 2,
+  attemptVerdict,
+);
 
 const runSteps = await evaluate(`document.querySelectorAll('.run-step').length`);
 const runGaps = await evaluate(`JSON.stringify([...document.querySelectorAll('.run-gap span')].map(e => e.textContent))`);

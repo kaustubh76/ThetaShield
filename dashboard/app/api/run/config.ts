@@ -17,16 +17,26 @@ function env(name: string): string | undefined {
   return value ? value : undefined;
 }
 
+// viem enforces EIP-55: a mixed-case address whose checksum does not match is
+// rejected outright, which is how the swap router in the environment was found
+// to be mis-cased. An all-lowercase address has no checksum to disagree with,
+// so every address is normalised on the way in rather than trusted as written.
+function address(name: string): string | undefined {
+  const value = env(name);
+  if (!value) return undefined;
+  return /^0x[0-9a-fA-F]{40}$/.test(value) ? value.toLowerCase() : undefined;
+}
+
 export const RUN_ENABLED = Boolean(env("DEPLOYER_PRIVATE_KEY"));
 
 export const RUN_ADDRESSES = {
-  swapRouter: env("ORIGIN_SWAP_ROUTER"),
-  originTransmitter: env("ORIGIN_CIRCLE_MESSAGE_TRANSMITTER"),
-  processorTransmitter: env("PROCESSOR_CIRCLE_MESSAGE_TRANSMITTER"),
-  token0: env("DEMO_TOKEN0"),
-  token1: env("DEMO_TOKEN1"),
-  hook: ADDRESSES.hook,
-  executor: ADDRESSES.executor,
+  swapRouter: address("ORIGIN_SWAP_ROUTER"),
+  originTransmitter: address("ORIGIN_CIRCLE_MESSAGE_TRANSMITTER"),
+  processorTransmitter: address("PROCESSOR_CIRCLE_MESSAGE_TRANSMITTER"),
+  token0: address("DEMO_TOKEN0"),
+  token1: address("DEMO_TOKEN1"),
+  hook: ADDRESSES.hook.toLowerCase(),
+  executor: ADDRESSES.executor.toLowerCase(),
   poolId: POOL_ID,
 } as const;
 
@@ -39,9 +49,12 @@ export function missingConfig(step: RunStep): string[] {
       ["DEMO_TOKEN0", RUN_ADDRESSES.token0],
       ["DEMO_TOKEN1", RUN_ADDRESSES.token1],
     ],
+    // Both legs are reachable from the browser, so both transmitters are
+    // required — the return leg delivers to the origin chain.
     relay: [
       ["DEPLOYER_PRIVATE_KEY", env("DEPLOYER_PRIVATE_KEY")],
       ["PROCESSOR_CIRCLE_MESSAGE_TRANSMITTER", RUN_ADDRESSES.processorTransmitter],
+      ["ORIGIN_CIRCLE_MESSAGE_TRANSMITTER", RUN_ADDRESSES.originTransmitter],
     ],
     cycle: [["DEPLOYER_PRIVATE_KEY", env("DEPLOYER_PRIVATE_KEY")]],
   };

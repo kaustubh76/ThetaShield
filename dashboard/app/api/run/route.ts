@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { createPublicClient, createWalletClient, encodeFunctionData, http, parseAbi } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { sepolia, unichainSepolia } from "viem/chains";
-import { ADDRESSES, EVENT_TOPICS, RPC } from "../../live-config";
+import { ADDRESSES, EVENT_TOPICS, POOL_ID, RPC } from "../../live-config";
+import { CIRCLE_DOMAIN, fetchAttestation } from "./circle";
 import {
   GUARDS,
   missingConfig,
@@ -22,7 +23,82 @@ const SWAP_ABI = parseAbi([
   "function swap(PoolKey key, SwapParams params, TestSettings testSettings, bytes hookData) returns (int256)",
 ]);
 const EXECUTOR_ABI = parseAbi(["function execute()"]);
-const PROCESSOR_ABI = parseAbi(["function pendingCount() view returns (uint16)"]);
+const TRANSMITTER_ABI = parseAbi(["function receiveMessage(bytes message, bytes attestation) returns (bool)"]);
+const PROCESSOR_ABI = parseAbi([
+  "function pendingCount() view returns (uint16)",
+  "function lastObservationId() view returns (uint64)",
+  "function recommendationSequence() view returns (uint64)",
+]);
+const HOOK_ABI = parseAbi(["function observationCount(bytes32 poolId) view returns (uint64)"]);
+const CONTROLLER_ABI = parseAbi(["function lastSequence(bytes32 poolId) view returns (uint64)"]);
+
+// Which Circle leg, if any, is outstanding. Read from counters on both chains
+// rather than taken from the request: the caller chooses nothing here, the same
+// way it chooses none of the swap's arguments.
+//
+//   outbound  the hook has observed a swap the processor has not yet received
+//   return    the processor has dispatched a recommendation the origin lacks
+type Leg = { name: "outbound" | "return"; sourceDomain: number; observationId?: number; sequence?: number };
+
+async function detectLeg(): Promise<Leg | null> {
+  const [observed, received, dispatched, installed] = await Promise.all([
+    origin.readContract({ address: ADDRESSES.hook.toLowerCase() as `0x${string}`, abi: HOOK_ABI, functionName: "observationCount", args: [POOL_ID.toLowerCase() as `0x${string}`] }),
+    processor.readContract({ address: ADDRESSES.processor.toLowerCase() as `0x${string}`, abi: PROCESSOR_ABI, functionName: "lastObservationId" }),
+    processor.readContract({ address: ADDRESSES.processor.toLowerCase() as `0x${string}`, abi: PROCESSOR_ABI, functionName: "recommendationSequence" }),
+    origin.readContract({ address: ADDRESSES.controller.toLowerCase() as `0x${string}`, abi: CONTROLLER_ABI, functionName: "lastSequence", args: [POOL_ID.toLowerCase() as `0x${string}`] }),
+  ]);
+  if (Number(observed) > Number(received)) {
+    return { name: "outbound", sourceDomain: CIRCLE_DOMAIN.origin, observationId: Number(observed) };
+  }
+  if (Number(dispatched) > Number(installed)) {
+    return { name: "return", sourceDomain: CIRCLE_DOMAIN.processor, sequence: Number(dispatched) };
+  }
+  return null;
+}
+
+// The transaction Circle indexed the message under. Found by a bounded scan of
+// the same windows readEvents already uses, which comfortably cover a run
+// started from the console minutes earlier.
+//
+// Retried on an empty result for the same reason readEvents retries: these
+// public endpoints are load balanced and a backend with an incomplete log index
+// answers an identical query with nothing. Caught live — the relay guard
+// flipped from Circle's real status to "outside the log window" between two
+// polls, for a swap sitting 40 blocks inside it.
+async function scanWithRetries(read: () => Promise<readonly unknown[]>, attempts = 5) {
+  let logs = await read().catch(() => [] as readonly unknown[]);
+  for (let attempt = 1; attempt < attempts && !logs.length; attempt += 1) {
+    logs = await read().catch(() => logs);
+  }
+  return logs;
+}
+
+async function sourceTransaction(leg: Leg): Promise<string | null> {
+  if (leg.name === "outbound") {
+    const head = await origin.getBlockNumber();
+    const logs = (await scanWithRetries(() =>
+      origin.getLogs({
+        address: ADDRESSES.hook.toLowerCase() as `0x${string}`,
+        fromBlock: head - 10_000n,
+        toBlock: head,
+      }),
+    )) as { topics: string[]; transactionHash: string }[];
+    const match = logs
+      .filter((log) => log.topics[0] === EVENT_TOPICS.swapObserved)
+      .find((log) => log.topics[2] && Number(BigInt(log.topics[2])) === leg.observationId);
+    return match?.transactionHash ?? null;
+  }
+  const head = await processor.getBlockNumber();
+  const logs = (await scanWithRetries(() =>
+    processor.getLogs({
+      address: ADDRESSES.executor.toLowerCase() as `0x${string}`,
+      fromBlock: head - 50_000n,
+      toBlock: head,
+    }),
+  )) as { topics: string[]; transactionHash: string }[];
+  const match = logs.filter((log) => log.topics[0] === EVENT_TOPICS.automationCycleCompleted).at(-1);
+  return match?.transactionHash ?? null;
+}
 
 const origin = createPublicClient({ chain: unichainSepolia, transport: http(RPC.origin) });
 const processor = createPublicClient({ chain: sepolia, transport: http(RPC.processor) });
@@ -31,6 +107,25 @@ function signer() {
   const secret = process.env.DEPLOYER_PRIVATE_KEY?.trim();
   if (!secret) throw new Error("this deployment has no signing key configured");
   return privateKeyToAccount((secret.startsWith("0x") ? secret : `0x${secret}`) as `0x${string}`);
+}
+
+// Nonce selection, the hard way, because both obvious answers are wrong here.
+//
+// The default lands on whichever load-balanced backend answers, and one that is
+// a block behind hands back a nonce already spent. The usual remedy — asking
+// for the "pending" tag — is worse on Unichain Sepolia's public RPC, which
+// answered pending = 0 in 9 of 12 consecutive samples while latest correctly
+// answered 20. So: sample "latest" a few times and take the highest, which
+// discards a stale backend without trusting a tag this provider does not
+// implement.
+async function nextNonce(
+  client: typeof origin | typeof processor,
+  address: `0x${string}`,
+): Promise<number> {
+  const samples = await Promise.all(
+    [0, 1, 2].map(() => client.getTransactionCount({ address, blockTag: "latest" }).catch(() => 0)),
+  );
+  return Math.max(...samples);
 }
 
 type Guard = { ok: boolean; reason: string };
@@ -51,7 +146,7 @@ async function guardsFor(step: RunStep): Promise<Guard[]> {
     const [balance, pending, head] = await Promise.all([
       origin.getBalance({ address }),
       processor.readContract({
-        address: ADDRESSES.processor as `0x${string}`,
+        address: ADDRESSES.processor.toLowerCase() as `0x${string}`,
         abi: PROCESSOR_ABI,
         functionName: "pendingCount",
       }),
@@ -73,7 +168,7 @@ async function guardsFor(step: RunStep): Promise<Guard[]> {
     // Cooldown measured from the last SwapObserved log rather than from a timer
     // this process owns, so it survives an instance being replaced.
     const logs = await origin.getLogs({
-      address: ADDRESSES.hook as `0x${string}`,
+      address: ADDRESSES.hook.toLowerCase() as `0x${string}`,
       fromBlock: head - 10_000n,
       toBlock: head,
     });
@@ -105,14 +200,41 @@ async function guardsFor(step: RunStep): Promise<Guard[]> {
   }
 
   if (step === "relay") {
-    // Excluded on purpose. Circle's attestation only exists once the source
-    // chain finalises, roughly 30 minutes after the swap, and holding a
-    // serverless function open for that is not possible. The relay stays an
-    // operator step run from the runbook.
+    // The wait for an attestation is long; the check is not. Circle answers in
+    // well under a second, so the browser polls this and presses relay when it
+    // flips — no request tries to hold itself open for half an hour.
+    const leg = await detectLeg();
+    if (!leg) {
+      guards.push({ ok: false, reason: "no Circle message is outstanding — both chains agree on what has been delivered" });
+      return guards;
+    }
     guards.push({
-      ok: false,
+      ok: true,
       reason:
-        "Circle's attestation only exists once the source chain finalises, ~30 min after the swap. This leg is run from the operator runbook, not the browser.",
+        leg.name === "outbound"
+          ? `observation ${leg.observationId} is observed on the origin but not yet received by the processor`
+          : `recommendation ${leg.sequence} is dispatched but not yet installed on the origin`,
+    });
+
+    const destination = leg.name === "outbound" ? processor : origin;
+    const floor = leg.name === "outbound" ? GUARDS.processorFloorWei : GUARDS.originFloorWei;
+    const balance = await destination.getBalance({ address });
+    guards.push({
+      ok: balance > floor,
+      reason: `destination balance ${(Number(balance) / 1e18).toFixed(5)} ETH against a ${Number(floor) / 1e18} ETH floor`,
+    });
+
+    const sourceTx = await sourceTransaction(leg);
+    if (!sourceTx) {
+      guards.push({ ok: false, reason: "the source transaction is outside the bounded log window, so the attestation cannot be looked up" });
+      return guards;
+    }
+    const attestation = await fetchAttestation(leg.sourceDomain, sourceTx);
+    guards.push({
+      ok: attestation.ready,
+      reason: attestation.ready
+        ? "Circle has attested the message and it is ready to deliver"
+        : `Circle reports "${attestation.status}"${attestation.detail ? ` — ${attestation.detail}` : ""}; it holds the message until the source chain finalises`,
     });
   }
 
@@ -173,8 +295,9 @@ export async function POST(request: Request) {
     if (step === "cycle") {
       const wallet = createWalletClient({ account, chain: sepolia, transport: http(RPC.processor) });
       const hash = await wallet.sendTransaction({
-        to: ADDRESSES.executor as `0x${string}`,
+        to: ADDRESSES.executor.toLowerCase() as `0x${string}`,
         data: encodeFunctionData({ abi: EXECUTOR_ABI, functionName: "execute" }),
+        nonce: await nextNonce(processor, account.address),
       });
       return NextResponse.json({ ok: true, step, hash }, { headers: { "cache-control": "no-store" } });
     }
@@ -194,7 +317,7 @@ export async function POST(request: Request) {
               currency1: RUN_ADDRESSES.token1 as `0x${string}`,
               fee: SWAP.fee,
               tickSpacing: SWAP.tickSpacing,
-              hooks: RUN_ADDRESSES.hook as `0x${string}`,
+              hooks: RUN_ADDRESSES.hook.toLowerCase() as `0x${string}`,
             },
             {
               zeroForOne: SWAP.zeroForOne,
@@ -205,8 +328,46 @@ export async function POST(request: Request) {
             "0x",
           ],
         }),
+        nonce: await nextNonce(origin, account.address),
       });
       return NextResponse.json({ ok: true, step, hash }, { headers: { "cache-control": "no-store" } });
+    }
+    if (step === "relay") {
+      // Re-derived and re-fetched at send time rather than carried from the
+      // guard pass: between the poll and the press, the leg can change or a
+      // newer message can supersede this one, and broadcasting a stale
+      // message/attestation pair would revert on the transmitter.
+      const leg = await detectLeg();
+      if (!leg) {
+        return NextResponse.json({ ok: false, message: "no Circle message is outstanding" }, { status: 409 });
+      }
+      const sourceTx = await sourceTransaction(leg);
+      if (!sourceTx) {
+        return NextResponse.json({ ok: false, message: "the source transaction is outside the log window" }, { status: 409 });
+      }
+      const attestation = await fetchAttestation(leg.sourceDomain, sourceTx);
+      if (!attestation.ready) {
+        return NextResponse.json(
+          { ok: false, message: `Circle has not attested this message yet (${attestation.status})` },
+          { status: 409 },
+        );
+      }
+      const outbound = leg.name === "outbound";
+      const wallet = createWalletClient({
+        account,
+        chain: outbound ? sepolia : unichainSepolia,
+        transport: http(outbound ? RPC.processor : RPC.origin),
+      });
+      const hash = await wallet.sendTransaction({
+        to: (outbound ? RUN_ADDRESSES.processorTransmitter : RUN_ADDRESSES.originTransmitter) as `0x${string}`,
+        data: encodeFunctionData({
+          abi: TRANSMITTER_ABI,
+          functionName: "receiveMessage",
+          args: [attestation.message as `0x${string}`, attestation.attestation as `0x${string}`],
+        }),
+        nonce: await nextNonce(outbound ? processor : origin, account.address),
+      });
+      return NextResponse.json({ ok: true, step, leg: leg.name, hash }, { headers: { "cache-control": "no-store" } });
     }
     return NextResponse.json(
       { ok: false, message: "this step is not available from the browser" },

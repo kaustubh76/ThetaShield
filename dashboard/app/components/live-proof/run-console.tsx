@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { DeploymentView } from "../../deployment-data";
 import { shortHex } from "../format";
+import type { SchedulerHealth } from "./scheduler-health";
 
 type Guard = { ok: boolean; reason: string };
 type StepState = { step: "swap" | "relay" | "cycle"; allowed: boolean; guards: Guard[] };
@@ -14,10 +15,10 @@ const COPY: Record<StepState["step"], { title: string; chain: "origin" | "proces
       "Sends one bounded swap through the protected pool. The hook observes it and dispatches the evidence over Circle, which is what puts an observation into the queue on the other chain.",
   },
   relay: {
-    title: "Relay the evidence",
+    title: "Relay the message",
     chain: "processor",
     detail:
-      "Delivers the attested Circle message to the processor. Circle only issues the attestation once the source chain finalises, so this leg is run from the operator runbook rather than the browser.",
+      "Delivers the attested Circle message to whichever chain is missing it — the observation outbound, or the recommendation on its way home. Circle holds a message until its source chain finalises, which took about half an hour on the last run, so this step waits rather than fails. Which leg is outstanding is read from both chains' counters, not chosen here.",
   },
   cycle: {
     title: "Advance the cycle",
@@ -27,11 +28,19 @@ const COPY: Record<StepState["step"], { title: string; chain: "origin" | "proces
   },
 };
 
-export default function RunConsole({ deployment, onRan }: { deployment: DeploymentView; onRan: () => void }) {
+export default function RunConsole({
+  deployment,
+  health,
+  onRan,
+}: {
+  deployment: DeploymentView;
+  health: SchedulerHealth;
+  onRan: () => void;
+}) {
   const [status, setStatus] = useState<RunStatus | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
-  const [result, setResult] = useState<{ step: string; hash: string } | null>(null);
+  const [result, setResult] = useState<{ step: string; hash: string; leg?: string } | null>(null);
   const [armed, setArmed] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
@@ -81,9 +90,9 @@ export default function RunConsole({ deployment, onRan }: { deployment: Deployme
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ step }),
         });
-        const payload = (await response.json()) as { ok: boolean; hash?: string; message?: string };
+        const payload = (await response.json()) as { ok: boolean; hash?: string; leg?: string; message?: string };
         if (!payload.ok || !payload.hash) throw new Error(payload.message ?? "the step was refused");
-        setResult({ step, hash: payload.hash });
+        setResult({ step, hash: payload.hash, leg: payload.leg });
         setError("");
         onRan();
       } catch (cause) {
@@ -128,6 +137,15 @@ export default function RunConsole({ deployment, onRan }: { deployment: Deployme
                 <span>{deployment.networks.find((network) => network.role === copy.chain)?.name}</span>
               </div>
               <p>{copy.detail}</p>
+              {/* Only on the step that starts a run: the reader is about to
+                  spend gas on something whose outcome is already predictable
+                  from what happened to the last one. */}
+              {entry.step === "swap" && health && !health.waking ? (
+                <p className="console-health">
+                  <b>{health.headline}</b>
+                  {` ${health.detail}`}
+                </p>
+              ) : null}
               <ul className="console-guards">
                 {entry.guards.map((guard) => (
                   <li className={guard.ok ? "guard ok" : "guard blocked"} key={guard.reason}>
@@ -153,7 +171,7 @@ export default function RunConsole({ deployment, onRan }: { deployment: Deployme
               {result?.step === entry.step ? (
                 <a
                   className="console-receipt"
-                  href={`${explorer(copy.chain)}/tx/${result.hash}`}
+                  href={`${explorer(result.leg === "return" ? "origin" : copy.chain)}/tx/${result.hash}`}
                   rel="noreferrer"
                   target="_blank"
                 >

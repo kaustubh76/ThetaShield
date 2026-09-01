@@ -167,7 +167,7 @@ export type RunTimelineView = {
 };
 
 export type LiveEvent = {
-  kind: "swap" | "epoch" | "cycle" | "queued" | "expired" | "dropped";
+  kind: "swap" | "epoch" | "cycle" | "queued" | "expired" | "dropped" | "settled";
   blockNumber: number;
   logIndex: number;
   txHash: string;

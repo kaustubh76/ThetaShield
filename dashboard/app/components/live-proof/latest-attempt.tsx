@@ -45,6 +45,9 @@ export default function LatestAttempt({
   const matureOnArrival = attempt.queuedAt !== null && attempt.queuedAt >= attempt.matureAt;
   const lifetime =
     attempt.queuedAt !== null && attempt.outcomeAt !== null ? attempt.outcomeAt - attempt.queuedAt : null;
+  const windowCloses = attempt.matureAt + (referenceWindowSeconds ?? 0);
+  const windowStillMatters =
+    attempt.outcome !== "settled" || attempt.outcomeAt === null || attempt.outcomeAt > windowCloses;
 
   return (
     <section aria-labelledby="attempt-heading" className={`latest-attempt ${outcome.tone}`}>
@@ -75,7 +78,12 @@ export default function LatestAttempt({
             <code>{shortHex(attempt.queuedTx)}</code> ↗
           </a>
         </li>
-        {referenceWindowSeconds !== null ? (
+        {/* The window row is a deadline, so it only belongs in the sequence
+            while it still bears on the outcome: as the thing to beat when the
+            observation is in flight, or as the explanation when it was not
+            beaten. Rendering it for an observation that was scored in time put
+            a future timestamp between two past ones. */}
+        {referenceWindowSeconds !== null && windowStillMatters ? (
           <li className={attempt.outcome === "expired" ? "missed" : ""}>
             <time>{clock(attempt.matureAt + referenceWindowSeconds)}</time>
             <b>Reference selection window closes</b>
