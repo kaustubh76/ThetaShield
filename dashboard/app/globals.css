@@ -612,6 +612,8 @@ h1 em { color: var(--signal); font-style: normal; }
 .plane-agreement.agree > b { color: var(--signal); }
 .plane-agreement.settling { border-color: rgba(255,189,89,.4); background: rgba(255,189,89,.05); }
 .plane-agreement.settling > b { color: var(--amber); }
+.plane-agreement.stalled { border-color: rgba(255,109,130,.5); background: rgba(255,109,130,.06); }
+.plane-agreement.stalled > b { color: var(--danger); }
 .plane-agreement.conflict { border-color: rgba(255,109,130,.5); background: rgba(255,109,130,.06); }
 .plane-agreement.conflict > b { color: var(--danger); }
 .plane-agreement > span { color: var(--muted); font-size: 10.5px; line-height: 1.55; }

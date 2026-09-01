@@ -303,6 +303,7 @@ export default function LiveProofPanel({
           lastRunAt={proof.runTimeline?.steps[proof.runTimeline.steps.length - 1]?.observedAt ?? null}
           pendingCount={proof.processor.pendingCount}
           pendingMaturity={proof.pendingMaturity}
+          referenceWindowSeconds={proof.processor.deployedConfig?.scheduler.referenceSelectionWindowSeconds ?? null}
           reactive={proof.reactive}
         />
       ) : null}

@@ -641,7 +641,16 @@ async function readEvents() {
   // backends with uneven log indexes and returns nothing roughly half the time,
   // so an empty answer is re-asked a bounded number of times before it is
   // reported as a genuine "no events" finding.
-  const EMPTY_RESCANS = 2;
+  //
+  // Measured against production on 2026-09-01, with a swap that demonstrably
+  // sat inside the window: 2 of 20 reads still reported an empty origin lane
+  // after 3 attempts, i.e. ~46% per attempt. (The same query run 40 times from
+  // a developer machine came back empty 0 times, so this is the hosted egress
+  // seeing a different pool of backends — it cannot be reproduced or tuned
+  // locally.) Five attempts takes the false "no events" rate from ~10% to ~2%;
+  // the extra calls only ever fire on an empty answer, and an empty answer is
+  // the cheap one.
+  const EMPTY_RESCANS = 4;
 
   async function scanOrigin(): Promise<RpcLog[]> {
     const read = () => getLogs(ORIGIN_RPC, HOOK, eventTopics.swapObserved, originFrom, originHead);

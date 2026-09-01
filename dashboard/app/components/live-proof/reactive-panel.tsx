@@ -46,6 +46,7 @@ export default function ReactivePanel({
   authentication,
   pendingMaturity,
   pendingCount,
+  referenceWindowSeconds,
   lastRunAt,
   deployment,
   generatedAt,
@@ -55,6 +56,8 @@ export default function ReactivePanel({
   authentication: AuthenticationView | null;
   pendingMaturity: PendingMaturityView | null;
   pendingCount: number;
+  /** Deployed referenceSelectionWindowSeconds: past it, evidence is unscoreable. */
+  referenceWindowSeconds: number | null;
   /** Unix seconds of the last completed run's final step, or null. */
   lastRunAt: number | null;
   deployment: DeploymentView;
@@ -95,20 +98,43 @@ export default function ReactivePanel({
   // that as "in step" would be the one false positive this whole block exists
   // to avoid.
   const queueAgrees = (pendingCount > 0) === armed;
+  // Only meaningful when BOTH planes name a moment. With no wake armed the
+  // scheduler names none, and comparing against dueAt = 0 rendered the Unix
+  // epoch as a wall-clock time in the disagreement copy.
   const maturityAgrees =
-    pendingMaturity !== null && pendingMaturity.earliestMatureAt !== null
+    armed && pendingMaturity !== null && pendingMaturity.earliestMatureAt !== null
       ? reactive.dueAt === pendingMaturity.earliestMatureAt
       : null;
-  const planeVerdict: "idle" | "agree" | "coarse-only" | "settling" | "conflict" =
+  // The scheduler declares its own worst case: one epoch, plus a retry for every
+  // attempt it is allowed. Work still outstanding past that bound has not been
+  // slow, it has missed — so "not yet in step" would promise a resolution the
+  // contract's own numbers no longer support. Observed live on 2026-09-01: an
+  // observation sat 29 minutes past maturity with no wake armed.
+  const schedulerBudget = config ? config.epochDurationSeconds + config.maximumRetries * config.retryDelaySeconds : null;
+  const matureAt = pendingMaturity?.earliestMatureAt ?? null;
+  const overdueBy = matureAt !== null ? now - matureAt : null;
+  const stalled =
+    !queueAgrees && schedulerBudget !== null && overdueBy !== null && overdueBy > schedulerBudget;
+  // Past the reference selection window, no sample can fall inside this
+  // observation's scoring range any more: the work is not merely late, it can
+  // no longer be done at all — by the scheduler or by anyone else. Observed
+  // live on 2026-09-01, where a keeper cycle returned processSucceeded with
+  // pendingAfter unchanged and no recommendation dispatched.
+  const unscoreable =
+    stalled && referenceWindowSeconds !== null && overdueBy !== null && overdueBy > referenceWindowSeconds;
+
+  const planeVerdict: "idle" | "agree" | "coarse-only" | "settling" | "stalled" | "conflict" =
     pendingCount === 0 && !armed
       ? "idle"
-      : maturityAgrees === false
-        ? "conflict"
-        : !queueAgrees
-          ? "settling"
-          : maturityAgrees === true
-            ? "agree"
-            : "coarse-only";
+      : stalled
+        ? "stalled"
+        : maturityAgrees === false
+          ? "conflict"
+          : !queueAgrees
+            ? "settling"
+            : maturityAgrees === true
+              ? "agree"
+              : "coarse-only";
 
   return (
     <section aria-labelledby="reactive-heading" className="reactive-panel">
@@ -209,13 +235,17 @@ export default function ReactivePanel({
           <b>
             {planeVerdict === "idle"
               ? "Both planes idle"
-              : planeVerdict === "conflict"
-                ? "The two planes name different moments"
-                : planeVerdict === "settling"
-                  ? "The two planes are not yet in step"
-                  : planeVerdict === "agree"
-                    ? "The two planes are in step"
-                    : "The two planes agree that work is outstanding"}
+              : planeVerdict === "stalled"
+                ? unscoreable
+                  ? "The scheduler missed its window and the evidence can no longer be scored"
+                  : "The scheduler has not woken for work that is already due"
+                : planeVerdict === "conflict"
+                  ? "The two planes name different moments"
+                  : planeVerdict === "settling"
+                    ? "The two planes are not yet in step"
+                    : planeVerdict === "agree"
+                      ? "The two planes are in step"
+                      : "The two planes agree that work is outstanding"}
           </b>
           <span>
             {`${processorName} holds `}
@@ -223,19 +253,23 @@ export default function ReactivePanel({
             {` · ${deployment.automation.networkName} has `}
             <b>{armed ? "a wake armed" : "no wake armed"}</b>
           </span>
-          {pendingMaturity && pendingMaturity.earliestMatureAt !== null ? (
-            <em>
-              {maturityAgrees
-                ? `Both name the same second for the next work — ${pendingMaturity.activeSlots} of ${pendingMaturity.scannedSlots} slots occupied, and the scheduler on the other chain arrived at it independently.`
-                : `The scheduler is due at ${chainTime(reactive.dueAt)}; the earliest of ${pendingMaturity.activeSlots} occupied slots matures at ${chainTime(pendingMaturity.earliestMatureAt)}. A wake that early fires before its evidence is scoreable.`}
-            </em>
-          ) : (
-            <em>
-              {pendingCount === 0
-                ? "With an empty queue that agreement is trivially true and proves nothing. The check that counts — the scheduler’s due time against the earliest maturity across the processor’s 32 pending slots — arms itself the moment an observation queues."
-                : "The maturity scan did not complete on this read, so only the coarse agreement above was checked."}
-            </em>
-          )}
+          {/* The detail follows the verdict rather than re-deriving it, so the
+              two can never disagree about what is being reported. */}
+          <em className={planeVerdict === "agree" ? "agrees" : ""}>
+            {planeVerdict === "idle"
+              ? "With an empty queue that agreement is trivially true and proves nothing. The check that counts — the scheduler’s due time against the earliest maturity across the processor’s 32 pending slots — arms itself the moment an observation queues."
+              : planeVerdict === "stalled" && overdueBy !== null && schedulerBudget !== null
+                ? unscoreable && referenceWindowSeconds !== null
+                  ? `The work matured ${elapsed(overdueBy)} ago; the scheduler allows itself ${schedulerBudget}s, one epoch plus every retry it is permitted. It is now past the ${Math.round(referenceWindowSeconds / 60)}-minute reference selection window, so no sample can fall inside this observation’s scoring range any more — it cannot be scored by the scheduler or by any keeper, and it will be swept as expired. This is the failure the scheduler exists to prevent. The pool is unharmed: the hook keeps charging the last valid recommendation, and no fee can be derived from evidence that was never scored.`
+                  : `The work matured ${elapsed(overdueBy)} ago and the scheduler allows itself ${schedulerBudget}s — one epoch plus every retry it is permitted. Past its own bound this is a miss, not a delay. It does not halt the pool: the executor’s cycle is permissionless, so any keeper can advance the same bounded work while the evidence is still inside its reference window, and the hook keeps charging the last valid recommendation until one does.`
+                : planeVerdict === "conflict" && pendingMaturity?.earliestMatureAt
+                  ? `They name different moments: the scheduler is due at ${chainTime(reactive.dueAt)}, the earliest of ${pendingMaturity.activeSlots} occupied slots matures at ${chainTime(pendingMaturity.earliestMatureAt)}. A wake that early fires before its evidence is scoreable.`
+                  : planeVerdict === "agree" && pendingMaturity
+                    ? `Both name the same second for the next work — ${pendingMaturity.activeSlots} of ${pendingMaturity.scannedSlots} slots occupied, and the scheduler on the other chain arrived at it independently.`
+                    : planeVerdict === "settling"
+                      ? "The processor has queued work the scheduler has not armed a wake for yet. The two planes are eventually consistent by construction — a queued observation reaches the scheduler as a log — so this is a state, not a fault."
+                      : "The maturity scan did not complete on this read, so only the coarse agreement above was checked."}
+          </em>
         </div>
       ) : null}
 
