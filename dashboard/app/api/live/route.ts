@@ -665,6 +665,9 @@ async function readEvents() {
     const calls = [
       logsCall(PROCESSOR, eventTopics.epochFinalized, processorFrom, processorHead),
       logsCall(EXECUTOR, eventTopics.automationCycleCompleted, processorFrom, processorHead),
+      logsCall(PROCESSOR, eventTopics.observationQueued, processorFrom, processorHead),
+      logsCall(PROCESSOR, eventTopics.observationExpired, processorFrom, processorHead),
+      logsCall(PROCESSOR, eventTopics.observationDropped, processorFrom, processorHead),
     ];
     const read = () => batchOrSingle(PROCESSOR_RPC, calls) as Promise<RpcLog[][]>;
     let logs = await read();
@@ -684,7 +687,7 @@ async function readEvents() {
       return [[], []] as RpcLog[][];
     }),
   ]);
-  const [epochLogs, cycleLogs] = processorLogs as RpcLog[][];
+  const [epochLogs, cycleLogs, queuedLogs, expiredLogs, droppedLogs] = processorLogs as RpcLog[][];
 
   // EpochFinalized and AutomationCycleCompleted carry no timestamp, so every
   // processor event shipped as observedAt: null and rendered undated. One
@@ -692,7 +695,11 @@ async function readEvents() {
   // null, which the ticker already handles.
   const processorTimes = new Map<number, number>();
   const distinctBlocks = [
-    ...new Set([...epochLogs, ...cycleLogs].map((log) => Number(BigInt(log.blockNumber)))),
+    ...new Set(
+      [...epochLogs, ...cycleLogs, ...queuedLogs, ...expiredLogs, ...droppedLogs].map((log) =>
+        Number(BigInt(log.blockNumber)),
+      ),
+    ),
   ];
   if (distinctBlocks.length) {
     try {
@@ -727,6 +734,35 @@ async function readEvents() {
         observedAt: timeOf(log),
       };
     }),
+    // The queue lifecycle, so an observation that arrives and dies unscored
+    // leaves a trace on the page rather than only a counter increment.
+    ...queuedLogs.slice(-4).map((log) => {
+      const body = words(log.data);
+      return {
+        kind: "queued" as const,
+        blockNumber: Number(BigInt(log.blockNumber)),
+        logIndex: Number(BigInt(log.logIndex ?? "0x0")),
+        txHash: log.transactionHash,
+        summary: `Observation ${Number(BigInt(log.topics[1]))} queued · ${BigInt(log.topics[3]) !== BigInt(0) ? "sell" : "buy"} side · matures ${new Date(unsigned(body[2]) * 1_000).toISOString().slice(11, 19)}Z`,
+        observedAt: timeOf(log),
+      };
+    }),
+    ...expiredLogs.slice(-4).map((log) => ({
+      kind: "expired" as const,
+      blockNumber: Number(BigInt(log.blockNumber)),
+      logIndex: Number(BigInt(log.logIndex ?? "0x0")),
+      txHash: log.transactionHash,
+      summary: `Observation ${Number(BigInt(log.topics[1]))} expired unscored · never reached an epoch`,
+      observedAt: timeOf(log),
+    })),
+    ...droppedLogs.slice(-4).map((log) => ({
+      kind: "dropped" as const,
+      blockNumber: Number(BigInt(log.blockNumber)),
+      logIndex: Number(BigInt(log.logIndex ?? "0x0")),
+      txHash: log.transactionHash,
+      summary: `Observation ${Number(BigInt(log.topics[1]))} dropped · ${["queue capacity", "markout out of bounds", "epoch capacity"][unsigned(words(log.data)[0])] ?? "unknown reason"}`,
+      observedAt: timeOf(log),
+    })),
     ...cycleLogs.slice(-4).map((log) => ({
       kind: "cycle" as const,
       blockNumber: Number(BigInt(log.blockNumber)),
@@ -739,9 +775,64 @@ async function readEvents() {
     .sort((left, right) => right.blockNumber - left.blockNumber)
     .slice(0, 6);
 
+  // The most recent attempt, assembled from the queue's own lifecycle rather
+  // than from the manifest. The manifest records the one run that succeeded;
+  // this records what the system last actually did, including failing. Built
+  // from the full log set rather than the truncated ticker list.
+  const latestQueued = queuedLogs.at(-1) ?? null;
+  let latestAttempt: {
+    observationId: number;
+    queuedAt: number | null;
+    queuedTx: string;
+    matureAt: number;
+    expiresAt: number;
+    outcome: "settled" | "expired" | "dropped" | "pending";
+    outcomeAt: number | null;
+    outcomeTx: string | null;
+    outcomeDetail: string | null;
+    sweptByCycle: number | null;
+    sweptByReactive: boolean | null;
+  } | null = null;
+  if (latestQueued) {
+    const observationId = Number(BigInt(latestQueued.topics[1]));
+    const body = words(latestQueued.data);
+    const sameId = (log: RpcLog) => Number(BigInt(log.topics[1])) === observationId;
+    const expired = expiredLogs.find(sameId) ?? null;
+    const dropped = droppedLogs.find(sameId) ?? null;
+    // An epoch finalising after the queue is the success signal available from
+    // logs alone; the settled counter is a total, not a per-observation fact.
+    const settled = epochLogs.find(
+      (log) => Number(BigInt(log.blockNumber)) >= Number(BigInt(latestQueued.blockNumber)),
+    ) ?? null;
+    const outcomeLog = expired ?? dropped ?? settled;
+    const sweep = outcomeLog
+      ? cycleLogs.find(
+          (log) => Number(BigInt(log.blockNumber)) === Number(BigInt(outcomeLog.blockNumber)),
+        ) ?? null
+      : null;
+    latestAttempt = {
+      observationId,
+      queuedAt: timeOf(latestQueued),
+      queuedTx: latestQueued.transactionHash,
+      matureAt: unsigned(body[2]),
+      expiresAt: unsigned(body[3]),
+      outcome: expired ? "expired" : dropped ? "dropped" : settled ? "settled" : "pending",
+      outcomeAt: outcomeLog ? timeOf(outcomeLog) : null,
+      outcomeTx: outcomeLog?.transactionHash ?? null,
+      outcomeDetail: dropped
+        ? (["queue capacity", "markout out of bounds", "epoch capacity"][unsigned(words(dropped.data)[0])] ?? "unknown reason")
+        : null,
+      sweptByCycle: sweep ? Number(BigInt(sweep.topics[1])) : null,
+      // topic_3 == 1 means the cycle came through executeFromReactive; 0 means
+      // a permissionless keeper advanced the same bounded work instead.
+      sweptByReactive: sweep ? BigInt(sweep.topics[3]) !== BigInt(0) : null,
+    };
+  }
+
   return {
     origin: origin.reverse(),
     processor,
+    latestAttempt,
     // The heads travel with the window so the page can state the scan's span in
     // wall-clock time as well as blocks — derived against a dated block from the
     // run timeline rather than an assumed block interval.

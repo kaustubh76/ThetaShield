@@ -104,4 +104,13 @@ export const EVENT_TOPICS = {
   swapObserved: "0xe1655e511781940523ba9610e292e7d027c00210b5a7daa1633bbd57743f7cb3",
   epochFinalized: "0x2301a5b7a5ad77dfa48a72a559028974252497279ea60d68583b5db1e073dfa7",
   automationCycleCompleted: "0x91a4fb0010e3103f420e1c86baa6e886e4b2c7421a6eb760de97243caac65154",
+  // The queue lifecycle. Without these, an observation could arrive, sit
+  // unscored and expire with nothing on the page saying so — which is exactly
+  // what happened on 2026-09-01: the only trace was the expired counter ticking
+  // from 0 to 1. ObservationExpired is NOT ObservationDropped; a drop carries a
+  // DropReason (Capacity / InvalidMarkout / EpochCapacity) and increments a
+  // different counter.
+  observationQueued: "0x3c00657d2abaf2a33e5bd0568e574d4fda181cecb1ac1b1524f9031d98453b59",
+  observationExpired: "0xd1cda8bb552cac0e73af6f810771f56ec47056ca195d0ad624f0cf0fd441285e",
+  observationDropped: "0xcd61f148f206b063c348139e06f3f958b4056a91d35d96031c16ff7b3561c05e",
 } as const;

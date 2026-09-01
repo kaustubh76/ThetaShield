@@ -1,4 +1,4 @@
-// Interactive regression suite: 26 checks over the controls the SSR tests cannot
+// Interactive regression suite: 29 checks over the controls the SSR tests cannot
 // reach — the failure-mode switches, the mechanism player, the journey phases,
 // the scenario/policy/sensitivity selects, the replay transport, the signal-lab
 // tabs, the registry accordions, the live refresh and the nav anchors.
@@ -122,6 +122,19 @@ if (authRows) {
   );
 }
 check("cross-plane agreement states which planes it compared", /pending/.test((await evaluate(`__txt('.plane-agreement')`)) ?? ""), (await evaluate(`__txt('.plane-agreement')`))?.slice(0, 60));
+
+// The run console. Deliberately NOT pressed: on this target no signing key is
+// configured so every button is disabled, and a suite that could broadcast a
+// real transaction has no business running unattended.
+const consoleSteps = await evaluate(`document.querySelectorAll('.console-step').length`);
+check("run console renders every step with live guards", consoleSteps === 3 && (await evaluate(`document.querySelectorAll('.console-guards .guard').length`)) >= 3, `${consoleSteps} steps`);
+check(
+  "run console is inert without a signing key",
+  (await evaluate(`[...document.querySelectorAll('.console-action')].every(b => b.disabled)`)) === true &&
+    /READ-ONLY/i.test((await evaluate(`__txt('.console-state')`)) ?? ""),
+  await evaluate(`__txt('.console-state')`),
+);
+check("latest attempt reports the queue outcome", /expired|scored|dropped|in flight/i.test((await evaluate(`__txt('.latest-attempt h3')`)) ?? ""), await evaluate(`__txt('.attempt-verdict')`));
 
 const runSteps = await evaluate(`document.querySelectorAll('.run-step').length`);
 const runGaps = await evaluate(`JSON.stringify([...document.querySelectorAll('.run-gap span')].map(e => e.textContent))`);

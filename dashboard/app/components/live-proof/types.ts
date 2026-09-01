@@ -167,7 +167,7 @@ export type RunTimelineView = {
 };
 
 export type LiveEvent = {
-  kind: "swap" | "epoch" | "cycle";
+  kind: "swap" | "epoch" | "cycle" | "queued" | "expired" | "dropped";
   blockNumber: number;
   logIndex: number;
   txHash: string;
@@ -175,9 +175,27 @@ export type LiveEvent = {
   observedAt: number | null;
 };
 
+// The most recent thing the system actually did, assembled from the queue's own
+// lifecycle. The run timeline records the one run that succeeded; this records
+// the latest attempt, including one that failed.
+export type LatestAttemptView = {
+  observationId: number;
+  queuedAt: number | null;
+  queuedTx: string;
+  matureAt: number;
+  expiresAt: number;
+  outcome: "settled" | "expired" | "dropped" | "pending";
+  outcomeAt: number | null;
+  outcomeTx: string | null;
+  outcomeDetail: string | null;
+  sweptByCycle: number | null;
+  sweptByReactive: boolean | null;
+};
+
 export type EventsView = {
   origin: LiveEvent[];
   processor: LiveEvent[];
+  latestAttempt: LatestAttemptView | null;
   window: { origin: number; processor: number };
   head: { origin: number; processor: number };
   scanned: { origin: boolean; processor: boolean };

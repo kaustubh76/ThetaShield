@@ -6,6 +6,8 @@ import { feeBps, formatInt, shortHex } from "../format";
 import AutomationCard from "./automation-card";
 import EventsTicker from "./events-ticker";
 import ReactivePanel from "./reactive-panel";
+import LatestAttempt from "./latest-attempt";
+import RunConsole from "./run-console";
 import ReferenceSources from "./reference-sources";
 import RunTimeline from "./run-timeline";
 import SideStateCard from "./side-state-card";
@@ -353,6 +355,14 @@ export default function LiveProofPanel({
       ) : null}
         </Accordion>
       ) : null}
+
+      <RunConsole deployment={deployment} onRan={() => void refresh()} />
+
+      <LatestAttempt
+        attempt={proof?.events?.latestAttempt ?? null}
+        deployment={deployment}
+        referenceWindowSeconds={proof?.processor.deployedConfig?.scheduler.referenceSelectionWindowSeconds ?? null}
+      />
 
       <RunTimeline deployment={deployment} onOpenPhase={onOpenPhase} timeline={proof?.runTimeline ?? null} />
 
