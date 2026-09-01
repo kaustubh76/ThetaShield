@@ -100,6 +100,7 @@ function ArchitectureAnimator({
   failureMode,
   onFailureMode,
   deployment,
+  focusPhase,
   runPhase,
   runSeq,
   onRunPhaseComplete,
@@ -110,6 +111,7 @@ function ArchitectureAnimator({
   failureMode: FailureMode;
   onFailureMode: (mode: FailureMode) => void;
   deployment: DeploymentView;
+  focusPhase: { id: JourneyPhaseId; seq: number } | null;
   runPhase: RunPhase;
   runSeq: number;
   onRunPhaseComplete: (finished: RunPhase) => void;
@@ -124,6 +126,19 @@ function ArchitectureAnimator({
   if (reducedMotion && !motionApplied) {
     setMotionApplied(true);
     setPlaying(false);
+  }
+
+  // A receipt elsewhere on the page asks for the phase it evidences. Keyed on
+  // the caller's counter so re-opening the same phase re-focuses it, and it
+  // pauses playback so the loop does not immediately walk away from the answer.
+  const [focusSeq, setFocusSeq] = useState(0);
+  if (focusPhase && focusPhase.seq !== focusSeq) {
+    setFocusSeq(focusPhase.seq);
+    const target = mechanismPhases.find((phase) => phase.id === focusPhase.id);
+    if (target) {
+      setActiveStage(target.firstStage);
+      setPlaying(false);
+    }
   }
 
   useEffect(() => {
@@ -689,6 +704,7 @@ function LPBenefitSimulator({
 export default function G9Experience({
   data,
   deployment,
+  focusPhase,
   policyId,
   onPolicyChange,
   runPhase,
@@ -699,6 +715,7 @@ export default function G9Experience({
 }: {
   data: DashboardView;
   deployment: DeploymentView;
+  focusPhase: { id: JourneyPhaseId; seq: number } | null;
   policyId: string;
   onPolicyChange: (id: string) => void;
   runPhase: RunPhase;
@@ -712,6 +729,7 @@ export default function G9Experience({
     <>
       <ArchitectureAnimator
         deployedConfig={deployedConfig}
+        focusPhase={focusPhase}
         deployment={deployment}
         finalizedThreshold={finalizedThreshold}
         trace={data.mechanismTrace}

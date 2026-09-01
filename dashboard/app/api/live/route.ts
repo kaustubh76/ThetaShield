@@ -4,16 +4,20 @@ import {
   EVENT_TOPICS,
   POOL_ID,
   READ_PATH,
+  REACTIVE_CALLBACK_TX,
   REACTIVE_RVM_ID,
   REFERENCE_SOURCE_IDS,
   RPC,
 } from "../../live-config";
 import {
+  addressFromWord,
   decodeBool,
   decodeCycleResult,
   decodeDeployedConfig,
   decodeFee,
+  decodeNetworkConfig,
   decodePoolConfig,
+  decodeReactiveCallback,
   decodeRecommendation,
   decodeReferenceSource,
   decodeSideState,
@@ -55,6 +59,12 @@ const selectors = {
   referenceSourceState: "0x57c191ae",
   cycleCount: "0x316fda0f",
   lastCycleResult: "0xd7fe3220",
+  // The executor's two immutable guard values. Its rvmIdOnly and
+  // authorizedSenderOnly modifiers compare exactly these, so reading them makes
+  // the callback authentication checkable instead of merely asserted.
+  reactiveRvmId: "0x0c41fb9a",
+  reactiveCallbackProxy: "0x566353ab",
+  pendingObservation: "0x54a6e4b2",
   wakeRequestCount: "0xfcfaf7be",
   observationSignalCount: "0xb8eb92d8",
   consecutiveRetries: "0x84e35204",
@@ -64,6 +74,9 @@ const selectors = {
   rscTriggerPhase: "0x9788376e",
   rscDueAt: "0x85f1b090",
   rscQueuedMaturityAt: "0x291e28fa",
+  // The RSC's own NetworkConfig: it names the processor and executor it drives
+  // and its cron topic, which is the Lasna side of the cross-plane agreement.
+  rscNetworkConfig: "0x90ced421",
   lastCycleId: "0x74a12a33",
 } as const;
 
@@ -318,11 +331,30 @@ async function readProcessor() {
     },
     referenceSources: null,
     automation: null,
+    authentication: null,
   };
 }
 
 function encodeReferenceSourceCall(sourceId: string): string {
   return `${selectors.referenceSourceState}${addressWord(PROCESSOR)}${sourceId.slice(2).padStart(64, "0")}`;
+}
+
+// Who may wake the executor, checked rather than asserted. The executor's
+// rvmIdOnly and authorizedSenderOnly guards compare an incoming callback
+// against these two immutable values; the proven callback transaction carries
+// the values it actually presented in its own calldata. Reading both sides lets
+// the page run the comparison instead of restating the manifest.
+async function readCallbackAuthentication(rvmIdData: string, callbackProxyData: string) {
+  const rvmId = addressFromWord(words(rvmIdData)[0]);
+  const callbackProxy = addressFromWord(words(callbackProxyData)[0]);
+  let callback: ReturnType<typeof decodeReactiveCallback> | null = null;
+  try {
+    const raw = await rpc<unknown>(PROCESSOR_RPC, "eth_getTransactionByHash", [REACTIVE_CALLBACK_TX]);
+    callback = raw ? decodeReactiveCallback(raw as Parameters<typeof decodeReactiveCallback>[0]) : null;
+  } catch {
+    callback = null;
+  }
+  return { rvmId, callbackProxy, transactionHash: REACTIVE_CALLBACK_TX, callback };
 }
 
 async function readProcessorLens() {
@@ -338,11 +370,16 @@ async function readProcessorLens() {
     ...REFERENCE_SOURCE_IDS.map((sourceId) => callOf(PROCESSOR_LENS, encodeReferenceSourceCall(sourceId))),
     callOf(EXECUTOR, selectors.cycleCount),
     callOf(EXECUTOR, selectors.lastCycleResult),
+    // The executor's immutable guard values ride the batch it was already in.
+    callOf(EXECUTOR, selectors.reactiveRvmId),
+    callOf(EXECUTOR, selectors.reactiveCallbackProxy),
   ])) as string[];
 
   const [chainIdHex, blockHex, lensCode, processorCode, snapshotData] = batched;
   const referenceData = batched.slice(5, 5 + REFERENCE_SOURCE_IDS.length);
-  const [cycleCountData, cycleResultData] = batched.slice(5 + REFERENCE_SOURCE_IDS.length);
+  const [cycleCountData, cycleResultData, rvmIdData, callbackProxyData] = batched.slice(
+    5 + REFERENCE_SOURCE_IDS.length,
+  );
 
   const references = REFERENCE_SOURCE_IDS.map((sourceId, index) => {
     try {
@@ -360,6 +397,11 @@ async function readProcessorLens() {
   } catch {
     automation = null;
   }
+  // The proven callback itself. It is read separately rather than inside the
+  // batch above because eth_getTransactionByHash is not an eth_call: a provider
+  // that answered it badly would otherwise fail the whole lens read and push
+  // the panel onto the direct path over a supplementary check.
+  const authentication = await optional(readCallbackAuthentication(rvmIdData, callbackProxyData), 4_000);
   const decoded = words(snapshotData);
   if (decoded.length !== 98) throw new Error("Unexpected processor lens response");
   const zeroForOneSideOffset = 10;
@@ -391,6 +433,7 @@ async function readProcessorLens() {
     },
     referenceSources: configuredReferences.length ? configuredReferences : null,
     automation,
+    authentication,
   };
 }
 
@@ -544,6 +587,7 @@ const REACTIVE_COUNTER_SELECTORS = [
   selectors.rscTriggerPhase,
   selectors.rscDueAt,
   selectors.rscQueuedMaturityAt,
+  selectors.rscNetworkConfig,
 ] as const;
 
 async function readReactive() {
@@ -565,8 +609,23 @@ async function readReactive() {
     )) as string[];
   }
 
-  const [wakeData, signalData, retriesData, lastCycleData, phaseData, triggerData, dueAtData, queuedData] =
-    counters;
+  const [
+    wakeData,
+    signalData,
+    retriesData,
+    lastCycleData,
+    phaseData,
+    triggerData,
+    dueAtData,
+    queuedData,
+    networkConfigData,
+  ] = counters;
+  let networkConfig: ReturnType<typeof decodeNetworkConfig> | null = null;
+  try {
+    networkConfig = decodeNetworkConfig(networkConfigData);
+  } catch {
+    networkConfig = null;
+  }
   return {
     source,
     wakeRequestCount: decodeSingle(wakeData),
@@ -580,7 +639,40 @@ async function readReactive() {
     triggerPhase: decodeSingle(triggerData),
     dueAt: decodeSingle(dueAtData),
     queuedMaturityAt: decodeSingle(queuedData),
+    // The RSC's own deployment view: the retry budget and epoch cadence it
+    // actually runs on, and the executor address the other plane must agree
+    // with. Decoded separately so a layout drift degrades this one group.
+    networkConfig,
   };
+}
+
+// The processor preallocates 32 pending slots, so pendingObservation(slot)
+// answers for 0-31 without reverting. The earliest maturity across the active
+// slots is when work is genuinely due on the Ethereum Sepolia side, and in
+// AwaitMaturity the RSC's dueAt on Lasna should equal it.
+//
+// Gated on pendingCount by the caller: while the queue is empty every slot is
+// zero and the comparison says nothing, so the 32-entry batch is not spent.
+const PENDING_SLOT_COUNT = 32;
+
+async function readPendingMaturity() {
+  const slots = (await batchOrSingle(
+    PROCESSOR_RPC,
+    Array.from({ length: PENDING_SLOT_COUNT }, (_, slot) =>
+      callOf(PROCESSOR, `${selectors.pendingObservation}${slot.toString(16).padStart(64, "0")}`),
+    ),
+  )) as string[];
+
+  let earliestMatureAt: number | null = null;
+  let active = 0;
+  for (const slot of slots) {
+    const decoded = words(slot);
+    if (decoded.length < 3 || unsigned(decoded[0]) === 0) continue;
+    active += 1;
+    const matureAt = unsigned(decoded[2]);
+    if (earliestMatureAt === null || matureAt < earliestMatureAt) earliestMatureAt = matureAt;
+  }
+  return { scannedSlots: PENDING_SLOT_COUNT, activeSlots: active, earliestMatureAt };
 }
 
 export async function GET() {
@@ -614,6 +706,11 @@ export async function GET() {
       [origin, processorBundle] = await Promise.all([readOrigin(), readProcessor()]);
     }
     const [reactive, events] = await Promise.all([reactivePromise, eventsPromise]);
+    // The sharper cross-plane check only exists when there is work outstanding:
+    // with an empty queue both planes read zero and agree about nothing. So the
+    // 32-slot scan is spent only when the processor says a slot is occupied.
+    const pendingMaturity =
+      processorBundle.processor.pendingCount > 0 ? await optional(readPendingMaturity(), 4_000) : null;
     // Expiry is chain state, so it is read from the chain wherever possible.
     // The origin lens computes secondsUntilExpiry against block.timestamp
     // inside the contract; only the direct-getter fallback has to fall back to
@@ -637,7 +734,9 @@ export async function GET() {
         processor: processorBundle.processor,
         referenceSources: processorBundle.referenceSources,
         automation: processorBundle.automation,
+        authentication: processorBundle.authentication,
         reactive,
+        pendingMaturity,
         events,
         recommendationExpired,
         expiryBasis,

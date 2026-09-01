@@ -9,6 +9,13 @@ export type LiveProofState = {
   stale: boolean;
   /** Epoch ms of the last successful read, or null if none has ever succeeded. */
   lastSuccessAt: number | null;
+  /**
+   * Epoch ms the next automatic poll is actually scheduled for. Reported rather
+   * than inferred from the interval, because a failing endpoint backs off to as
+   * much as ten minutes and a countdown that kept saying "60s" would assert a
+   * freshness the panel is not going to have.
+   */
+  nextPollAt: number | null;
   failureCount: number;
   refresh: () => Promise<void>;
 };
@@ -62,6 +69,7 @@ export function useLiveProof(intervalMs = 60_000): LiveProofState {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [lastSuccessAt, setLastSuccessAt] = useState<number | null>(null);
+  const [nextPollAt, setNextPollAt] = useState<number | null>(null);
   const [failureCount, setFailureCount] = useState(0);
   // The manual Refresh button and the scheduled poll can be in flight together;
   // without a ticket the slower response would overwrite the newer snapshot.
@@ -112,11 +120,14 @@ export function useLiveProof(intervalMs = 60_000): LiveProofState {
     // hammered while still recovering on its own once it returns.
     const schedule = () => {
       const backoff = intervalMs * 2 ** Math.min(failures.current, 4);
-      timer = window.setTimeout(run, Math.min(backoff, MAXIMUM_INTERVAL_MS));
+      const delay = Math.min(backoff, MAXIMUM_INTERVAL_MS);
+      setNextPollAt(Date.now() + delay);
+      timer = window.setTimeout(run, delay);
     };
 
     const run = async () => {
       if (cancelled) return;
+      setNextPollAt(null);
       await refresh();
       if (cancelled) return;
       schedule();
@@ -125,6 +136,7 @@ export function useLiveProof(intervalMs = 60_000): LiveProofState {
     void run();
     return () => {
       cancelled = true;
+      setNextPollAt(null);
       window.clearTimeout(timer);
     };
   }, [refresh, intervalMs]);
@@ -135,6 +147,7 @@ export function useLiveProof(intervalMs = 60_000): LiveProofState {
     loading,
     stale: proof !== null && failureCount > 0,
     lastSuccessAt,
+    nextPollAt,
     failureCount,
     refresh,
   };

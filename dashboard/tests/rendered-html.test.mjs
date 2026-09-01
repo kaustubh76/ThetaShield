@@ -87,6 +87,10 @@ test("server-renders the complete ThetaShield research dashboard", async () => {
   assert.match(html, /Read directly from deployed contracts/i);
   assert.match(html, /Refresh on-chain state/i);
   assert.match(html, /LIVE RECEIPT TRAIL/i);
+  // The trail is navigable in both directions: into the loop phase a receipt
+  // evidences, and out to the explorer.
+  assert.match(html, /show this step in the loop/i);
+  assert.match(html, /walk the trail, or open any receipt/i);
   assert.match(html, /Read-only proof/i);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton/i);
 });
@@ -140,6 +144,21 @@ test("live API defaults to the paired G10 lenses with a named direct fallback", 
   // The Reactive counters live in the ReactiveVM, so they must be read with the
   // RVM-scoped call, not eth_call.
   assert.match(route, /rnk_call/);
+  // The callback authentication is checked, not asserted: both of the
+  // executor's immutable guard values are read, and the proven callback is read
+  // back so its calldata can be compared against them. The transaction must be
+  // fetched with getTransactionByHash — public Sepolia providers prune the
+  // receipt index and answer null for this hash.
+  assert.match(route, /reactiveRvmId: "0x0c41fb9a"/);
+  assert.match(route, /reactiveCallbackProxy: "0x566353ab"/);
+  assert.match(route, /eth_getTransactionByHash/);
+  assert.doesNotMatch(route, /eth_getTransactionReceipt/);
+  // The RSC's own view of the deployment, which is the Lasna side of the
+  // cross-plane agreement.
+  assert.match(route, /rscNetworkConfig: "0x90ced421"/);
+  // The 32-slot maturity scan must stay gated on the queue being non-empty:
+  // ungated it spends a 32-entry batch on every read to compare zero to zero.
+  assert.match(route, /pendingCount > 0 \? await optional\(readPendingMaturity/);
   assert.match(route, /from "\.\.\/\.\.\/live-config"/);
 
   const config = await readFile(new URL("app/live-config.ts", root), "utf8");

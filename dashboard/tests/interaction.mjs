@@ -1,4 +1,4 @@
-// Interactive regression suite: 18 checks over the controls the SSR tests cannot
+// Interactive regression suite: 23 checks over the controls the SSR tests cannot
 // reach — the failure-mode switches, the mechanism player, the journey phases,
 // the scenario/policy/sensitivity selects, the replay transport, the signal-lab
 // tabs, the registry accordions, the live refresh and the nav anchors.
@@ -105,6 +105,30 @@ await evaluate(`__q('.run-action').click(); true;`); await wait(2200);
 check("run control starts the guided run", (await evaluate(`__q('.run-progress') !== null && __q('.run-action').className.includes('is-running')`)) === true, await evaluate(`__txt('.run-progress')`));
 await evaluate(`__q('.run-action').click(); true;`); await wait(400);
 check("run control stops cleanly", (await evaluate(`__q('.run-action').className.includes('is-running')`)) === false, "stopped");
+
+// The Reactive surface. The authentication rows and the receipt trail are the
+// two things on this page that are interactive rather than merely rendered, so
+// both are driven here rather than trusted to the SSR assertions.
+await evaluate(`__q('#live-proof').scrollIntoView(); true;`); await wait(1200);
+const authRows = await evaluate(`document.querySelectorAll('.auth-row').length`);
+check("callback authentication renders its checks", authRows >= 2, `rows=${authRows} verdict=${await evaluate(`__txt('.auth-verdict')`)}`);
+check("every authentication check agrees", (await evaluate(`document.querySelectorAll('.auth-row.is-failing').length`)) === 0, await evaluate(`__txt('.auth-verdict')`));
+if (authRows) {
+  await evaluate(`document.querySelectorAll('.auth-toggle')[0].click(); true;`); await wait(300);
+  check(
+    "authentication row expands to its read provenance",
+    (await evaluate(`__q('.auth-detail') !== null`)) === true && /eth_call|rnk_call|eth_getTransactionByHash/.test((await evaluate(`__txt('.auth-detail')`)) ?? ""),
+    (await evaluate(`__txt('.auth-detail')`))?.slice(0, 70),
+  );
+}
+check("cross-plane agreement states which planes it compared", /pending/.test((await evaluate(`__txt('.plane-agreement')`)) ?? ""), (await evaluate(`__txt('.plane-agreement')`))?.slice(0, 60));
+
+await evaluate(`document.querySelectorAll('.receipt-jump')[2].click(); true;`); await wait(700);
+check(
+  "receipt jumps to the journey phase it evidences",
+  /ACTIVE STEP/.test((await evaluate(`__txt('.journey-detail span')`)) ?? "") && (await evaluate(`__q('.journey-phases button.active') !== null`)) === true,
+  `${await evaluate(`__txt('.journey-detail span')`)} -> ${await evaluate(`__txt('.journey-phases button.active b')`)}`,
+);
 
 check("nav anchors resolve", (await evaluate(`JSON.stringify([...document.querySelectorAll('.site-header nav a')].filter(a => !document.querySelector(a.getAttribute('href'))).map(a=>a.getAttribute('href')))`)) === "[]", "ok");
 check("external links https", (await evaluate(`JSON.stringify([...document.querySelectorAll('a[href]')].map(a=>a.getAttribute('href')).filter(h => !h.startsWith('#') && !/^https:\\/\\//.test(h)))`)) === "[]", "ok");

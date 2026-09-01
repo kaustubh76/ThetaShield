@@ -14,6 +14,7 @@ import RegistrySection from "./components/registry/registry-section";
 import { useReducedMotion } from "./components/use-reduced-motion";
 import type { DeploymentView } from "./deployment-data";
 import G9Experience, { type RunPhase } from "./g9-experience";
+import type { JourneyPhaseId } from "./journey-phases";
 import LaunchIntro from "./launch-intro";
 import type { DashboardView } from "./research-data";
 
@@ -101,6 +102,18 @@ export default function DashboardClient({
 
   const running = runPhase !== "idle" && runPhase !== "outcome";
   const runStep = runPhase === "journey" ? 1 : runPhase === "replay" ? 2 : runPhase === "outcome" ? 3 : 0;
+
+  // A receipt in the live proof names the journey phase it evidences, so
+  // opening one walks the reader to that phase instead of only out to an
+  // explorer. The counter lets the same phase be re-opened.
+  const [focusPhase, setFocusPhase] = useState<{ id: JourneyPhaseId; seq: number } | null>(null);
+  const openPhase = useCallback(
+    (id: JourneyPhaseId) => {
+      setFocusPhase((current) => ({ id, seq: (current?.seq ?? 0) + 1 }));
+      reveal("mechanism");
+    },
+    [reveal],
+  );
 
   const selectPolicy = useCallback(
     (id: string) => {
@@ -203,6 +216,7 @@ export default function DashboardClient({
       <DistinctionStrip onSelect={selectPolicy} policies={policyRows} selectedId={policyId} />
 
       <G9Experience
+        focusPhase={focusPhase}
         data={data}
         deployedConfig={live.proof?.processor.deployedConfig ?? null}
         deployment={deployment}
@@ -219,7 +233,7 @@ export default function DashboardClient({
           <div><p className="kicker">Live testnet proof</p><h2>Don’t trust the demo. Read the contracts.</h2></div>
           <p>Read directly from deployed contracts across Unichain Sepolia and Ethereum Sepolia, on every refresh.</p>
         </div>
-        <LiveProofPanel deployment={deployment} live={live} />
+        <LiveProofPanel deployment={deployment} live={live} onOpenPhase={openPhase} />
       </section>
 
       <RegistrySection

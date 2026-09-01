@@ -85,6 +85,46 @@ export type AutomationView = {
   };
 };
 
+// Who is allowed to wake the executor, read from both sides. `rvmId` and
+// `callbackProxy` are the executor's immutable guard values on the processor
+// chain; `callback` is what the proven callback transaction actually presented,
+// decoded from its own calldata. Equality between them is the authentication.
+export type AuthenticationView = {
+  rvmId: string;
+  callbackProxy: string;
+  transactionHash: string;
+  callback: {
+    to: string;
+    targetArg: string;
+    rvmArg: string;
+    blockNumber: number | null;
+    observedAt: number | null;
+  } | null;
+};
+
+// The RSC's own NetworkConfig, read inside the ReactiveVM.
+export type ReactiveNetworkConfigView = {
+  monitoredChainId: number;
+  destinationChainId: number;
+  reactiveChainId: number;
+  processor: string;
+  executor: string;
+  cronTopic: string;
+  callbackGasLimit: number;
+  epochDurationSeconds: number;
+  retryDelaySeconds: number;
+  maximumRetries: number;
+};
+
+// The earliest maturity across the processor's occupied pending slots. Present
+// only when the queue is non-empty: with nothing pending the scan compares
+// zero to zero and is not evidence of anything.
+export type PendingMaturityView = {
+  scannedSlots: number;
+  activeSlots: number;
+  earliestMatureAt: number | null;
+};
+
 export type ReactiveView = {
   // "rvm" is the correct read (rnk_call against the deployer's ReactiveVM, where
   // react() actually writes); "chain" is the degraded fallback, whose counters
@@ -102,6 +142,7 @@ export type ReactiveView = {
   dueAt: number;
   /** Earliest maturity deferred behind the in-flight cycle, or 0. */
   queuedMaturityAt: number;
+  networkConfig: ReactiveNetworkConfigView | null;
 };
 
 export type LiveEvent = {
@@ -170,7 +211,9 @@ export type LiveProof = {
   };
   referenceSources: ReferenceSourceView[] | null;
   automation: AutomationView | null;
+  authentication: AuthenticationView | null;
   reactive: ReactiveView | null;
+  pendingMaturity: PendingMaturityView | null;
   events: EventsView | null;
 };
 

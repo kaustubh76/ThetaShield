@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { DeploymentView } from "../../deployment-data";
+import type { JourneyPhaseId } from "../../journey-phases";
 import Accordion from "../accordion";
 import { feeBps, formatInt, shortHex } from "../format";
 import AutomationCard from "./automation-card";
@@ -8,6 +9,7 @@ import ReactivePanel from "./reactive-panel";
 import ReferenceSources from "./reference-sources";
 import SideStateCard from "./side-state-card";
 import TtlRing from "./ttl-ring";
+import { wadToBpsNumber } from "./types";
 import type { LiveProofState } from "./use-live-proof";
 
 // Intl throws RangeError beyond ~8.64e12 seconds, and unsigned() only rejects
@@ -31,14 +33,16 @@ function formatChainTime(seconds: number) {
 export default function LiveProofPanel({
   deployment,
   live,
+  onOpenPhase,
 }: {
   deployment: DeploymentView;
   live: LiveProofState;
+  onOpenPhase: (id: JourneyPhaseId) => void;
 }) {
   const originName = deployment.networks.find((network) => network.role === "origin")?.name ?? "Origin";
   const processorName =
     deployment.networks.find((network) => network.role === "processor")?.name ?? "Processor";
-  const { proof, error, loading, refresh, stale, lastSuccessAt, failureCount } = live;
+  const { proof, error, loading, refresh, stale, lastSuccessAt, nextPollAt, failureCount } = live;
   // A snapshot that stopped refreshing is not the same finding as a live read.
   // Presenting it as one is the mirror image of claiming a fee before any read
   // returns, so it gets its own state rather than inheriting the green one.
@@ -51,10 +55,13 @@ export default function LiveProofPanel({
     const interval = window.setInterval(() => setNowMs(Date.now()), 1_000);
     return () => window.clearInterval(interval);
   }, []);
+  // Read from the hook's own schedule rather than assumed to be 60s: a failing
+  // endpoint backs off to as much as ten minutes, and a countdown that kept
+  // promising a refresh within the minute would be the same false currency the
+  // stale banner exists to prevent.
   const untilNextRead =
-    lastSuccessAt === null || nowMs === null
-      ? null
-      : Math.max(0, 60 - Math.floor((nowMs - lastSuccessAt) / 1_000));
+    nextPollAt === null || nowMs === null ? null : Math.max(0, Math.ceil((nextPollAt - nowMs) / 1_000));
+  const backingOff = untilNextRead !== null && untilNextRead > 75;
 
   const withheld: string[] = [];
   if (proof) {
@@ -99,6 +106,20 @@ export default function LiveProofPanel({
     );
     const usedBaseline = direction === "buy" ? proof.origin.buy.usedBaseline : proof.origin.sell.usedBaseline;
     return usedBaseline ? `recommended ${recommended} · baseline applied` : `recommendation ${recommended} applied`;
+  };
+  // The signed directional risk the controller carries for each side. This is
+  // the quantity the fee curve is a function of, so a recommendation shown
+  // without it is a number with its cause withheld. Positive means adverse
+  // pressure in that direction; the sign is what makes the protection
+  // directional rather than a blanket surcharge.
+  const riskFor = (direction: "buy" | "sell"): string => {
+    if (!proof || proof.origin.recommendation.sequence === 0) return "—";
+    const wad =
+      direction === "buy"
+        ? proof.origin.recommendation.oneForZeroRiskWad
+        : proof.origin.recommendation.zeroForOneRiskWad;
+    const bps = wadToBpsNumber(wad);
+    return `${bps > 0 ? "+" : ""}${bps.toFixed(2)} bps signed risk`;
   };
   // A recommendation can be installed and not yet valid; rendering it as live
   // would overstate what the hook is currently charging.
@@ -161,7 +182,13 @@ export default function LiveProofPanel({
         <div className="refresh-group">
           {untilNextRead !== null ? (
             <span className="poll-countdown">
-              {loading ? "reading…" : untilNextRead > 0 ? `next read in ${untilNextRead}s` : "reading shortly"}
+              {loading
+                ? "reading…"
+                : untilNextRead <= 0
+                  ? "reading shortly"
+                  : backingOff
+                    ? `backing off · next read in ${Math.ceil(untilNextRead / 60)}m`
+                    : `next read in ${untilNextRead}s`}
             </span>
           ) : null}
           <button className="refresh-button" disabled={loading} onClick={() => void refresh()} type="button">
@@ -191,10 +218,12 @@ export default function LiveProofPanel({
             <div>
               <span>BUY-BASE FEE</span><strong>{proof ? feeBps(proof.origin.buy.feePips) : "—"}</strong><small>bps</small>
               <em>{recommendedFor("buy")}</em>
+              <i>{riskFor("buy")}</i>
             </div>
             <div>
               <span>SELL-BASE FEE</span><strong>{proof ? feeBps(proof.origin.sell.feePips) : "—"}</strong><small>bps</small>
               <em>{recommendedFor("sell")}</em>
+              <i>{riskFor("sell")}</i>
             </div>
           </div>
           <dl className="live-facts">
@@ -249,9 +278,12 @@ export default function LiveProofPanel({
 
       {proof?.reactive ? (
         <ReactivePanel
+          authentication={proof.authentication}
           automation={proof.automation}
           deployment={deployment}
           generatedAt={proof.generatedAt}
+          pendingCount={proof.processor.pendingCount}
+          pendingMaturity={proof.pendingMaturity}
           reactive={proof.reactive}
         />
       ) : null}
@@ -297,14 +329,27 @@ export default function LiveProofPanel({
         </Accordion>
       ) : null}
 
-      <div className="receipt-heading"><span>LIVE RECEIPT TRAIL</span><b>{`${deployment.receipts.length} public transactions · open any receipt`}</b></div>
+      <div className="receipt-heading"><span>LIVE RECEIPT TRAIL</span><b>{`${deployment.receipts.length} public transactions · walk the trail, or open any receipt`}</b></div>
+      {/* Each receipt names the journey phase it evidences, so the trail is
+          navigable in two directions: into the loop, or out to the explorer.
+          Two interactive children rather than one, because an anchor cannot
+          legally nest inside a button. */}
       <div className="receipt-rail">
         {deployment.receipts.map((receipt) => (
-          <a className="receipt-step" href={receipt.url} key={receipt.hash} rel="noreferrer" target="_blank">
-            <span className="receipt-index">{receipt.index}</span>
-            <span className="receipt-copy"><b>{receipt.title}</b><small>{receipt.chainName}</small><code>{shortHex(receipt.hash)}</code></span>
-            <span aria-hidden="true">↗</span>
-          </a>
+          <div className="receipt-step" key={receipt.hash}>
+            <button className="receipt-jump" onClick={() => onOpenPhase(receipt.phase)} type="button">
+              <span className="receipt-index">{receipt.index}</span>
+              <span className="receipt-copy">
+                <b>{receipt.title}</b>
+                <small>{receipt.chainName}</small>
+                <em>{`show this step in the loop →`}</em>
+              </span>
+            </button>
+            <a className="receipt-open" href={receipt.url} rel="noreferrer" target="_blank">
+              <code>{shortHex(receipt.hash)}</code>
+              <span aria-hidden="true">↗</span>
+            </a>
+          </div>
         ))}
       </div>
 

@@ -298,3 +298,84 @@ test("every automation cycle field reads its declared word offset", () => {
     }
   }
 });
+
+// Address words: the low 20 bytes of the word, and nothing else. A decoder that
+// sliced from the wrong end would silently produce a plausible-looking address.
+test("address words decode from the low 20 bytes and reject anything else", () => {
+  const address = "1a3a275df6658ab96151480d920d58cea5ab9707";
+  assert.equal(decode.addressFromWord(`${"0".repeat(24)}${address}`), `0x${address}`);
+  assert.equal(decode.addressFromWord(`${"0".repeat(24)}${address.toUpperCase()}`), `0x${address}`);
+  // A dirty upper word is a layout error, not an address with leading noise.
+  assert.throws(() => decode.addressFromWord(`${"0".repeat(23)}1${address}`), /not an ABI address/);
+  // The zero word is a well-formed address, so the decoder returns it. Refusing
+  // to treat it as agreement is the comparison's job, not the decoder's —
+  // otherwise two failed reads would "agree" with each other.
+  assert.equal(decode.addressFromWord("0".repeat(64)), `0x${"0".repeat(40)}`);
+});
+
+test("every RSC network-config field reads its declared word offset", () => {
+  const config = decode.decodeNetworkConfig(rampResponse(10));
+  assert.equal(config.monitoredChainId, WORD_BASE + 0);
+  assert.equal(config.destinationChainId, WORD_BASE + 1);
+  assert.equal(config.reactiveChainId, WORD_BASE + 2);
+  // Words 3 and 4 are addresses: the check the panel runs compares these two
+  // against the executor's own getters, so a swapped pair would report
+  // agreement between the wrong contracts.
+  assert.equal(config.processor, `0x${(WORD_BASE + 3).toString(16).padStart(40, "0")}`);
+  assert.equal(config.executor, `0x${(WORD_BASE + 4).toString(16).padStart(40, "0")}`);
+  assert.equal(config.cronTopic, `0x${(WORD_BASE + 5).toString(16).padStart(64, "0")}`);
+  assert.equal(config.callbackGasLimit, WORD_BASE + 6);
+  assert.equal(config.epochDurationSeconds, WORD_BASE + 7);
+  assert.equal(config.retryDelaySeconds, WORD_BASE + 8);
+  assert.equal(config.maximumRetries, WORD_BASE + 9);
+  assert.throws(() => decode.decodeNetworkConfig(rampResponse(9)), /Unexpected network config/);
+});
+
+// The proven callback's calldata is the historical half of the authentication
+// check. If it decoded loosely, the page would compare the executor's guards
+// against values it had invented rather than read.
+const CALLBACK_TX = {
+  to: "0xC9F36411C9897e7F959D99ffca2a0Ba7ee0D7bDA",
+  blockNumber: "0xb0dd60",
+  blockTimestamp: "0x6a92a8f0",
+  input:
+    "0x246a9512" +
+    "0000000000000000000000001a3a275df6658ab96151480d920d58cea5ab9707" +
+    "0000000000000000000000000000000000000000000000000000000000000040" +
+    "0000000000000000000000000000000000000000000000000000000000000024" +
+    "997ce1d5" +
+    "00000000000000000000000033189c643774ed2713ebff5a6923e5fa42b96ee8" +
+    "00000000000000000000000000000000000000000000000000000000",
+};
+
+test("the proven callback decodes the two values the executor's guards compare", () => {
+  const callback = decode.decodeReactiveCallback(CALLBACK_TX);
+  assert.equal(callback.to, "0xc9f36411c9897e7f959d99ffca2a0ba7ee0d7bda");
+  assert.equal(callback.targetArg, "0x1a3a275df6658ab96151480d920d58cea5ab9707");
+  assert.equal(callback.rvmArg, "0x33189c643774ed2713ebff5a6923e5fa42b96ee8");
+  assert.equal(callback.blockNumber, 11_591_008);
+  assert.equal(callback.observedAt, 1_787_996_400);
+});
+
+test("the callback decoder refuses transactions that are not authenticated wakes", () => {
+  assert.throws(
+    () => decode.decodeReactiveCallback({ ...CALLBACK_TX, input: `0xdeadbeef${CALLBACK_TX.input.slice(10)}` }),
+    /not a Reactive proxy callback/,
+  );
+  assert.throws(() => decode.decodeReactiveCallback({ ...CALLBACK_TX, to: null }), /not a Reactive proxy callback/);
+  // Right proxy entry point, wrong inner call: still not evidence of a wake.
+  assert.throws(
+    () => decode.decodeReactiveCallback({ ...CALLBACK_TX, input: CALLBACK_TX.input.replace("997ce1d5", "12345678") }),
+    /does not call executeFromReactive/,
+  );
+});
+
+// blockTimestamp is a provider extension rather than part of the JSON-RPC spec,
+// and the receipt for this hash is pruned on the public Sepolia endpoints, so
+// the decode has to survive a transaction that carries neither.
+test("the callback decoder degrades when the provider omits block metadata", () => {
+  const callback = decode.decodeReactiveCallback({ ...CALLBACK_TX, blockNumber: null, blockTimestamp: null });
+  assert.equal(callback.blockNumber, null);
+  assert.equal(callback.observedAt, null);
+  assert.equal(callback.rvmArg, "0x33189c643774ed2713ebff5a6923e5fa42b96ee8");
+});

@@ -175,3 +175,81 @@ export function decodeCycleResult(data: string) {
   };
 }
 
+
+// An ABI address occupies the low 20 bytes of its word. Returned lower-cased so
+// the agreement checks in the UI compare bytes rather than checksum casing.
+export function addressFromWord(word: string): string {
+  if (!/^0{24}[0-9a-fA-F]{40}$/.test(word)) throw new Error("Word is not an ABI address");
+  return `0x${word.slice(24).toLowerCase()}`;
+}
+
+// ThetaShieldAutomationRSC.NetworkConfig, in declaration order. This is the
+// RSC's own view of the deployment: it names the processor and executor it
+// drives and the cron topic it is subscribed to, so reading it inside the RVM
+// is what lets the page check the two planes against each other rather than
+// assert their agreement from the manifest.
+export function decodeNetworkConfig(data: string) {
+  const decoded = words(data);
+  if (decoded.length !== 10) throw new Error("Unexpected network config response");
+  return {
+    monitoredChainId: unsigned(decoded[0]),
+    destinationChainId: unsigned(decoded[1]),
+    reactiveChainId: unsigned(decoded[2]),
+    processor: addressFromWord(decoded[3]),
+    executor: addressFromWord(decoded[4]),
+    cronTopic: `0x${decoded[5]}`,
+    callbackGasLimit: unsigned(decoded[6]),
+    epochDurationSeconds: unsigned(decoded[7]),
+    retryDelaySeconds: unsigned(decoded[8]),
+    maximumRetries: unsigned(decoded[9]),
+  };
+}
+
+// The Reactive callback proxy's entry point, and the executor entry point it
+// wraps. Both are checked rather than assumed: a proxy that called anything
+// else would not be evidence of an authenticated wake.
+export const CALLBACK_PROXY_SELECTOR = "0x246a9512"; // callback(address,bytes)
+export const EXECUTE_FROM_REACTIVE_SELECTOR = "0x997ce1d5"; // executeFromReactive(address)
+
+type RawTransaction = {
+  to?: string | null;
+  input?: string;
+  blockNumber?: string | null;
+  blockTimestamp?: string | null;
+};
+
+// Pulls the two authenticated terms out of the proven callback's own calldata:
+// which executor the proxy was asked to call, and which RVM id it presented.
+// The executor's rvmIdOnly / authorizedSenderOnly guards compare exactly these
+// against its immutable getters, so decoding them turns "callbacks are
+// authenticated" into a comparison the page can run.
+//
+// Read with eth_getTransactionByHash, never eth_getTransactionReceipt: public
+// Sepolia providers prune the receipt index and answer null for this hash while
+// still returning the full mined transaction.
+export function decodeReactiveCallback(raw: RawTransaction) {
+  const input = raw.input ?? "";
+  if (!raw.to || !input.startsWith(CALLBACK_PROXY_SELECTOR)) {
+    throw new Error("Callback transaction is not a Reactive proxy callback");
+  }
+  const head = words(`0x${input.slice(10)}`.padEnd(2, "0"));
+  const targetArg = addressFromWord(head[0]);
+  // The payload is a dynamic bytes argument: word 1 holds its byte offset from
+  // the start of the argument block, then a length word, then the payload.
+  const payloadOffsetBytes = unsigned(head[1]);
+  const lengthCursor = 10 + payloadOffsetBytes * 2;
+  const payloadLength = unsigned(input.slice(lengthCursor, lengthCursor + 64));
+  const payload = input.slice(lengthCursor + 64, lengthCursor + 64 + payloadLength * 2);
+  if (!payload.startsWith(EXECUTE_FROM_REACTIVE_SELECTOR.slice(2))) {
+    throw new Error("Callback payload does not call executeFromReactive");
+  }
+  return {
+    to: raw.to.toLowerCase(),
+    targetArg,
+    rvmArg: addressFromWord(payload.slice(8, 72)),
+    blockNumber: raw.blockNumber ? unsigned(raw.blockNumber.slice(2)) : null,
+    // blockTimestamp is a provider extension, not part of the JSON-RPC spec, so
+    // its absence must degrade rather than fail the whole decode.
+    observedAt: raw.blockTimestamp ? unsigned(raw.blockTimestamp.slice(2)) : null,
+  };
+}
