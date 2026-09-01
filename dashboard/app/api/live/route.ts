@@ -58,6 +58,12 @@ const selectors = {
   wakeRequestCount: "0xfcfaf7be",
   observationSignalCount: "0xb8eb92d8",
   consecutiveRetries: "0x84e35204",
+  // The RSC's scheduler state. These live in the RVM like the counters, so they
+  // only answer through rnk_call; a chain-side read returns constructor defaults.
+  rscPhase: "0xb1c9fe6e",
+  rscTriggerPhase: "0x9788376e",
+  rscDueAt: "0x85f1b090",
+  rscQueuedMaturityAt: "0x291e28fa",
   lastCycleId: "0x74a12a33",
 } as const;
 
@@ -534,6 +540,10 @@ const REACTIVE_COUNTER_SELECTORS = [
   selectors.observationSignalCount,
   selectors.consecutiveRetries,
   selectors.lastCycleId,
+  selectors.rscPhase,
+  selectors.rscTriggerPhase,
+  selectors.rscDueAt,
+  selectors.rscQueuedMaturityAt,
 ] as const;
 
 async function readReactive() {
@@ -555,13 +565,21 @@ async function readReactive() {
     )) as string[];
   }
 
-  const [wakeData, signalData, retriesData, lastCycleData] = counters;
+  const [wakeData, signalData, retriesData, lastCycleData, phaseData, triggerData, dueAtData, queuedData] =
+    counters;
   return {
     source,
     wakeRequestCount: decodeSingle(wakeData),
     observationSignalCount: decodeSingle(signalData),
     consecutiveRetries: decodeSingle(retriesData),
     lastCycleId: decodeSingle(lastCycleData),
+    // Scheduler state: which of the five phases the RSC is in, which phase
+    // issued the wake now in flight, when the next wake is due, and whether an
+    // observation is queued behind the current cycle.
+    phase: decodeSingle(phaseData),
+    triggerPhase: decodeSingle(triggerData),
+    dueAt: decodeSingle(dueAtData),
+    queuedMaturityAt: decodeSingle(queuedData),
   };
 }
 

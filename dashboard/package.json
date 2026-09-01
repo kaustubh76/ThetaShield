@@ -10,7 +10,7 @@
     "build": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext build",
     "vercel-build": "next build",
     "start": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext start",
-    "test": "npm run build && node --test tests/rendered-html.test.mjs && node --experimental-strip-types --test tests/live-decode.test.mjs && node --test tests/holdout-targets.test.mjs",
+    "test": "npm run build && node --test tests/rendered-html.test.mjs && node --experimental-strip-types --test tests/live-decode.test.mjs && node --experimental-strip-types --test tests/fee-model.test.mjs && node --test tests/holdout-targets.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "verify": "npm run lint && npm test && npm audit --omit=dev --audit-level=high",
     "test:interaction": "node tests/interaction.mjs"

@@ -588,6 +588,48 @@ const heroTracePoints = heroTraceSource.steps
       };
     });
 
+// The single observation the animated loop carries. Picked from the locked
+// trace, not composed: the first step whose epoch completed with real
+// confidence, so every stage of the loop has a genuine value to report rather
+// than a cold-start zero.
+const mechanismStep = (() => {
+  const step = heroTraceSource.steps.find((entry) => {
+    const evidence = entry.evidence[0] as (typeof entry.evidence)[number] & {
+      epoch_complete?: boolean;
+      confidence_wad?: number | null;
+      calculated_fee_pips?: number;
+      previous_fee_pips?: number;
+    } | undefined;
+    // Not merely a completed epoch: one where the fee actually moved. Otherwise
+    // the loop ends on "fee curve → the baseline", which demonstrates nothing.
+    return Boolean(
+      evidence?.epoch_complete &&
+        (evidence.confidence_wad ?? 0) > 0 &&
+        (evidence.calculated_fee_pips ?? 0) > (evidence.previous_fee_pips ?? 0),
+    );
+  });
+  if (!step) throw new Error("locked trace has no completed epoch that moved the fee");
+  return step;
+})();
+
+const mechanismTrace = (() => {
+  const evidence = mechanismStep.evidence[0] as (typeof mechanismStep.evidence)[number] & {
+    calculated_fee_pips?: number;
+    previous_fee_pips?: number;
+  };
+  const entry = heroTracePoints[0];
+  return {
+    eventCount: heroTraceSource.event_count,
+    seed: heroTraceSource.seed,
+    entryBuyBps: entry.buyFeeBps.toFixed(2),
+    entrySellBps: entry.sellFeeBps.toFixed(2),
+    markoutBps: round(evidence.raw_markout_wad / WAD_PER_BASIS_POINT, 2).toFixed(2),
+    bandBps: round(evidence.dead_band_wad / WAD_PER_BASIS_POINT, 2).toFixed(2),
+    filteredBps: round(evidence.filtered_markout_wad / WAD_PER_BASIS_POINT, 2).toFixed(2),
+    calculatedBps: ((evidence.calculated_fee_pips ?? 0) / 100).toFixed(2),
+  };
+})();
+
 const heroFinal = heroTracePoints[heroTracePoints.length - 1];
 
 // The readout reports the end of the very series the chart draws. Deriving it
@@ -709,6 +751,7 @@ export const dashboardView = {
   holdoutStory,
   hypotheses,
   lpOutcome,
+  mechanismTrace,
   policyRows,
   researchConfigRows,
   sensitivityAll,

@@ -535,6 +535,61 @@ h1 em { color: var(--signal); font-style: normal; }
 
 .evidence-provenance { margin: 26px 0 0; color: var(--dim); font-size: 11px; line-height: 1.65; }
 .evidence-provenance code { color: var(--muted); font-family: var(--font-geist-mono), monospace; font-size: 10px; }
+.refresh-group { display: flex; align-items: center; gap: 12px; }
+.poll-countdown { color: var(--dim); font-family: var(--font-geist-mono), monospace; font-size: 8px; letter-spacing: .06em; text-transform: uppercase; }
+.stage-fact { margin: 10px 0 0 !important; color: var(--signal) !important; font-family: var(--font-geist-mono), monospace; font-size: 9.5px !important; letter-spacing: .03em; }
+/* The fee explorer: the page's one place where a visitor supplies a number and
+   the deployed curve answers. */
+.fee-explorer { margin-top: 16px; padding: 22px; border: 1px solid var(--line); background: rgba(13,24,21,.6); }
+.fee-explorer-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+.fee-explorer-head span { color: var(--signal); font-family: var(--font-geist-mono), monospace; font-size: 8px; letter-spacing: .1em; }
+.fee-explorer-head b { color: var(--dim); font-family: var(--font-geist-mono), monospace; font-size: 7.5px; font-weight: 400; letter-spacing: .05em; text-transform: uppercase; }
+.fee-explorer-inputs { display: grid; grid-template-columns: repeat(3, 1fr) auto; align-items: end; gap: 16px; margin-top: 18px; }
+.fee-explorer-inputs label { display: grid; gap: 6px; }
+.fee-explorer-inputs label span { color: var(--dim); font-family: var(--font-geist-mono), monospace; font-size: 7.5px; letter-spacing: .06em; text-transform: uppercase; }
+.fee-explorer-inputs input[type="range"] { width: 100%; accent-color: var(--signal); }
+.fee-explorer-inputs label b { color: var(--paper); font-family: var(--font-geist-mono), monospace; font-size: 13px; }
+.fee-persist { padding: 10px 14px; border: 1px solid var(--line); color: var(--dim); background: transparent; cursor: pointer; font: inherit; font-family: var(--font-geist-mono), monospace; font-size: 8px; letter-spacing: .06em; text-transform: uppercase; }
+.fee-persist.active { border-color: var(--signal); color: var(--signal); }
+.fee-explorer-steps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 20px 0 0; padding: 0; list-style: none; }
+.fee-explorer-steps li { padding: 13px; border: 1px solid var(--line); background: rgba(7,16,14,.55); }
+.fee-explorer-steps li span { display: block; color: var(--dim); font-family: var(--font-geist-mono), monospace; font-size: 7px; letter-spacing: .06em; text-transform: uppercase; }
+.fee-explorer-steps li b { display: block; margin-top: 6px; color: var(--paper); font-size: 19px; letter-spacing: -.03em; }
+.fee-explorer-steps li em { display: block; margin-top: 4px; color: var(--dim); font-size: 8.5px; font-style: normal; }
+.fee-explorer-steps li.muted b { color: var(--dim); }
+.fee-explorer-steps li.lit b { color: var(--amber); }
+.fee-explorer-steps li.result { border-color: var(--signal); background: rgba(128,255,178,.06); }
+.fee-explorer-steps li.result b { color: var(--signal); }
+.fee-explorer-note { margin: 16px 0 0; color: var(--dim); font-size: 10.5px; line-height: 1.6; }
+.fee-explorer-note code { color: var(--muted); font-family: var(--font-geist-mono), monospace; font-size: 9.5px; }
+/* Reactive scheduling plane — promoted from a four-counter card to the live
+   state machine, because "when does it wake and why" is the integration. */
+.reactive-panel { margin-top: 16px; padding: 24px; border: 1px solid rgba(158,145,255,.35); background: rgba(158,145,255,.04); }
+.reactive-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+.reactive-head h3 { margin: 6px 0 0; font-size: 18px; font-weight: 500; letter-spacing: -.02em; }
+.reactive-head .kicker { color: var(--violet); }
+.reactive-source { color: var(--signal); font-family: var(--font-geist-mono), monospace; font-size: 7.5px; letter-spacing: .06em; text-transform: uppercase; }
+.reactive-source.degraded { color: var(--amber); }
+.reactive-machine { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 22px 0 0; padding: 0; list-style: none; counter-reset: reactive; }
+.reactive-state { position: relative; padding: 14px 12px; border: 1px solid var(--line); background: rgba(7,16,14,.55); }
+.reactive-state b { display: block; color: var(--muted); font-size: 11px; font-weight: 500; }
+.reactive-state span { display: block; margin-top: 5px; color: var(--dim); font-size: 9px; line-height: 1.45; }
+.reactive-state em { position: absolute; top: -8px; right: 10px; padding: 1px 7px; color: var(--ink); background: var(--violet); font-family: var(--font-geist-mono), monospace; font-size: 7px; font-style: normal; letter-spacing: .08em; text-transform: uppercase; }
+.reactive-state.current { border-color: var(--violet); background: rgba(158,145,255,.1); box-shadow: 0 0 22px rgba(158,145,255,.16); }
+.reactive-state.current b { color: var(--paper); }
+.reactive-state.retry { border-style: dashed; }
+.reactive-state.retry em { background: var(--amber); }
+.reactive-facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 20px; }
+.reactive-facts dt { color: var(--dim); font-family: var(--font-geist-mono), monospace; font-size: 7.5px; letter-spacing: .06em; text-transform: uppercase; }
+.reactive-facts dd { margin: 4px 0 0; font-size: 13px; }
+.reactive-facts dd.armed { color: var(--violet); font-family: var(--font-geist-mono), monospace; }
+.reactive-facts dd.agrees { color: var(--signal); }
+.reactive-receipts { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
+.reactive-receipts > span { color: var(--dim); font-family: var(--font-geist-mono), monospace; font-size: 7.5px; letter-spacing: .06em; text-transform: uppercase; }
+.reactive-receipts a { display: inline-flex; align-items: center; gap: 8px; padding: 7px 11px; border: 1px solid var(--line); font-size: 10px; }
+.reactive-receipts a:hover { border-color: var(--violet); color: var(--paper); }
+.reactive-receipts a b { font-weight: 500; }
+.reactive-receipts a code { color: var(--dim); font-family: var(--font-geist-mono), monospace; font-size: 9px; }
 .route-error { max-width: 620px; margin: 0 auto; padding: 120px 24px; }
 .route-error h1 { margin: 0; font-size: 26px; letter-spacing: -.03em; }
 .route-error p { margin: 16px 0 24px; color: var(--muted); font-size: 13px; line-height: 1.7; }
@@ -814,6 +869,10 @@ footer > div:last-child { display: grid; justify-content: end; gap: 5px; color: 
   nav a { white-space: nowrap; }
   .chart-scroll > svg { min-width: 620px; }
   .lp-outcome-grid { grid-template-columns: 1fr; }
+  .reactive-machine { grid-template-columns: 1fr 1fr; }
+  .fee-explorer-inputs { grid-template-columns: 1fr; }
+  .fee-explorer-steps { grid-template-columns: 1fr 1fr; }
+  .reactive-facts { grid-template-columns: 1fr 1fr; }
   .lp-outcome-foot { flex-direction: column; }
   .frontier-plot .chart-scroll > svg { min-width: 420px; }
   .release-state { font-size: 8px; }

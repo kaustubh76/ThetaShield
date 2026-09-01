@@ -2,6 +2,9 @@
 
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import ChartScroll from "./components/charts/chart-scroll";
+import FeeExplorer from "./components/fee-explorer";
+import { formatInt } from "./components/format";
+import type { DeployedConfigView } from "./components/live-proof/types";
 // Autoplay stops when the visitor prefers reduced motion, but the transport
 // controls stay live so they can still opt into the animation deliberately.
 import { useReducedMotion } from "./components/use-reduced-motion";
@@ -13,6 +16,9 @@ type SimulatorData = DashboardView["simulator"];
 
 /** Which leg of the guided run is playing. "idle" means nothing is driving. */
 export type RunPhase = "idle" | "journey" | "replay" | "outcome";
+
+/** The one real observation the animated loop carries, from the locked trace. */
+export type MechanismTrace = DashboardView["mechanismTrace"];
 
 // The guided run steps faster than free autoplay: it is a demonstration with an
 // end, not an ambient loop, and three legs have to fit in a watchable span.
@@ -97,6 +103,9 @@ function ArchitectureAnimator({
   runPhase,
   runSeq,
   onRunPhaseComplete,
+  deployedConfig,
+  finalizedThreshold,
+  trace,
 }: {
   failureMode: FailureMode;
   onFailureMode: (mode: FailureMode) => void;
@@ -104,6 +113,9 @@ function ArchitectureAnimator({
   runPhase: RunPhase;
   runSeq: number;
   onRunPhaseComplete: (finished: RunPhase) => void;
+  deployedConfig: DeployedConfigView | null;
+  finalizedThreshold: number | null;
+  trace: MechanismTrace;
 }) {
   const [activeStage, setActiveStage] = useState(0);
   const [playing, setPlaying] = useState(true);
@@ -149,6 +161,34 @@ function ArchitectureAnimator({
   const activePhaseStages = mechanismStages.slice(activePhase.firstStage, activePhase.lastStage + 1);
   const failure = failureModes[failureMode];
   const phaseReceipts = deployment.receipts.filter((receipt) => receipt.phase === activePhase.id);
+
+  // One real observation carried through the loop. The analysis numbers are the
+  // locked trace's own; the transport numbers are the proven Circle messages;
+  // the bounds are read from the deployed pool when a live read has landed.
+  const scheduler = deployedConfig?.scheduler ?? null;
+  const observation = deployment.circleMessages.find((entry) => entry.kind === "observation");
+  const recommendation = deployment.circleMessages.find((entry) => entry.kind === "recommendation");
+  const seconds = (value: number | undefined) => (value === undefined ? "—" : `${formatInt(value)}s`);
+  const stageFact: (string | null)[] = [
+    `${trace.eventCount} events replayed · seed ${trace.seed}`,
+    `applied ${trace.entryBuyBps} / ${trace.entrySellBps} bps buy / sell`,
+    `evidence emitted, scored ${seconds(scheduler?.markoutHorizonSeconds)} later`,
+    observation ? `domain ${observation.sourceDomain} → ${observation.destinationDomain}` : null,
+    finalizedThreshold === null ? "finality threshold read on-chain" : `finality ${formatInt(finalizedThreshold)}`,
+    scheduler ? `slot reserved · ${formatInt(scheduler.maximumPendingObservations)} max pending` : null,
+    "RSC arms a wake when the observation matures",
+    scheduler ? `bounded to ${formatInt(scheduler.maximumProcessPerCall)} slots per call` : null,
+    `matures after ${seconds(scheduler?.markoutHorizonSeconds)}`,
+    scheduler ? `${formatInt(scheduler.minimumReferenceSources)} sources minimum, median taken` : null,
+    `raw markout ${trace.markoutBps} bps`,
+    `dead band ±${trace.bandBps} → ${trace.filteredBps} bps survives`,
+    scheduler ? `${formatInt(scheduler.requiredToxicEpochs)}-of-${formatInt(scheduler.persistenceWindow)} window` : null,
+    `fee curve → ${trace.calculatedBps} bps`,
+    recommendation ? `domain ${recommendation.sourceDomain} → ${recommendation.destinationDomain}` : null,
+    `TTL ${seconds(scheduler?.recommendationLifetimeSeconds)} · sequence checked`,
+    `expected ${(deployment.acceptance.expectedFeePips / 100).toFixed(2)} = observed ${(deployment.acceptance.observedFeePips / 100).toFixed(2)} bps on-chain`,
+  ];
+  const activeFact = stageFact[activeStage] ?? null;
   // Chain names come from the manifest; the journey used to print "Unichain" and
   // "Ethereum" while the rest of the page said "Unichain Sepolia" and
   // "Ethereum Sepolia", and called the Reactive plane by a third name.
@@ -212,6 +252,7 @@ function ArchitectureAnimator({
             <span>ACTIVE STEP {String(activeStage + 1).padStart(2, "0")} / {mechanismStages.length}</span>
             <b>{active[1]}</b>
             <p>{active[2]}</p>
+            {activeFact ? <p className="stage-fact">{activeFact}</p> : null}
           </div>
           <div className="phase-sequence" aria-label={`Steps in ${activePhase.label}`}>
             <span>{phaseNetwork(activePhase.network).toUpperCase()} · {activePhase.label}</span>
@@ -254,6 +295,8 @@ function ArchitectureAnimator({
         <div><span>CONTROL JOURNEY</span><b>{activePhase.label}</b><p>{phaseNetwork(activePhase.network)} is carrying this stage. The trace advances in execution order without moving the reader between disconnected lanes.</p></div>
         <div className={failureMode === "healthy" ? "healthy" : "failed"}><span>SELECTED PATH</span><code>{failure.code}</code><p>{failure.result}</p></div>
       </div>
+
+      <FeeExplorer deployedConfig={deployedConfig} />
 
       <div className="loss-monitor">
         <span>SILENT-LOSS SURFACES MADE VISIBLE</span>
@@ -651,6 +694,8 @@ export default function G9Experience({
   runPhase,
   runSeq,
   onRunPhaseComplete,
+  deployedConfig,
+  finalizedThreshold,
 }: {
   data: DashboardView;
   deployment: DeploymentView;
@@ -659,12 +704,17 @@ export default function G9Experience({
   runPhase: RunPhase;
   runSeq: number;
   onRunPhaseComplete: (finished: RunPhase) => void;
+  deployedConfig: DeployedConfigView | null;
+  finalizedThreshold: number | null;
 }) {
   const [failureMode, setFailureMode] = useState<FailureMode>("healthy");
   return (
     <>
       <ArchitectureAnimator
+        deployedConfig={deployedConfig}
         deployment={deployment}
+        finalizedThreshold={finalizedThreshold}
+        trace={data.mechanismTrace}
         failureMode={failureMode}
         onFailureMode={setFailureMode}
         onRunPhaseComplete={onRunPhaseComplete}

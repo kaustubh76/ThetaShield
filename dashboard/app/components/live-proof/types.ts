@@ -94,6 +94,14 @@ export type ReactiveView = {
   observationSignalCount: number;
   consecutiveRetries: number;
   lastCycleId: number;
+  /** 0 Idle · 1 AwaitMaturity · 2 AwaitCycle · 3 AwaitFinalization · 4 Retry. */
+  phase: number;
+  /** The phase that issued the wake currently in flight. */
+  triggerPhase: number;
+  /** Unix seconds the next wake is due, or 0 when none is armed. */
+  dueAt: number;
+  /** Earliest maturity deferred behind the in-flight cycle, or 0. */
+  queuedMaturityAt: number;
 };
 
 export type LiveEvent = {

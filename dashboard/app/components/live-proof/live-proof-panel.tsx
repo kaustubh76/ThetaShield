@@ -1,9 +1,10 @@
+import { useEffect, useState } from "react";
 import type { DeploymentView } from "../../deployment-data";
 import Accordion from "../accordion";
 import { feeBps, formatInt, shortHex } from "../format";
 import AutomationCard from "./automation-card";
 import EventsTicker from "./events-ticker";
-import ReactiveCard from "./reactive-card";
+import ReactivePanel from "./reactive-panel";
 import ReferenceSources from "./reference-sources";
 import SideStateCard from "./side-state-card";
 import TtlRing from "./ttl-ring";
@@ -41,6 +42,20 @@ export default function LiveProofPanel({
   // A snapshot that stopped refreshing is not the same finding as a live read.
   // Presenting it as one is the mirror image of claiming a fee before any read
   // returns, so it gets its own state rather than inheriting the green one.
+  // Ticks once a second so the countdown moves. Date.now() is impure, so the
+  // clock is kept in state and advanced by the timer rather than read during
+  // render. Derived from the last SUCCESS, so a failing read counts past zero
+  // instead of pretending a refresh landed.
+  const [nowMs, setNowMs] = useState<number | null>(null);
+  useEffect(() => {
+    const interval = window.setInterval(() => setNowMs(Date.now()), 1_000);
+    return () => window.clearInterval(interval);
+  }, []);
+  const untilNextRead =
+    lastSuccessAt === null || nowMs === null
+      ? null
+      : Math.max(0, 60 - Math.floor((nowMs - lastSuccessAt) / 1_000));
+
   const withheld: string[] = [];
   if (proof) {
     if (proof.readPath === "historical-direct") {
@@ -143,9 +158,16 @@ export default function LiveProofPanel({
               : "Reading both public testnets…"}
           </p>
         </div>
-        <button className="refresh-button" disabled={loading} onClick={() => void refresh()} type="button">
-          {loading ? "Reading on-chain state…" : "Refresh on-chain state"}
-        </button>
+        <div className="refresh-group">
+          {untilNextRead !== null ? (
+            <span className="poll-countdown">
+              {loading ? "reading…" : untilNextRead > 0 ? `next read in ${untilNextRead}s` : "reading shortly"}
+            </span>
+          ) : null}
+          <button className="refresh-button" disabled={loading} onClick={() => void refresh()} type="button">
+            {loading ? "Reading on-chain state…" : "Refresh on-chain state"}
+          </button>
+        </div>
       </div>
 
       {error ? (
@@ -225,6 +247,15 @@ export default function LiveProofPanel({
         ) : null}
       </div>
 
+      {proof?.reactive ? (
+        <ReactivePanel
+          automation={proof.automation}
+          deployment={deployment}
+          generatedAt={proof.generatedAt}
+          reactive={proof.reactive}
+        />
+      ) : null}
+
       {proof ? (
         <Accordion
           badge="⌗"
@@ -240,9 +271,6 @@ export default function LiveProofPanel({
             </>
           ) : null}
           {proof.automation ? <AutomationCard automation={proof.automation} /> : null}
-          {proof.reactive ? (
-            <ReactiveCard automation={proof.automation} deployment={deployment} reactive={proof.reactive} />
-          ) : null}
         </div>
 
         {/* One line instead of five. A withheld card and an empty one are still

@@ -204,7 +204,9 @@ export default function DashboardClient({
 
       <G9Experience
         data={data}
+        deployedConfig={live.proof?.processor.deployedConfig ?? null}
         deployment={deployment}
+        finalizedThreshold={live.proof?.origin.finalizedThreshold ?? null}
         onPolicyChange={setPolicyId}
         onRunPhaseComplete={advanceRun}
         policyId={policyId}
