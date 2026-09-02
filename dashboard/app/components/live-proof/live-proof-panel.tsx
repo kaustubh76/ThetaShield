@@ -173,6 +173,16 @@ export default function LiveProofPanel({
     proof && proof.expiryBasis === "host-clock"
       ? " Expiry is inferred from this server's clock on the direct-getter path, not read from the chain."
       : "";
+  // Why the baseline holds, stated as a checkable number rather than as
+  // reassurance. The curve needs `minimumTrailingObservations` per side before
+  // it can compute a dispersion at all; settledCount is a lifetime total across
+  // BOTH sides, so it supports only the one-way inference — if the total is
+  // short of the requirement, no single side can possibly have enough. The
+  // converse does not follow, so above the threshold this claims nothing.
+  const trailingNeeded = proof?.processor.deployedConfig?.scheduler.minimumTrailingObservations ?? null;
+  const provablyShort =
+    proof !== null && trailingNeeded !== null && proof.processor.settledCount < trailingNeeded;
+
   const statusDetail = !proof
     ? error
       ? "No claim is made about the current fee until a read succeeds. The verified receipt trail below is permanent."
@@ -180,7 +190,9 @@ export default function LiveProofPanel({
     : safeBaseline
       ? proof.recommendationExpired
         ? `Both swap directions return the configured ${feeBps(proof.origin.baselineFeePips)} bps baseline, as the controller reports. Sequence ${proof.origin.lastSequence} remains auditable, but its validity window has ended.${expiryNote}`
-        : "Refusing to overreact is the system's first live safety decision: without shared confidence, both directions hold the configured baseline by design."
+      : provablyShort && trailingNeeded !== null
+          ? `The curve needs ${trailingNeeded} trailing observations per side before it can compute a dispersion at all, and this pool has settled ${proof.processor.settledCount} across both sides. Confidence is therefore structurally zero and the ${feeBps(proof.origin.baselineFeePips)} bps baseline is the only answer available — not a judgement that the flow is benign.`
+          : "Refusing to overreact is the system's first live safety decision: without shared confidence, both directions hold the configured baseline by design."
       : proof.recommendationExpired
         // The chain still reports a premium applied while the window reads as
         // ended. Saying "baseline" here would contradict the fees rendered above.

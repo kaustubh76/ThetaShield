@@ -1020,6 +1020,13 @@ footer > div:last-child { display: grid; justify-content: end; gap: 5px; color: 
   .live-toolbar, .live-toolbar > div { align-items: stretch; flex-direction: column; }
   .refresh-button { width: 100%; }
   .live-grid, .console-steps { grid-template-columns: 1fr; }
+  /* The three-column step row leaves ~150px for prose at this width. Stack it:
+     time and receipt share the top line, the copy gets the full column. */
+  .attempt-steps li { grid-template-columns: auto minmax(0, 1fr); gap: 6px 10px; }
+  .attempt-steps time { grid-column: 1; text-align: left; }
+  .attempt-steps b { grid-column: 2; }
+  .attempt-steps span { grid-column: 1 / -1; }
+  .attempt-steps a { grid-row: auto; grid-column: 1 / -1; }
   .run-body { grid-template-columns: 64px minmax(0, 1fr); gap: 10px; padding-right: 14px; }
   .run-body > .receipt-open { grid-column: 2; padding: 0 0 12px; }
   .run-gap { grid-template-columns: 72px minmax(0, 1fr); }
