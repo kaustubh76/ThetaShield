@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { DeploymentView } from "../../deployment-data";
 import CallbackAuthentication from "./callback-authentication";
+import type { SchedulerHealth } from "./scheduler-health";
 import type { AuthenticationView, AutomationView, PendingMaturityView, ReactiveView } from "./types";
 
 // The five phases the RSC moves through, in the order the loop walks them.
@@ -46,6 +47,7 @@ export default function ReactivePanel({
   authentication,
   pendingMaturity,
   pendingCount,
+  health,
   referenceWindowSeconds,
   lastRunAt,
   deployment,
@@ -56,6 +58,8 @@ export default function ReactivePanel({
   authentication: AuthenticationView | null;
   pendingMaturity: PendingMaturityView | null;
   pendingCount: number;
+  /** Shared with the run console so the two cannot describe the scheduler differently. */
+  health: SchedulerHealth;
   /** Deployed referenceSelectionWindowSeconds: past it, evidence is unscoreable. */
   referenceWindowSeconds: number | null;
   /** Unix seconds of the last completed run's final step, or null. */
@@ -83,7 +87,12 @@ export default function ReactivePanel({
   const armed = rvm && reactive.dueAt > 0;
   const remaining = armed ? reactive.dueAt - now : 0;
   const executorCycle = automation?.lastCycle.cycleId ?? null;
-  const cyclesAgree = executorCycle !== null && executorCycle === reactive.lastCycleId;
+  // The RSC subscribes to AutomationCycleCompleted with topic_3 == 1, so it
+  // counts ONLY cycles authenticated through executeFromReactive and ignores
+  // permissionless keeper cycles by construction. Rendering its counter beside
+  // the executor's total as "2 · executor reports 6" therefore showed correct
+  // filtering as though it were two chains disagreeing.
+  const keeperCycles = executorCycle === null ? null : executorCycle - reactive.lastCycleId;
   const config = reactive.networkConfig;
   const processorName =
     deployment.networks.find((network) => network.role === "processor")?.name ?? "the processor chain";
@@ -152,13 +161,36 @@ export default function ReactivePanel({
         </span>
       </div>
 
+      {/* Idle can mean two different things and they are not interchangeable:
+          no work to do, or work that never arrived. The health verdict comes
+          from what happened to the last observation, so this cannot claim the
+          quiet kind while the loud kind is true. */}
       {rvm && reactive.phase === 0 ? (
-        <p className="reactive-rest">
-          {`Idle is the resting state, not a fault: the scheduler is subscribed and wakes on swap
-          traffic, and this pool has had none since it last completed a full run`}
-          {lastRunAt !== null ? ` ${elapsed(now - lastRunAt)} ago` : ""}
-          {`. The run below is dated from its own transactions.`}
-        </p>
+        health && !health.waking ? (
+          <div className="reactive-rest degraded">
+            <b>Integration verified · log delivery degraded upstream</b>
+            <p>
+              {`Everything this side controls checks out on this read: the subscription is live on the
+              processor contract and the ObservationQueued topic, the callback authentication passes
+              on every term, the ReactiveVM is funded, and ${deployment.automation.networkName} is
+              emitting the ${deployment.automation.cronName} this contract subscribes to. What has not
+              happened is delivery of the log into the VM — the signal counter has not moved for the
+              last observation, and that is reported upstream.`}
+            </p>
+            <p>
+              {`The protocol is built for exactly this. The executor's cycle is permissionless, so the
+              same bounded work any callback would do was carried by a keeper instead, and the loop
+              closed end to end. Nothing here waits on a single scheduler to be healthy.`}
+            </p>
+          </div>
+        ) : (
+          <p className="reactive-rest">
+            {`Idle is the resting state, not a fault: the scheduler is subscribed and wakes on swap
+            traffic, and there is nothing outstanding`}
+            {lastRunAt !== null ? ` since the last run ${elapsed(now - lastRunAt)} ago` : ""}
+            {`. The run below is dated from its own transactions.`}
+          </p>
+        )
       ) : null}
 
       {/* The state machine. This is what makes Reactive legible: it is a
@@ -213,13 +245,15 @@ export default function ReactivePanel({
           <dd>{rvm ? (reactive.queuedMaturityAt > 0 ? "one waiting" : "none") : "—"}</dd>
         </div>
         <div>
-          <dt>Cycle observed</dt>
-          <dd className={cyclesAgree ? "agrees" : ""}>
-            {rvm
-              ? executorCycle === null
+          <dt>Authenticated callbacks</dt>
+          <dd className={rvm && reactive.lastCycleId > 0 ? "agrees" : ""}>
+            {!rvm
+              ? "—"
+              : keeperCycles === null
                 ? String(reactive.lastCycleId)
-                : `${reactive.lastCycleId} · executor ${cyclesAgree ? "agrees" : `reports ${executorCycle}`}`
-              : "—"}
+                : keeperCycles > 0
+                  ? `${reactive.lastCycleId} · ${keeperCycles} keeper ${keeperCycles === 1 ? "cycle" : "cycles"} correctly ignored`
+                  : `${reactive.lastCycleId} · all cycles authenticated`}
           </dd>
         </div>
       </div>

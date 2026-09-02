@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createPublicClient, createWalletClient, encodeFunctionData, http, parseAbi } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { sepolia, unichainSepolia } from "viem/chains";
-import { ADDRESSES, EVENT_TOPICS, POOL_ID, RPC } from "../../live-config";
+import { ADDRESSES, EVENT_TOPICS, POOL_ID, REACTIVE_RVM_ID, RPC } from "../../live-config";
 import { CIRCLE_DOMAIN, fetchAttestation } from "./circle";
 import {
   GUARDS,
@@ -109,6 +109,20 @@ function signer() {
   return privateKeyToAccount((secret.startsWith("0x") ? secret : `0x${secret}`) as `0x${string}`);
 }
 
+// The account the guards are evaluated against. With a key configured it is the
+// signer; without one it is the deployer address from the manifest, which is the
+// same account and is public. That distinction matters: it lets an unarmed
+// deployment still answer "what would be permitted right now" truthfully, which
+// the console claims and previously could not deliver — guardsFor returned early
+// on missing config and never touched the chain.
+function guardAddress(): `0x${string}` {
+  try {
+    return signer().address;
+  } catch {
+    return REACTIVE_RVM_ID.toLowerCase() as `0x${string}`;
+  }
+}
+
 // Nonce selection, the hard way, because both obvious answers are wrong here.
 //
 // The default lands on whichever load-balanced backend answers, and one that is
@@ -135,12 +149,14 @@ type Guard = { ok: boolean; reason: string };
 // between two requests, so an in-memory counter would reset to zero and a
 // cooldown held in RAM would not hold at all.
 async function guardsFor(step: RunStep): Promise<Guard[]> {
+  const guards: Guard[] = [];
+  const address = guardAddress();
+  // Reported as one more guard rather than as an early return, so the chain
+  // conditions below are still evaluated and shown on an unarmed deployment.
   const missing = missingConfig(step);
   if (missing.length) {
-    return [{ ok: false, reason: `not configured on this deployment: ${missing.join(", ")}` }];
+    guards.push({ ok: false, reason: `this deployment cannot sign: ${missing.join(", ")}` });
   }
-  const guards: Guard[] = [];
-  const address = signer().address;
 
   if (step === "swap") {
     const [balance, pending, head] = await Promise.all([

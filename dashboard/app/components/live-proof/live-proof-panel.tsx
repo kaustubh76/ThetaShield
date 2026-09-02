@@ -7,7 +7,7 @@ import AutomationCard from "./automation-card";
 import EventsTicker from "./events-ticker";
 import ReactivePanel from "./reactive-panel";
 import LatestAttempt from "./latest-attempt";
-import RunConsole from "./run-console";
+import RunConsole, { type ExercisedStep } from "./run-console";
 import { schedulerHealth } from "./scheduler-health";
 import ReferenceSources from "./reference-sources";
 import RunTimeline from "./run-timeline";
@@ -83,6 +83,16 @@ export default function LiveProofPanel({
     return blocks > 0 && seconds > 0 ? seconds / blocks : null;
   };
   const blockSeconds = { origin: blockSecondsFor("origin"), processor: blockSecondsFor("processor") };
+
+  // The receipt that last exercised each console step, taken from the payload
+  // rather than written into the source: the relay and cycle come from the most
+  // recent attempt's own lifecycle, the swap from the dated run timeline.
+  const attempt = proof?.events?.latestAttempt ?? null;
+  const provenSwap = proof?.runTimeline?.steps.find((step) => step.index === 0) ?? null;
+  const exercised: Partial<Record<"swap" | "relay" | "cycle", ExercisedStep>> = {};
+  if (provenSwap) exercised.swap = { hash: provenSwap.hash, chain: "origin" };
+  if (attempt) exercised.relay = { hash: attempt.queuedTx, chain: "processor" };
+  if (attempt?.outcomeTx) exercised.cycle = { hash: attempt.outcomeTx, chain: "processor" };
 
   const withheld: string[] = [];
   if (proof) {
@@ -316,6 +326,7 @@ export default function LiveProofPanel({
           deployment={deployment}
           generatedAt={proof.generatedAt}
           lastRunAt={proof.runTimeline?.steps[proof.runTimeline.steps.length - 1]?.observedAt ?? null}
+          health={schedulerHealth(proof)}
           pendingCount={proof.processor.pendingCount}
           pendingMaturity={proof.pendingMaturity}
           referenceWindowSeconds={proof.processor.deployedConfig?.scheduler.referenceSelectionWindowSeconds ?? null}
@@ -369,7 +380,12 @@ export default function LiveProofPanel({
         </Accordion>
       ) : null}
 
-      <RunConsole deployment={deployment} health={schedulerHealth(proof)} onRan={() => void refresh()} />
+      <RunConsole
+        deployment={deployment}
+        exercised={exercised}
+        health={schedulerHealth(proof)}
+        onRan={() => void refresh()}
+      />
 
       <LatestAttempt
         attempt={proof?.events?.latestAttempt ?? null}

@@ -28,13 +28,22 @@ const COPY: Record<StepState["step"], { title: string; chain: "origin" | "proces
   },
 };
 
+export type ExercisedStep = { hash: string; chain: "origin" | "processor" };
+
 export default function RunConsole({
   deployment,
   health,
+  exercised,
   onRan,
 }: {
   deployment: DeploymentView;
   health: SchedulerHealth;
+  /**
+   * The transaction that last exercised each step, read from live payload data
+   * rather than written into the source — the gate forbids hex literals outside
+   * live-config, and a hardcoded receipt would rot the moment a run happens.
+   */
+  exercised: Partial<Record<StepState["step"], ExercisedStep>>;
   onRan: () => void;
 }) {
   const [status, setStatus] = useState<RunStatus | null>(null);
@@ -123,7 +132,7 @@ export default function RunConsole({
       <p className="console-warning">
         {status?.enabled
           ? "These buttons broadcast real transactions to Unichain Sepolia and Ethereum Sepolia and change deployed contract state. They are open to anyone, so every step is bounded: the arguments are fixed in the source, one run may be in flight at a time, a cooldown separates runs, and each chain has a balance floor the endpoint refuses to spend below."
-          : "No signing key is configured here, so every step below is refused. The guards still evaluate against live chain state, so you can see exactly what would and would not be permitted right now."}
+          : "Each step below has been run against the live testnets — the receipts are linked. This deployment holds no signing key, so the endpoint refuses to broadcast and the buttons stay inert; adding the operator environment arms them. The guards still evaluate against live chain state either way, which is the part worth reading."}
       </p>
 
       <ol className="console-steps">
@@ -146,14 +155,28 @@ export default function RunConsole({
                   {` ${health.detail}`}
                 </p>
               ) : null}
-              <ul className="console-guards">
-                {entry.guards.map((guard) => (
-                  <li className={guard.ok ? "guard ok" : "guard blocked"} key={guard.reason}>
-                    <i aria-hidden="true">{guard.ok ? "✓" : "✕"}</i>
-                    {guard.reason}
-                  </li>
-                ))}
-              </ul>
+              {status ? (
+                <ul className="console-guards">
+                  {entry.guards.map((guard) => (
+                    <li className={guard.ok ? "guard ok" : "guard blocked"} key={guard.reason}>
+                      <i aria-hidden="true">{guard.ok ? "✓" : "✕"}</i>
+                      {guard.reason}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              {exercised[entry.step] ? (
+                <p className="console-proven">
+                  {"last run against the live testnets · "}
+                  <a
+                    href={`${explorer(exercised[entry.step]!.chain)}/tx/${exercised[entry.step]!.hash}`}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    <code>{shortHex(exercised[entry.step]!.hash)}</code> ↗
+                  </a>
+                </p>
+              ) : null}
               <button
                 className={isArmed ? "console-action armed" : "console-action"}
                 disabled={!entry.allowed || busy !== null}
@@ -166,7 +189,9 @@ export default function RunConsole({
                     ? "press again to broadcast"
                     : entry.allowed
                       ? copy.title
-                      : "blocked"}
+                      : status?.enabled
+                        ? "held by a guard"
+                        : "not armed here"}
               </button>
               {result?.step === entry.step ? (
                 <a

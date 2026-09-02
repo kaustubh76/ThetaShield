@@ -155,7 +155,6 @@ export default function RegistrySection({
 
       <Accordion
         badge="03"
-        defaultOpen
         id="registry-parameters"
         meta={`${researchConfig.length} research keys · ${
           liveStatus === "ready" || liveStatus === "stale" ? "deployed values read from chain" : "reading deployed values"
@@ -170,89 +169,89 @@ export default function RegistrySection({
         />
       </Accordion>
 
-      <Accordion badge="04" id="registry-cost" meta={`${deployment.cost.every((entry) => entry.approvedByOwner) ? "owner approved" : "approval incomplete"} · ${deployment.cost.every((entry) => Number.parseFloat(entry.actual) <= Number.parseFloat(entry.estimatedMaximum)) ? "actuals under estimate" : "an actual exceeded its estimate"}`} title="Deployment cost">
-        <div className="cost-rows">
-          {deployment.cost.map((entry) => {
-            const actual = Number.parseFloat(entry.actual);
-            const estimated = Number.parseFloat(entry.estimatedMaximum);
-            const share = estimated > 0 ? Math.min(100, (actual / estimated) * 100) : 0;
-            return (
-              <div className="cost-row" key={entry.role}>
-                <div className="cost-head">
-                  <b>{entry.networkName}</b>
-                  <span>{`gas limit ${formatInt(entry.gasLimit)}`}</span>
-                  <em className={entry.approvedByOwner ? "verified" : "unverified"}>{entry.approvedByOwner ? "owner approved" : "not approved"}</em>
+      <Accordion
+        badge="04"
+        id="registry-reference"
+        meta="cost · gas · judge Q&A · glossary"
+        title="Reference"
+      >
+        <h4 className="reference-heading">Deployment cost</h4>
+          <div className="cost-rows">
+            {deployment.cost.map((entry) => {
+              const actual = Number.parseFloat(entry.actual);
+              const estimated = Number.parseFloat(entry.estimatedMaximum);
+              const share = estimated > 0 ? Math.min(100, (actual / estimated) * 100) : 0;
+              return (
+                <div className="cost-row" key={entry.role}>
+                  <div className="cost-head">
+                    <b>{entry.networkName}</b>
+                    <span>{`gas limit ${formatInt(entry.gasLimit)}`}</span>
+                    <em className={entry.approvedByOwner ? "verified" : "unverified"}>{entry.approvedByOwner ? "owner approved" : "not approved"}</em>
+                  </div>
+                  <div className="cost-bar" role="img" aria-label={`${entry.networkName}: actual spend ${entry.actual} of approved maximum ${entry.estimatedMaximum} ${entry.currency}`}>
+                    <i style={{ width: `${Math.max(1.5, share)}%` }} />
+                  </div>
+                  <div className="cost-figures">
+                    <span>{`actual ${actual} `}</span>
+                    <span>{`approved max ${estimated} ${entry.currency}`}</span>
+                  </div>
                 </div>
-                <div className="cost-bar" role="img" aria-label={`${entry.networkName}: actual spend ${entry.actual} of approved maximum ${entry.estimatedMaximum} ${entry.currency}`}>
-                  <i style={{ width: `${Math.max(1.5, share)}%` }} />
-                </div>
-                <div className="cost-figures">
-                  <span>{`actual ${actual} `}</span>
-                  <span>{`approved max ${estimated} ${entry.currency}`}</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-        <div className="fingerprints">
-          <h4>Preflight fingerprints</h4>
-          {deployment.acceptance.preflightFingerprints.map((fingerprint) => (
-            <code key={fingerprint}>{fingerprint}</code>
-          ))}
-        </div>
-      </Accordion>
-
-      <Accordion badge="05" id="registry-gas" meta={`hook total ${formatInt(deployment.gas.hookTotal)} per swap`} title="Measured gas">
-        <div className="gas-panel">
-          <div className="card-title"><span>MEASURED GAS · ISOLATED LOCAL EVM</span><b>{`hook total ${formatInt(deployment.gas.hookTotal)} per swap`}</b></div>
-          <div className="gas-rows">
-            <div className="gas-row">
-              <span>hook · beforeSwap + afterSwap (warm)</span>
-              <div className="gas-bar" role="img" aria-label={`Hook gas: beforeSwap ${formatInt(deployment.gas.beforeSwap)} plus warm afterSwap ${formatInt(deployment.gas.afterSwapWarm)} equals ${formatInt(deployment.gas.hookTotal)} per swap.`}>
-                <i className="seg-a" style={{ width: `${(deployment.gas.beforeSwap / deployment.gas.hookTotal) * 100}%` }} />
-                <i className="seg-b" style={{ width: `${(deployment.gas.afterSwapWarm / deployment.gas.hookTotal) * 100}%` }} />
-              </div>
-              <b>{`${formatInt(deployment.gas.beforeSwap)} + ${formatInt(deployment.gas.afterSwapWarm)}`}</b>
-            </div>
-            <div className="gas-row">
-              <span>controller · apply recommendation cold / warm</span>
-              <div className="gas-bar">
-                <i className="seg-a" style={{ width: `${(deployment.gas.applyCold / deployment.gas.hookTotal) * 100}%` }} />
-              </div>
-              <b>{`${formatInt(deployment.gas.applyCold)} / ${formatInt(deployment.gas.applyWarm)}`}</b>
-            </div>
-            <div className="gas-row">
-              <span>controller · feeForSwap (warm read)</span>
-              <div className="gas-bar">
-                <i className="seg-a" style={{ width: `${Math.max(1, (deployment.gas.feeForSwapWarm / deployment.gas.hookTotal) * 100)}%` }} />
-              </div>
-              <b>{formatInt(deployment.gas.feeForSwapWarm)}</b>
-            </div>
+              );
+            })}
           </div>
-          <p className="card-caption">
-            Isolated local EVM call measurements under the pinned compiler profile. They exclude the
-            PoolManager and router transaction and are not a live-chain cost quote.
-          </p>
-        </div>
-      </Accordion>
-
-      <Accordion badge="06" id="registry-qa" meta={`${judgeQuestions.length} questions`} title="Judge Q&A">
-        <div className="qa-list">
-          {judgeQuestions.map((entry, index) => (
-            <details className="qa-item" key={entry.question} open={index === 0}>
-              <summary>{entry.question}</summary>
-              <p>{entry.answer}</p>
-            </details>
-          ))}
-        </div>
-      </Accordion>
-
-      <Accordion badge="07" id="registry-glossary" meta={`${glossary.length} terms`} title="Glossary">
-        <dl className="glossary">
-          {glossary.map(([term, definition]) => (
-            <div key={term}><dt>{term}</dt><dd>{definition}</dd></div>
-          ))}
-        </dl>
+          <div className="fingerprints">
+            <h4>Preflight fingerprints</h4>
+            {deployment.acceptance.preflightFingerprints.map((fingerprint) => (
+              <code key={fingerprint}>{fingerprint}</code>
+            ))}
+          </div>
+        <h4 className="reference-heading">Measured gas</h4>
+          <div className="gas-panel">
+            <div className="card-title"><span>MEASURED GAS · ISOLATED LOCAL EVM</span><b>{`hook total ${formatInt(deployment.gas.hookTotal)} per swap`}</b></div>
+            <div className="gas-rows">
+              <div className="gas-row">
+                <span>hook · beforeSwap + afterSwap (warm)</span>
+                <div className="gas-bar" role="img" aria-label={`Hook gas: beforeSwap ${formatInt(deployment.gas.beforeSwap)} plus warm afterSwap ${formatInt(deployment.gas.afterSwapWarm)} equals ${formatInt(deployment.gas.hookTotal)} per swap.`}>
+                  <i className="seg-a" style={{ width: `${(deployment.gas.beforeSwap / deployment.gas.hookTotal) * 100}%` }} />
+                  <i className="seg-b" style={{ width: `${(deployment.gas.afterSwapWarm / deployment.gas.hookTotal) * 100}%` }} />
+                </div>
+                <b>{`${formatInt(deployment.gas.beforeSwap)} + ${formatInt(deployment.gas.afterSwapWarm)}`}</b>
+              </div>
+              <div className="gas-row">
+                <span>controller · apply recommendation cold / warm</span>
+                <div className="gas-bar">
+                  <i className="seg-a" style={{ width: `${(deployment.gas.applyCold / deployment.gas.hookTotal) * 100}%` }} />
+                </div>
+                <b>{`${formatInt(deployment.gas.applyCold)} / ${formatInt(deployment.gas.applyWarm)}`}</b>
+              </div>
+              <div className="gas-row">
+                <span>controller · feeForSwap (warm read)</span>
+                <div className="gas-bar">
+                  <i className="seg-a" style={{ width: `${Math.max(1, (deployment.gas.feeForSwapWarm / deployment.gas.hookTotal) * 100)}%` }} />
+                </div>
+                <b>{formatInt(deployment.gas.feeForSwapWarm)}</b>
+              </div>
+            </div>
+            <p className="card-caption">
+              Isolated local EVM call measurements under the pinned compiler profile. They exclude the
+              PoolManager and router transaction and are not a live-chain cost quote.
+            </p>
+          </div>
+        <h4 className="reference-heading">Judge Q&A</h4>
+          <div className="qa-list">
+            {judgeQuestions.map((entry, index) => (
+              <details className="qa-item" key={entry.question} open={index === 0}>
+                <summary>{entry.question}</summary>
+                <p>{entry.answer}</p>
+              </details>
+            ))}
+          </div>
+        <h4 className="reference-heading">Glossary</h4>
+          <dl className="glossary">
+            {glossary.map(([term, definition]) => (
+              <div key={term}><dt>{term}</dt><dd>{definition}</dd></div>
+            ))}
+          </dl>
       </Accordion>
     </section>
   );

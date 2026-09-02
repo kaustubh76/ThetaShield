@@ -9,6 +9,7 @@ function EventLane({
   windowBlocks,
   windowSeconds,
   scanned,
+  hideWhenEmpty,
   generatedAt,
 }: {
   label: string;
@@ -17,8 +18,15 @@ function EventLane({
   windowBlocks: number;
   windowSeconds: number | null;
   scanned: boolean;
+  /** Drop a successfully-scanned empty lane instead of explaining the blank. */
+  hideWhenEmpty: boolean;
   generatedAt: string;
 }) {
+  // A lane whose window structurally cannot reach the activity has nothing to
+  // say, and a paragraph explaining that is worse than no lane: it reads as a
+  // fault. It is dropped only when the scan SUCCEEDED and was empty — a failed
+  // scan is a different finding and still gets its line.
+  if (hideWhenEmpty && scanned && !events.length) return null;
   // The origin chain caps eth_getLogs at 10,000 blocks, which on a one-second
   // chain is under three hours — so an empty lane is a statement about the
   // window, not about whether the system has ever run. Saying only "10,000
@@ -69,6 +77,9 @@ export default function EventsTicker({
   /** Measured seconds per block per chain, or null when not derivable. */
   blockSeconds: { origin: number | null; processor: number | null };
 }) {
+  // Only drop the origin lane when the other lane is carrying the story; with
+  // both empty, one honest "nothing recent" beats an empty section.
+  const hasProcessorEvents = events.processor.length > 0;
   const origin = deployment.networks.find((network) => network.role === "origin");
   const processor = deployment.networks.find((network) => network.role === "processor");
   if (!origin || !processor) return null;
@@ -82,6 +93,7 @@ export default function EventsTicker({
           explorerBase={origin.explorerBase}
           generatedAt={generatedAt}
           label={`${origin.name.toUpperCase()} · SWAPS OBSERVED`}
+          hideWhenEmpty={hasProcessorEvents}
           scanned={events.scanned.origin}
           windowBlocks={events.window.origin}
           windowSeconds={blockSeconds.origin === null ? null : blockSeconds.origin * events.window.origin}
@@ -91,6 +103,7 @@ export default function EventsTicker({
           explorerBase={processor.explorerBase}
           generatedAt={generatedAt}
           label={`${processor.name.toUpperCase()} · EPOCHS + AUTOMATION`}
+          hideWhenEmpty={false}
           scanned={events.scanned.processor}
           windowBlocks={events.window.processor}
           windowSeconds={blockSeconds.processor === null ? null : blockSeconds.processor * events.window.processor}
