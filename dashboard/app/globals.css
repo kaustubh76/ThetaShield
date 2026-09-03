@@ -401,6 +401,11 @@ h1 em { color: var(--signal); font-style: normal; }
 .console-state { font-family: var(--font-geist-mono), monospace; font-size: 7.5px; letter-spacing: .06em; }
 .console-state.live { color: var(--amber); }
 .console-state.off { color: var(--dim); }
+/* A first read in flight and a failed read are distinct from a deployment
+   that holds no key. They used to share the read-only badge, which is how
+   the console reported a mode it had not established yet. */
+.console-state.pending { color: var(--dim); }
+.console-state.failed { color: var(--danger); }
 .console-warning { margin: 14px 0 0; color: var(--muted); font-size: 10.5px; line-height: 1.6; }
 .console-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0 0; padding: 0; list-style: none; }
 .console-step { display: flex; flex-direction: column; min-width: 0; padding: 16px; border: 1px solid var(--line); background: rgba(7,16,14,.55); }
@@ -424,6 +429,15 @@ h1 em { color: var(--signal); font-style: normal; }
 .console-action.armed { border-color: var(--amber); color: var(--ink); background: var(--amber); font-weight: 500; }
 .console-receipt { margin-top: 8px; color: var(--signal); font-family: var(--font-geist-mono), monospace; font-size: 9px; }
 .console-error { margin: 14px 0 0; padding: 10px 14px; border: 1px solid rgba(255,109,130,.45); color: var(--danger); background: rgba(255,109,130,.06); font-size: 10.5px; }
+.console-stale { margin: 10px 0 0; color: var(--amber); font-size: 10px; line-height: 1.55; }
+/* The guards the endpoint re-ran at the moment of the press, shown under the
+   button that was pressed rather than as one line at the foot of the list. */
+.console-refusal-head { margin: 12px 0 0; color: var(--amber); font-family: var(--font-geist-mono), monospace; font-size: 8px; letter-spacing: .05em; text-transform: uppercase; }
+.console-guards.console-refusal { margin-top: 6px; }
+.console-guards.console-refusal .guard { color: var(--muted); }
+.console-step-error { margin: 10px 0 0; color: var(--danger); font-size: 9.5px; line-height: 1.5; }
+.console-retry { margin: 14px 0 0; padding: 9px 13px; border: 1px solid var(--line); color: var(--signal); background: transparent; cursor: pointer; font: inherit; font-size: 10px; }
+.console-retry:hover, .console-retry:focus-visible { border-color: var(--signal); }
 .console-steps > li:first-child { margin-top: 0; }
 
 .latest-attempt { margin: 50px 0 26px; padding: 22px; border: 1px solid var(--line); background: rgba(13,24,21,.72); }

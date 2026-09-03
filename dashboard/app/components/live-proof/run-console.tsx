@@ -1,13 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import type { DeploymentView } from "../../deployment-data";
 import { shortHex } from "../format";
 import type { SchedulerHealth } from "./scheduler-health";
+import { RUN_STEP_ORDER, type RunGuard, type RunStatusState, type RunStep } from "./use-run-status";
 
-type Guard = { ok: boolean; reason: string };
-type StepState = { step: "swap" | "relay" | "cycle"; allowed: boolean; guards: Guard[] };
-type RunStatus = { ok: true; enabled: boolean; steps: StepState[]; swap: { amountWei: string } };
-
-const COPY: Record<StepState["step"], { title: string; chain: "origin" | "processor"; detail: string }> = {
+const COPY: Record<RunStep, { title: string; chain: "origin" | "processor"; detail: string }> = {
   swap: {
     title: "Start a run",
     chain: "origin",
@@ -30,11 +27,29 @@ const COPY: Record<StepState["step"], { title: string; chain: "origin" | "proces
 
 export type ExercisedStep = { hash: string; chain: "origin" | "processor" };
 
+type Sent = { hash: string; leg?: string; outcome: string };
+
+function GuardList({ guards, className }: { guards: RunGuard[]; className?: string }) {
+  return (
+    <ul className={className ? `console-guards ${className}` : "console-guards"}>
+      {guards.map((guard) => (
+        // Keyed by code, not by reason: a cooldown's reason changes every minute,
+        // and keying on it remounts the row on every poll and makes it flicker.
+        <li className={guard.ok ? "guard ok" : "guard blocked"} key={guard.code}>
+          <i aria-hidden="true">{guard.ok ? "✓" : "✕"}</i>
+          {guard.reason}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export default function RunConsole({
   deployment,
   health,
   exercised,
   onRan,
+  run,
 }: {
   deployment: DeploymentView;
   health: SchedulerHealth;
@@ -43,79 +58,95 @@ export default function RunConsole({
    * rather than written into the source — the gate forbids hex literals outside
    * live-config, and a hardcoded receipt would rot the moment a run happens.
    */
-  exercised: Partial<Record<StepState["step"], ExercisedStep>>;
+  exercised: Partial<Record<RunStep, ExercisedStep>>;
   onRan: () => void;
+  run: RunStatusState;
 }) {
-  const [status, setStatus] = useState<RunStatus | null>(null);
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState<string | null>(null);
-  const [result, setResult] = useState<{ step: string; hash: string; leg?: string } | null>(null);
-  const [armed, setArmed] = useState<string | null>(null);
+  const [busy, setBusy] = useState<RunStep | null>(null);
+  const [armedStep, setArmedStep] = useState<RunStep | null>(null);
+  // Keyed by step rather than held in one slot each, so pressing a second step
+  // does not erase the receipt or the refusal from the first.
+  const [sent, setSent] = useState<Partial<Record<RunStep, Sent>>>({});
+  const [refusals, setRefusals] = useState<Partial<Record<RunStep, RunGuard[]>>>({});
+  const [failures, setFailures] = useState<Partial<Record<RunStep, string>>>({});
 
-  const refresh = useCallback(async () => {
-    try {
-      const response = await fetch("/api/run", { cache: "no-store" });
-      const payload = (await response.json()) as RunStatus | { ok: false; message: string };
-      if (!("ok" in payload) || !payload.ok) throw new Error("message" in payload ? payload.message : "unavailable");
-      setStatus(payload);
-      setError("");
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "run status unavailable");
+  const { status, error, loading, stale, refresh, boost } = run;
+
+  // Three situations used to render the same "READ-ONLY" badge: a first read in
+  // flight, a read that failed, and a deployment that genuinely holds no key.
+  // Only the third is read-only, and saying so about the other two is how the
+  // console came to look broken when it was merely uninformed.
+  const phase = status ? (status.enabled ? "armed" : "read-only") : loading ? "loading" : "unavailable";
+
+  async function press(step: RunStep) {
+    // Two presses, never one, so a real transaction against a live deployment
+    // cannot be fired by a stray click.
+    if (armedStep !== step) {
+      setArmedStep(step);
+      return;
     }
-  }, []);
-
-  // Wrapped rather than called directly: fetch can throw synchronously, which
-  // would put the catch's setState on the effect's own synchronous path. The
-  // cancelled flag also stops a late response updating an unmounted console —
-  // the same discipline useLiveProof uses for its poll.
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      await Promise.resolve();
-      if (cancelled) return;
-      await refresh();
-    };
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [refresh]);
-
-  // Two presses, never one. The first arms a specific step and the second
-  // sends it, so a real transaction against a live deployment cannot be fired
-  // by a stray click on a page the reader is only scrolling through.
-  const run = useCallback(
-    async (step: string) => {
-      if (armed !== step) {
-        setArmed(step);
+    setBusy(step);
+    setArmedStep(null);
+    setSent((previous) => ({ ...previous, [step]: undefined }));
+    setRefusals((previous) => ({ ...previous, [step]: undefined }));
+    setFailures((previous) => ({ ...previous, [step]: undefined }));
+    try {
+      const response = await fetch("/api/run", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ step }),
+      });
+      const payload = (await response.json()) as {
+        ok?: boolean;
+        hash?: string;
+        leg?: string;
+        outcome?: string;
+        message?: string;
+        guards?: RunGuard[];
+      };
+      if (response.status === 409 && payload.guards?.length) {
+        // A refusal is a finding, not a failure: the endpoint re-ran the guards
+        // and one of them said no. Showing which one is the whole point.
+        setRefusals((previous) => ({ ...previous, [step]: payload.guards }));
         return;
       }
-      setBusy(step);
-      setArmed(null);
-      setResult(null);
-      try {
-        const response = await fetch("/api/run", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ step }),
-        });
-        const payload = (await response.json()) as { ok: boolean; hash?: string; leg?: string; message?: string };
-        if (!payload.ok || !payload.hash) throw new Error(payload.message ?? "the step was refused");
-        setResult({ step, hash: payload.hash, leg: payload.leg });
-        setError("");
-        onRan();
-      } catch (cause) {
-        setError(cause instanceof Error ? cause.message : "the step failed");
-      } finally {
-        setBusy(null);
-        void refresh();
-      }
-    },
-    [armed, onRan, refresh],
-  );
+      if (!payload.ok || !payload.hash) throw new Error(payload.message ?? "the run endpoint refused");
+      setSent((previous) => ({
+        ...previous,
+        [step]: { hash: payload.hash!, leg: payload.leg, outcome: payload.outcome ?? "pending" },
+      }));
+    } catch (pressError) {
+      setFailures((previous) => ({
+        ...previous,
+        [step]: pressError instanceof Error ? pressError.message : "the run endpoint refused",
+      }));
+    } finally {
+      setBusy(null);
+      boost();
+      void refresh();
+      onRan();
+    }
+  }
 
   const explorer = (chain: "origin" | "processor") =>
     deployment.networks.find((network) => network.role === chain)?.explorerBase ?? "";
+
+  const badge = {
+    armed: { className: "live", text: "SIGNING KEY CONFIGURED · BUTTONS SEND REAL TRANSACTIONS" },
+    "read-only": { className: "off", text: "READ-ONLY ON THIS DEPLOYMENT" },
+    loading: { className: "pending", text: "CHECKING THIS DEPLOYMENT…" },
+    unavailable: { className: "failed", text: "RUN STATUS UNAVAILABLE" },
+  }[phase];
+
+  const warning = {
+    armed:
+      "These buttons broadcast real transactions to Unichain Sepolia and Ethereum Sepolia and change deployed contract state. They are open to anyone, so every step is bounded: the arguments are fixed in the source, one run may be in flight at a time, a cooldown separates runs, a fee ceiling caps what a press can cost, and each chain has a balance floor the endpoint refuses to spend below.",
+    "read-only":
+      "Each step below has been run against the live testnets — the receipts are linked. This deployment holds no signing key, so the endpoint refuses to broadcast and the buttons stay inert; adding the operator environment arms them. The guards still evaluate against live chain state either way, which is the part worth reading.",
+    loading: "Reading the guards from both chains to see what this deployment will currently permit.",
+    unavailable:
+      "The guard status could not be read, so no claim is made about what this deployment would permit right now. The receipts linked below are permanent and unaffected.",
+  }[phase];
 
   return (
     <section aria-labelledby="run-console-heading" className="run-console">
@@ -124,23 +155,30 @@ export default function RunConsole({
           <p className="kicker">Run the loop · live testnets</p>
           <h3 id="run-console-heading">Drive the protocol from here</h3>
         </div>
-        <span className={status?.enabled ? "console-state live" : "console-state off"}>
-          {status?.enabled ? "SIGNING KEY CONFIGURED · BUTTONS SEND REAL TRANSACTIONS" : "READ-ONLY ON THIS DEPLOYMENT"}
-        </span>
+        <span className={`console-state ${badge.className}`}>{badge.text}</span>
       </div>
 
-      <p className="console-warning">
-        {status?.enabled
-          ? "These buttons broadcast real transactions to Unichain Sepolia and Ethereum Sepolia and change deployed contract state. They are open to anyone, so every step is bounded: the arguments are fixed in the source, one run may be in flight at a time, a cooldown separates runs, and each chain has a balance floor the endpoint refuses to spend below."
-          : "Each step below has been run against the live testnets — the receipts are linked. This deployment holds no signing key, so the endpoint refuses to broadcast and the buttons stay inert; adding the operator environment arms them. The guards still evaluate against live chain state either way, which is the part worth reading."}
-      </p>
+      <p className="console-warning">{warning}</p>
+      {stale ? (
+        <p className="console-stale">
+          The guards below are the last successful read — the status endpoint is not answering right now.
+        </p>
+      ) : null}
 
       <ol className="console-steps">
-        {(status?.steps ?? []).map((entry) => {
-          const copy = COPY[entry.step];
-          const isArmed = armed === entry.step;
+        {/* Iterated from a fixed order rather than from the response, so the
+            three steps and their receipts still render when the status read
+            fails. Previously this list emptied itself and left the paragraph
+            above pointing at nothing. */}
+        {RUN_STEP_ORDER.map((step) => {
+          const copy = COPY[step];
+          const entry = status?.steps.find((candidate) => candidate.step === step) ?? null;
+          const isArmed = armedStep === step;
+          const canPress = phase === "armed" && Boolean(entry?.allowed);
+          const receipt = sent[step];
+          const refused = refusals[step];
           return (
-            <li className={entry.allowed ? "console-step" : "console-step blocked"} key={entry.step}>
+            <li className={entry?.allowed ? "console-step" : "console-step blocked"} key={step}>
               <div className="console-step-head">
                 <b>{copy.title}</b>
                 <span>{deployment.networks.find((network) => network.role === copy.chain)?.name}</span>
@@ -149,58 +187,78 @@ export default function RunConsole({
               {/* Only on the step that starts a run: the reader is about to
                   spend gas on something whose outcome is already predictable
                   from what happened to the last one. */}
-              {entry.step === "swap" && health && !health.waking ? (
-                <p className="console-health">
-                  <b>{health.headline}</b>
-                  {` ${health.detail}`}
-                </p>
+              {step === "swap" && health && !health.waking ? (
+                <p className="console-health">{health.headline}</p>
               ) : null}
-              {status ? (
+
+              {entry ? (
+                <GuardList guards={entry.guards} />
+              ) : phase === "unavailable" ? (
                 <ul className="console-guards">
-                  {entry.guards.map((guard) => (
-                    <li className={guard.ok ? "guard ok" : "guard blocked"} key={guard.reason}>
-                      <i aria-hidden="true">{guard.ok ? "✓" : "✕"}</i>
-                      {guard.reason}
-                    </li>
-                  ))}
+                  <li className="guard blocked">
+                    <i aria-hidden="true">✕</i>
+                    {`the guard status could not be read: ${error}`}
+                  </li>
                 </ul>
-              ) : null}
-              {exercised[entry.step] ? (
+              ) : (
+                <ul className="console-guards">
+                  <li className="guard">
+                    <i aria-hidden="true">·</i>
+                    reading the chain…
+                  </li>
+                </ul>
+              )}
+
+              {exercised[step] ? (
                 <p className="console-proven">
                   {"last run against the live testnets · "}
                   <a
-                    href={`${explorer(exercised[entry.step]!.chain)}/tx/${exercised[entry.step]!.hash}`}
+                    href={`${explorer(exercised[step]!.chain)}/tx/${exercised[step]!.hash}`}
                     rel="noreferrer"
                     target="_blank"
                   >
-                    <code>{shortHex(exercised[entry.step]!.hash)}</code> ↗
+                    <code>{shortHex(exercised[step]!.hash)}</code> ↗
                   </a>
                 </p>
               ) : null}
+
               <button
                 className={isArmed ? "console-action armed" : "console-action"}
-                disabled={!entry.allowed || busy !== null}
-                onClick={() => void run(entry.step)}
+                disabled={busy !== null || !canPress}
+                onClick={() => void press(step)}
                 type="button"
               >
-                {busy === entry.step
+                {busy === step
                   ? "broadcasting…"
                   : isArmed
                     ? "press again to broadcast"
-                    : entry.allowed
-                      ? copy.title
-                      : status?.enabled
-                        ? "held by a guard"
-                        : "not armed here"}
+                    : phase === "loading"
+                      ? "checking…"
+                      : phase === "unavailable"
+                        ? "status unavailable"
+                        : canPress
+                          ? copy.title
+                          : phase === "armed"
+                            ? "held by a guard"
+                            : "not armed here"}
               </button>
-              {result?.step === entry.step ? (
+
+              {refused?.length ? (
+                <>
+                  <p className="console-refusal-head">refused when you pressed it — the chain said:</p>
+                  <GuardList className="console-refusal" guards={refused.filter((guard) => !guard.ok)} />
+                </>
+              ) : null}
+              {failures[step] ? <p className="console-step-error">{failures[step]}</p> : null}
+
+              {receipt ? (
                 <a
                   className="console-receipt"
-                  href={`${explorer(result.leg === "return" ? "origin" : copy.chain)}/tx/${result.hash}`}
+                  href={`${explorer(receipt.leg === "return" ? "origin" : copy.chain)}/tx/${receipt.hash}`}
                   rel="noreferrer"
                   target="_blank"
                 >
-                  {`sent · ${shortHex(result.hash)} ↗`}
+                  {`${receipt.outcome === "reverted" ? "REVERTED" : receipt.outcome === "success" ? "mined" : "sent"} · ${shortHex(receipt.hash)} ↗`}
                 </a>
               ) : null}
             </li>
@@ -208,7 +266,11 @@ export default function RunConsole({
         })}
       </ol>
 
-      {error ? <p className="console-error">{error}</p> : null}
+      {phase === "unavailable" ? (
+        <button className="console-retry" onClick={() => void refresh()} type="button">
+          try the status read again
+        </button>
+      ) : null}
     </section>
   );
 }

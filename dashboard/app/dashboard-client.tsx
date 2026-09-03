@@ -10,6 +10,7 @@ import DistinctionStrip from "./components/distinction-strip";
 import ExecutionLog from "./components/live-proof/execution-log";
 import LiveProofPanel from "./components/live-proof/live-proof-panel";
 import { useLiveProof } from "./components/live-proof/use-live-proof";
+import { useRunStatus } from "./components/live-proof/use-run-status";
 import LpOutcome from "./components/lp-outcome";
 import RegistrySection from "./components/registry/registry-section";
 import { useReducedMotion } from "./components/use-reduced-motion";
@@ -38,6 +39,10 @@ export default function DashboardClient({
     sensitivityAll,
   } = data;
   const live = useLiveProof();
+  // One poller for the run console, alongside the one for the live payload.
+  // Both are called here rather than inside the components that read them, so
+  // the page issues one request per endpoint however many readers there are.
+  const run = useRunStatus();
   // "stale" is not a flavour of ready: the header must not keep asserting a live
   // recommendation once refreshes have stopped landing.
   const liveStatus = live.stale
@@ -235,7 +240,7 @@ export default function DashboardClient({
           <div><p className="kicker">Live testnet proof</p><h2>Don’t trust the demo. Read the contracts.</h2></div>
           <p>Read directly from deployed contracts across Unichain Sepolia and Ethereum Sepolia, on every refresh.</p>
         </div>
-        <LiveProofPanel deployment={deployment} live={live} onOpenPhase={openPhase} />
+        <LiveProofPanel deployment={deployment} live={live} onOpenPhase={openPhase} run={run} />
       </section>
 
       <ExecutionLog deployment={deployment} live={live} />

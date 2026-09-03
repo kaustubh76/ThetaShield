@@ -123,17 +123,35 @@ if (authRows) {
 }
 check("cross-plane agreement states which planes it compared", /pending/.test((await evaluate(`__txt('.plane-agreement')`)) ?? ""), (await evaluate(`__txt('.plane-agreement')`))?.slice(0, 60));
 
-// The run console. Deliberately NOT pressed: on this target no signing key is
-// configured so every button is disabled, and a suite that could broadcast a
-// real transaction has no business running unattended.
+// The run console. Deliberately NEVER pressed, on any target: an armed
+// deployment broadcasts real transactions, and a suite that could do that has no
+// business running unattended. Mode-aware rather than asserting inertness, so
+// the same checks are correct against an armed production and an unarmed local
+// build — the console must report a definite mode either way, which is the
+// property that actually regressed when it showed READ-ONLY while merely
+// loading or failing.
 const consoleSteps = await evaluate(`document.querySelectorAll('.console-step').length`);
-check("run console renders every step with live guards", consoleSteps === 3 && (await evaluate(`document.querySelectorAll('.console-guards .guard').length`)) >= 3, `${consoleSteps} steps`);
+check("run console renders every step", consoleSteps === 3, `${consoleSteps} steps`);
+const consoleState = (await evaluate(`__txt('.console-state')`)) ?? "";
 check(
-  "run console is inert without a signing key",
-  (await evaluate(`[...document.querySelectorAll('.console-action')].every(b => b.disabled)`)) === true &&
-    /READ-ONLY/i.test((await evaluate(`__txt('.console-state')`)) ?? ""),
-  await evaluate(`__txt('.console-state')`),
+  "run console reports a definite mode",
+  /SIGNING KEY CONFIGURED|READ-ONLY|RUN STATUS UNAVAILABLE|CHECKING/i.test(consoleState),
+  consoleState,
 );
+if (/SIGNING KEY CONFIGURED/i.test(consoleState)) {
+  check(
+    "armed console renders live guards and pre-arms nothing",
+    (await evaluate(`document.querySelectorAll('.console-guards .guard').length`)) >= 3 &&
+      (await evaluate(`[...document.querySelectorAll('.console-action')].every(b => !/press again/i.test(b.textContent))`)) === true,
+    consoleState,
+  );
+} else {
+  check(
+    "unarmed console is inert",
+    (await evaluate(`[...document.querySelectorAll('.console-action')].every(b => b.disabled)`)) === true,
+    consoleState,
+  );
+}
 const attemptVerdict = (await evaluate(`__txt('.attempt-verdict')`)) ?? "";
 check(
   "latest attempt reports the queue outcome",

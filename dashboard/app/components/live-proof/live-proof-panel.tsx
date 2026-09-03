@@ -14,6 +14,7 @@ import SideStateCard from "./side-state-card";
 import TtlRing from "./ttl-ring";
 import { wadToBpsNumber } from "./types";
 import type { LiveProofState } from "./use-live-proof";
+import type { RunStatusState } from "./use-run-status";
 
 // Intl throws RangeError beyond ~8.64e12 seconds, and unsigned() only rejects
 // above MAX_SAFE_INTEGER — so a malformed word in that band would take the whole
@@ -36,10 +37,12 @@ function formatChainTime(seconds: number) {
 export default function LiveProofPanel({
   deployment,
   live,
+  run,
   onOpenPhase,
 }: {
   deployment: DeploymentView;
   live: LiveProofState;
+  run: RunStatusState;
   onOpenPhase: (id: JourneyPhaseId) => void;
 }) {
   const originName = deployment.networks.find((network) => network.role === "origin")?.name ?? "Origin";
@@ -384,6 +387,7 @@ export default function LiveProofPanel({
         exercised={exercised}
         health={schedulerHealth(proof)}
         onRan={() => void refresh()}
+        run={run}
       />
 
       <RunTimeline deployment={deployment} onOpenPhase={onOpenPhase} timeline={proof?.runTimeline ?? null} />
