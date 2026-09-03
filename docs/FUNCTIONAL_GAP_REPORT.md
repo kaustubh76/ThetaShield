@@ -113,7 +113,7 @@ What exists:
 The consequence is functional rather than cosmetic. `ReferencePriceDispersion`
 supports 16 sources and computes a weighted median plus weighted MAD, but with one
 source the median *is* that source, dispersion is zero, and agreement scoring is
-degenerate. `confidenceCapWad: 0.6e18` correctly prevents a single source from
+degenerate. `confidenceCapWad: 0.6e18` *(shipped `RESEARCH_V1` now sets `1e18`)* correctly prevents a single source from
 reaching full confidence — but it also means **confidence can never exceed 60%**,
 against a `confidenceFloorWad` of `0.5e18`. The system runs permanently inside a
 ten-point confidence band with no headroom.
@@ -258,7 +258,7 @@ Three facts that must drive the interface:
 
 1. **On pooled LP net PnL, ThetaShield ranks fourth of five.** It beats only the
    fixed fee; `volatility_only` wins. H1 in
-   [`PHASE6_HANDOFF.md`](PHASE6_HANDOFF.md) is a *paired* test against the fixed fee
+   [`PHASE6_HANDOFF.md`](history/PHASE6_HANDOFF.md) is a *paired* test against the fixed fee
    in *persistent* regimes only — legitimate, but far narrower than "LPs earn more",
    and the document says so outright.
 2. **Inventory PnL is −731.01 for every policy** — identical, because order flow is
@@ -278,7 +278,7 @@ for its detection by over-charging ordinary traders.
 
 That claim's value rests on benign traders *staying*, and the simulator cannot
 measure it. [`scenarios.py`](../research/thetashield/scenarios.py) generates trades
-independently of fee, and [`PHASE5_HANDOFF.md`](PHASE5_HANDOFF.md) states
+independently of fee, and [`PHASE5_HANDOFF.md`](history/PHASE5_HANDOFF.md) states
 *"Exogenous order flow does not react to policy fee changes."* Brief §15 lists
 "Estimated volume lost due to higher fees" as a required metric; it is not
 implemented.
@@ -297,7 +297,7 @@ publish the inelastic results alongside.
 
 ### F5.2 — Re-verify the fast path
 
-[`PHASE61_HANDOFF.md`](PHASE61_HANDOFF.md) instructs
+[`PHASE61_HANDOFF.md`](history/PHASE61_HANDOFF.md) instructs
 `forge test --match-contract ThetaShieldReactiveTest`; that contract was deleted in
 `3d2cd7e`. The logic **was** ported correctly — `_updateFastPath` at
 [`ThetaShieldCircleProcessor.sol:700`](../src/circle/ThetaShieldCircleProcessor.sol#L700)

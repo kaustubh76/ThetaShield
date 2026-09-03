@@ -24,7 +24,9 @@
   ·
   <a href="deployments/unichain-sepolia-ethereum-sepolia-reactive-legacy-kaustubh76-live.json">Acceptance trace</a>
   ·
-  <a href="docs/WINNING_PITCH_SCRIPT.md">Four-minute pitch</a>
+  <a href="docs/PITCH_DECK.md">Pitch deck</a>
+  ·
+  <a href="docs/README.md">All docs</a>
 </p>
 
 > [!IMPORTANT]
@@ -113,7 +115,7 @@ The [live proof dashboard](https://thetashield.vercel.app/#live-proof) reads cur
 | Origin Lens | Unichain Sepolia | [`0xEF9C…3D5d`](https://unichain-sepolia.blockscout.com/address/0xEF9C630C6977d16Dac5107fe590FB184CB593D5d) |
 | Three-pool sampler | Ethereum Sepolia | [`0xEF9C…3D5d`](https://eth-sepolia.blockscout.com/address/0xEF9C630C6977d16Dac5107fe590FB184CB593D5d) |
 | Circle processor | Ethereum Sepolia | [`0x7bdF…BBF2`](https://eth-sepolia.blockscout.com/address/0x7bdF95029fd614e5FCB5C7B2D63e263a8Ca4BBF2) |
-| Processor Lens | Ethereum Sepolia | [`0x4a1b…1EAb`](https://eth-sepolia.blockscout.com/address/0x4a1b453f4Ba183d7BEcd7e81bFfd8fB0682F1EAb) |
+| Processor Lens | Ethereum Sepolia | [`0x4a1B…1EAb`](https://eth-sepolia.blockscout.com/address/0x4a1B453f4Ba183D7BecD7E81bFfD8FB0682F1EAb) |
 | Automation executor | Ethereum Sepolia | [`0x1A3a…9707`](https://eth-sepolia.blockscout.com/address/0x1A3a275dF6658ab96151480d920d58CeA5ab9707) |
 | Automation RSC | Reactive Lasna | [`0x4f00…2609`](https://lasna.reactscan.net/address/0x4f00e3BDd224F4c4b4958D54cD774E84B9092609) |
 
@@ -193,16 +195,24 @@ src/
 ├── hook/          Uniswap v4 dynamic-fee hook
 ├── controller/    Authenticated directional recommendation store
 ├── circle/        CCTP V2 transport, messages, and bounded processor
+├── reactive/      Reactive RSC scheduler and the authenticated callback executor
+├── feeds/         Three-pool median reference sampler; the mock feed is demo-only
 ├── libraries/     Markout, filtering, confidence, persistence, and fee math
-├── deployment/    CREATE2 mining and deployment validation
-└── feeds/         Deterministic testnet demo feed
+├── lens/          Stateless read-only aggregation for the dashboard
+├── deployment/    CREATE2 mining and fail-closed deployment validation
+├── security/      Two-step ownership, with no renounce path
+├── base/          Shared units and fixed-point conventions
+├── interfaces/    Circle, feed, and controller interfaces
+├── types/         Shared value types
+└── demo/          Test tokens, never production
 
 test/              Unit, fuzz, invariant, gas, deployment, and integration tests
 script/            Circle preflight, deploy, configure, relay, and acceptance tools
 research/          Independent Python model, scenarios, experiments, and reports
 dashboard/         Interactive dashboard and read-only live testnet proof
 deployments/       Machine-readable live manifest and archived retired candidates
-docs/              Architecture, threat model, runbooks, reports, and phase handoffs
+docs/              Architecture, threat model, runbooks, reports (docs/README.md maps them)
+docs/history/      Eleven per-phase verification records, kept as dated receipts
 ```
 
 ## Run locally
@@ -228,7 +238,7 @@ make verify
 - Solidity formatting, linting, compilation, size checks, and tests;
 - Python compilation, research tests, golden vectors, and reproducibility checks;
 - dependency lock and tracked-secret checks;
-- deployment-manifest validation; and
+- deployment-manifest validation and the generated flow diagram; and
 - dashboard lint, production build, rendered-content tests, and dependency audit.
 
 Useful focused commands:
@@ -241,6 +251,7 @@ make invariant-check       # stateful invariants
 make gas-check             # gas ceilings
 make deployment-dry-run    # deployment and Circle lifecycle validation
 make dashboard-check       # dashboard build and tests
+make diagram               # regenerate docs/THETASHIELD_FLOW.excalidraw
 ```
 
 Fork tests are deliberately opt-in because they require live RPC configuration:
@@ -281,7 +292,7 @@ The interactive signal-lab cards are explicitly simulated. The separate **Live T
 | [End-to-end flow diagram](docs/THETASHIELD_FLOW.excalidraw) | Generated from the deployment manifest, so it cannot drift from what is deployed |
 | [Teammate handover video](docs/TEAMMATE_HANDOVER_VIDEO.md) | Rough recording script, repository tour, access boundary, and first-day checklist |
 
-The full map, separating reviewer-facing documents from working history, is in [`docs/README.md`](docs/README.md). Historical Phase 3/4/7/8 Omni/Lasna documents are retained for auditability; they are not current deployment instructions.
+The full map, separating reviewer-facing documents from working history, is in [`docs/README.md`](docs/README.md). The eleven per-phase verification records live in [`docs/history/`](docs/history/), with an [index](docs/history/README.md) saying what each established and what superseded it; they are retained for auditability and are not current deployment instructions.
 
 ## Production boundary
 

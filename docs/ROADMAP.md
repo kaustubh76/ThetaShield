@@ -17,7 +17,7 @@ Every phase is verified before it is committed and pushed to `main`.
 | Phase 8B — Circle contracts and local lifecycle | Complete |
 | Phase 8C — Circle release hardening | Complete |
 | Phase 8D — Live deployment | Complete |
-| Phase 9 — Dashboard and submission | Complete; private dashboard published, submission still owner-gated |
+| Phase 9 — Dashboard and submission | Complete; dashboard published publicly, submission still owner-gated |
 | Gap G0 — Baseline and architecture lock | Complete |
 | Gap G1 — Coverage and flow-elasticity research | Complete |
 | Gap G2 — Solidity coverage feedback | Complete |
@@ -108,11 +108,11 @@ copy, and a final clean-clone reproduction.
 
 The dashboard, final report, demo script, draft submission, and Phase 9
 verification gate are complete. Phase 8D live addresses and acceptance evidence
-are recorded in [`the live deployment manifest`](../deployments/unichain-sepolia-ethereum-sepolia-reactive-legacy-kaustubh76-live.json). No external
+are recorded in [the live deployment manifest](../deployments/unichain-sepolia-ethereum-sepolia-reactive-legacy-kaustubh76-live.json). No external
 submission has been made. The migration decision is recorded in
 [`CIRCLE_MIGRATION.md`](CIRCLE_MIGRATION.md).
 
 The post-release functional programme and its locked architecture decisions are
 recorded in [`FUNCTIONAL_GAP_IMPLEMENTATION.md`](FUNCTIONAL_GAP_IMPLEMENTATION.md).
 The completed G10 deployment and public receipts are recorded in
-[`the live deployment manifest`](../deployments/unichain-sepolia-ethereum-sepolia-reactive-legacy-kaustubh76-live.json).
+[the live deployment manifest](../deployments/unichain-sepolia-ethereum-sepolia-reactive-legacy-kaustubh76-live.json).

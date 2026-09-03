@@ -14,6 +14,14 @@ configured baseline. ThetaShield is unaudited research software.
 - Reactive Network subscriptions, ReactVM execution, callback proxy, funding,
   and CRON delivery are automation trust boundaries. Their authority ends at a
   permissionless bounded work function.
+- `reactive-lib` and `reactive-test-lib` are **un-vendored submodules and an
+  external audit boundary**. `vmOnly`, `authorizedSenderOnly`, `rvmIdOnly`,
+  `Callback` and `AbstractPayer` are the entire authentication surface of the
+  automation plane, and they are pinned third-party code that this repository's
+  review and test suite do not cover. A defect there is a defect in that
+  surface; the containment is that the executor those modifiers guard can only
+  call functions that are already permissionless, and cannot install controller
+  state or forge a Circle message.
 - The keeper is untrusted and permissionless: it can delay, duplicate, or omit
   work, but cannot forge a valid Circle peer or bypass sequence/timing checks.
 - Configured v4 reference pools and their liquidity are market-data trust

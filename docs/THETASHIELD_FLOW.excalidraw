@@ -8804,7 +8804,7 @@
    "x": 30,
    "y": 2641.25,
    "width": 4200,
-   "height": 528.75,
+   "height": 543.75,
    "angle": 0,
    "strokeColor": "#adb5bd",
    "backgroundColor": "#ffffff",
@@ -9502,7 +9502,7 @@
    "x": 1518,
    "y": 2763.25,
    "width": 400,
-   "height": 118.25,
+   "height": 133.25,
    "angle": 0,
    "strokeColor": "#2f9e44",
    "backgroundColor": "#ebfbee",
@@ -9541,7 +9541,7 @@
    "type": "text",
    "x": 1532,
    "y": 2775.25,
-   "width": 195.0,
+   "width": 210.6,
    "height": 18.75,
    "angle": 0,
    "strokeColor": "#2f9e44",
@@ -9564,8 +9564,8 @@
    "updated": 1788400000000,
    "link": null,
    "locked": false,
-   "text": "4 \u00b7 the processor decides",
-   "originalText": "4 \u00b7 the processor decides",
+   "text": "4 \u00b7 the second wake decides",
+   "originalText": "4 \u00b7 the second wake decides",
    "fontSize": 15,
    "fontFamily": 2,
    "textAlign": "left",
@@ -9615,8 +9615,8 @@
    "type": "text",
    "x": 1532,
    "y": 2819.75,
-   "width": 355.68,
-   "height": 30.0,
+   "width": 343.2,
+   "height": 45.0,
    "angle": 0,
    "strokeColor": "#1e1e1e",
    "backgroundColor": "transparent",
@@ -9638,8 +9638,8 @@
    "updated": 1788400000000,
    "link": null,
    "locked": false,
-   "text": "Scores the observation against delayed reference evidence\nand dispatches recommendation sequence 1.",
-   "originalText": "Scores the observation against delayed reference evidence\nand dispatches recommendation sequence 1.",
+   "text": "The RSC's second authenticated callback. Finalises the\nepoch, scores the observation against delayed reference\nevidence, and dispatches recommendation sequence 1.",
+   "originalText": "The RSC's second authenticated callback. Finalises the\nepoch, scores the observation against delayed reference\nevidence, and dispatches recommendation sequence 1.",
    "fontSize": 12,
    "fontFamily": 2,
    "textAlign": "left",
@@ -9651,7 +9651,7 @@
    "id": "ts0291",
    "type": "text",
    "x": 1532,
-   "y": 2855.75,
+   "y": 2870.75,
    "width": 204.6,
    "height": 13.75,
    "angle": 0,
@@ -10172,7 +10172,7 @@
    "x": 1442,
    "y": 2822.375,
    "width": 76,
-   "height": 0.0,
+   "height": 7.5,
    "angle": 0,
    "strokeColor": "#495057",
    "backgroundColor": "transparent",
@@ -10200,8 +10200,16 @@
      0
     ],
     [
+     38.0,
+     0
+    ],
+    [
+     38.0,
+     7.5
+    ],
+    [
      76,
-     0.0
+     7.5
     ]
    ],
    "lastCommittedPoint": null,
@@ -10223,9 +10231,9 @@
    "id": "ts0307",
    "type": "arrow",
    "x": 1918,
-   "y": 2822.375,
+   "y": 2829.875,
    "width": 76,
-   "height": 0.0,
+   "height": 7.5,
    "angle": 0,
    "strokeColor": "#495057",
    "backgroundColor": "transparent",
@@ -10253,8 +10261,16 @@
      0
     ],
     [
+     38.0,
+     0
+    ],
+    [
+     38.0,
+     -7.5
+    ],
+    [
      76,
-     0.0
+     -7.5
     ]
    ],
    "lastCommittedPoint": null,
@@ -10329,7 +10345,7 @@
    "id": "ts0310",
    "type": "rectangle",
    "x": 90,
-   "y": 2965.5,
+   "y": 2980.5,
    "width": 700,
    "height": 115.5,
    "angle": 0,
@@ -10365,7 +10381,7 @@
    "id": "ts0311",
    "type": "text",
    "x": 104,
-   "y": 2977.5,
+   "y": 2992.5,
    "width": 148.20000000000002,
    "height": 18.75,
    "angle": 0,
@@ -10402,7 +10418,7 @@
    "id": "ts0312",
    "type": "text",
    "x": 104,
-   "y": 3004.25,
+   "y": 3019.25,
    "width": 661.44,
    "height": 45.0,
    "angle": 0,
@@ -10439,7 +10455,7 @@
    "id": "ts0313",
    "type": "text",
    "x": 104,
-   "y": 3055.25,
+   "y": 3070.25,
    "width": 283.8,
    "height": 13.75,
    "angle": 0,
@@ -10476,7 +10492,7 @@
    "id": "ts0315",
    "type": "rectangle",
    "x": 866,
-   "y": 2965.5,
+   "y": 2980.5,
    "width": 700,
    "height": 159.25,
    "angle": 0,
@@ -10516,7 +10532,7 @@
    "id": "ts0316",
    "type": "text",
    "x": 880,
-   "y": 2977.5,
+   "y": 2992.5,
    "width": 460.2,
    "height": 18.75,
    "angle": 0,
@@ -10553,7 +10569,7 @@
    "id": "ts0317",
    "type": "text",
    "x": 880,
-   "y": 3004.25,
+   "y": 3019.25,
    "width": 661.44,
    "height": 75.0,
    "angle": 0,
@@ -10590,7 +10606,7 @@
    "id": "ts0318",
    "type": "text",
    "x": 880,
-   "y": 3085.25,
+   "y": 3100.25,
    "width": 660.0,
    "height": 27.5,
    "angle": 0,
@@ -10627,7 +10643,7 @@
    "id": "ts0320",
    "type": "rectangle",
    "x": 1642,
-   "y": 2965.5,
+   "y": 2980.5,
    "width": 820,
    "height": 160.5,
    "angle": 0,
@@ -10663,7 +10679,7 @@
    "id": "ts0321",
    "type": "text",
    "x": 1656,
-   "y": 2977.5,
+   "y": 2992.5,
    "width": 288.6,
    "height": 18.75,
    "angle": 0,
@@ -10700,7 +10716,7 @@
    "id": "ts0322",
    "type": "text",
    "x": 1656,
-   "y": 3004.25,
+   "y": 3019.25,
    "width": 780.0,
    "height": 90.0,
    "angle": 0,
@@ -10737,7 +10753,7 @@
    "id": "ts0323",
    "type": "text",
    "x": 1656,
-   "y": 3100.25,
+   "y": 3115.25,
    "width": 475.2,
    "height": 13.75,
    "angle": 0,
@@ -10776,7 +10792,7 @@
    "x": 290.0,
    "y": 2881.5,
    "width": 150.0,
-   "height": 84.0,
+   "height": 99.0,
    "angle": 0,
    "strokeColor": "#495057",
    "backgroundColor": "transparent",
@@ -10809,11 +10825,11 @@
     ],
     [
      75.0,
-     84.0
+     99.0
     ],
     [
      150.0,
-     84.0
+     99.0
     ]
    ],
    "lastCommittedPoint": null,
@@ -10837,7 +10853,7 @@
    "x": 2670.0,
    "y": 2881.5,
    "width": 1454.0,
-   "height": 84.0,
+   "height": 99.0,
    "angle": 0,
    "strokeColor": "#e03131",
    "backgroundColor": "transparent",
@@ -10866,15 +10882,15 @@
     ],
     [
      0,
-     42.0
+     49.5
     ],
     [
      -1454.0,
-     42.0
+     49.5
     ],
     [
      -1454.0,
-     84.0
+     99.0
     ]
    ],
    "lastCommittedPoint": null,
@@ -10896,7 +10912,7 @@
    "id": "ts0326",
    "type": "arrow",
    "x": 1566,
-   "y": 3045.125,
+   "y": 3060.125,
    "width": 76,
    "height": 0.625,
    "angle": 0,
@@ -11929,7 +11945,7 @@
    "id": "ts0359",
    "type": "text",
    "x": 1460.2,
-   "y": 2803.375,
+   "y": 2807.125,
    "width": 39.6,
    "height": 13.75,
    "angle": 0,
@@ -11964,7 +11980,7 @@
    "id": "ts0360",
    "type": "text",
    "x": 1932.9,
-   "y": 2803.375,
+   "y": 2807.125,
    "width": 46.199999999999996,
    "height": 13.75,
    "angle": 0,

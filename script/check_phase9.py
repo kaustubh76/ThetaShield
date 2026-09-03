@@ -102,7 +102,7 @@ def main() -> None:
     deployment_data = read_required("dashboard/app/deployment-data.ts")
     layout = read_required("dashboard/app/layout.tsx")
     report = read_required("docs/FINAL_REPORT.md")
-    handoff = read_required("docs/PHASE9_HANDOFF.md")
+    handoff = read_required("docs/history/PHASE9_HANDOFF.md")
     submission = read_required("docs/SUBMISSION.md")
     read_required("docs/DEMO_SCRIPT.md")
 
@@ -182,7 +182,7 @@ def main() -> None:
     for phrase in ("Circle CCTP", "Python", "complete live testnet deployment"):
         require(report, phrase, "docs/FINAL_REPORT.md")
 
-    require(handoff, "Phase 9 is complete", "docs/PHASE9_HANDOFF.md")
+    require(handoff, "Phase 9 is complete", "docs/history/PHASE9_HANDOFF.md")
     require(submission, "has not been submitted", "docs/SUBMISSION.md")
 
     phase9_surface = "\n".join((page, research_data, layout, report, handoff, submission))

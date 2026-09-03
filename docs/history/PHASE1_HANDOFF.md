@@ -54,7 +54,7 @@ The deterministic benign-noise scenario produced 0 active premium epochs across
 508 scored epochs. This is a controlled symmetry check, not an estimate of a
 universal false-positive rate and not evidence of production LP profitability.
 The complete assumptions and limitations are in
-[`research/reports/PHASE1_BENIGN_NOISE.md`](../research/reports/PHASE1_BENIGN_NOISE.md).
+[`research/reports/PHASE1_BENIGN_NOISE.md`](../../research/reports/PHASE1_BENIGN_NOISE.md).
 
 ## Reproduce
 

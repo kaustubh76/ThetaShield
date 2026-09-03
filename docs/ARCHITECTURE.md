@@ -82,6 +82,46 @@ existing robust median, weighted dispersion, and agreement confidence logic.
 `DEMO_V1` retains the owner-published mock only for deterministic local and
 historical acceptance tests.
 
+**What the live reference market is not.** The three configured pools are three
+fee tiers of a single project-issued pair (`tsrALPHA`/`tsrBETA`) on Ethereum
+Sepolia. The protected pool is a *different* pair (`tsALPHA`/`tsBETA`) on
+Unichain Sepolia. Four ERC-20s, two chains, no bridge and no arbitrage path
+between them — the two markets have no economic relationship, and all three
+reference tiers are moved together by one operator transaction
+(`runMoveReferences()` in `script/CircleAcceptance.s.sol`). So the sampler's
+agreement, dispersion and confidence machinery is fully exercised but cannot
+reject: agreement is structural rather than evidential, the sampler publishes a
+fixed `confidenceWad = 1e18` with no attenuation for depth, spread or age, and
+it stamps `observedAt` at sample time, so an untraded pool publishes a stale
+price with a fresh timestamp. Live markout therefore **demonstrates the
+mechanism rather than measuring adverse selection**. Reference tiers co-located
+with the protected pair are the next architectural step, not a claim made today.
+
+## Coverage accounting
+
+`FeeCurve.calculateClosedLoop` tracks realized fee revenue against estimated
+loss per side and exposes a coverage ratio against a 1.25x target. It is
+**bounded telemetry with a small nudge, not a closed-loop controller**, and the
+distinction is deliberate:
+
+- the coverage premium is computed *inside* the toxicity gate, so a coverage
+  deficit on its own can never move a fee — it only amplifies an already
+  triggered directional state;
+- at shipped values (`coverageGainFeePips` 50 against `gainFeePips` 450,000) a
+  full `1.25e18` deficit is worth roughly 62 pips of a 9,500-pip range, and the
+  `maximumIncreasePips` rate limit routinely clips more than the whole coverage
+  contribution;
+- the G1 experiment records `elastic_fee_revenue_delta_quote_wad = -0.011` — it
+  does not improve mean fee revenue in that deterministic synthetic setting; and
+- each premium is clamped individually before the sum is clamped again, so a
+  consumer reading `EpochFinalized` must not assume `toxicPremiumPips +
+  coveragePremiumPips == premiumPips`.
+
+Coverage accounting is asymmetric to risk accounting by construction: loss uses
+raw markout and uncapped notional, risk uses dead-band-filtered markout and
+capped notional. See `docs/SECOND_PASS_REVIEW.md` R2 for the full analysis and
+the open decision.
+
 The former Omni design that duplicated markout calculation and attempted a
 direct Unichain controller callback remains retired. The current Legacy Lasna
 integration calls the Ethereum processor executor, removing the failed

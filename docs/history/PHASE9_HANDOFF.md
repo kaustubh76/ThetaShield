@@ -2,7 +2,7 @@
 
 > **Post-Phase-9 update:** the public dashboard now defaults to the paired G10
 > lenses and links the complete Circle + Reactive Legacy acceptance trail. See
-> [G10 Live Acceptance](../deployments/unichain-sepolia-ethereum-sepolia-reactive-legacy-kaustubh76-live.json). The original Phase 9 text below
+> [G10 Live Acceptance](../../deployments/unichain-sepolia-ethereum-sepolia-reactive-legacy-kaustubh76-live.json). The original Phase 9 text below
 > is retained as its historical handoff.
 
 ## Delivered

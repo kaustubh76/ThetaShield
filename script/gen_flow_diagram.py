@@ -641,9 +641,9 @@ RUN_STEPS: tuple[tuple[str, str, str, str, int, int], ...] = (
     (
         "circle.recommendation.send_transaction_hash",
         "processor",
-        "4 · the processor decides",
-        "Scores the observation against delayed reference evidence and dispatches recommendation "
-        "sequence 1.",
+        "4 · the second wake decides",
+        "The RSC's second authenticated callback. Finalises the epoch, scores the observation "
+        "against delayed reference evidence, and dispatches recommendation sequence 1.",
         11_591_019,
         1_787_996_532,
     ),

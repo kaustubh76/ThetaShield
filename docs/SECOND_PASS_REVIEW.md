@@ -90,7 +90,7 @@ never relayed. Relay is manual and nobody is running it.
 > unaffected and remains the real issue.
 
 The subscriptions are live, but **99.9% of the 2.0 lREACT reserve burned in ~27 hours**.
-`G10_LIVE_ACCEPTANCE.md` predicted the drain ("Legacy `Cron10` execution consumes RSC
+[the live manifest](../deployments/unichain-sepolia-ethereum-sepolia-reactive-legacy-kaustubh76-live.json) predicted the drain ("Legacy `Cron10` execution consumes RSC
 credit even while no work is armed"); the measured rate means the automation plane dies
 roughly one day after every top-up. Funding is available on the deployer; it was simply
 not replenished.
@@ -118,7 +118,7 @@ the cron heartbeat for event-only subscriptions.
 
 | Was | Now |
 |---|---|
-| No closed loop | `FeeCurve.calculateClosedLoop`, coverage accounting in `SideState`, 1.25x target, G1 research gate |
+| No closed loop *(see R2 — the loop exists but is close to inert)* | `FeeCurve.calculateClosedLoop`, coverage accounting in `SideState`, 1.25x target, G1 research gate |
 | Deploy shipped filters off | `RESEARCH_V1` is the default; `DEMO_V1` warns; `ConfigMirrorTest` pins both |
 | `schedulerConfig` unreadable | `schedulerConfiguration()` getter |
 | No lens | `src/lens/ThetaShieldLens.sol`, stateless, deployed and responding on both chains |
@@ -174,7 +174,12 @@ Two supporting mechanics:
   no timestamp, so an untraded pool publishes a stale price with a fresh stamp. All three
   live readings carry an identical 27-hour-old `observedAt`.
 
-**This is not disclosed in the front-door documents.** `README.md` says "permissionless,
+> **Resolved for disclosure, 2026-09-03.** The sentence this section asks for is now in
+> `README.md`, `docs/WINNING_PITCH_SCRIPT.md`, `docs/ARCHITECTURE.md`,
+> `docs/SUBMISSION.md`, `docs/FINAL_REPORT.md` and the dashboard trust surface.
+> The architectural fix below — co-located reference tiers — remains open.
+
+**This was not disclosed in the front-door documents when this review was written.** `README.md` says "permissionless,
 liquidity-filtered three-pool sampler. Neither is a production oracle" — which reads as
 *not production-grade*, not *the reference tracks a different asset and is moved by us*.
 "Self-contained" appears only in `DEPLOYMENT_RUNBOOK.md` and

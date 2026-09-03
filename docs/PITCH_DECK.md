@@ -399,15 +399,16 @@ and it defuses the sharpest question in the room before it is asked.
 > **What is real:** deployed contracts on three networks · authenticated Circle
 > messages both ways · two public authenticated Reactive callbacks · a
 > PoolManager swap charged the fee the controller expected · 48 Python tests and
-> a Solidity suite of 127 test functions across 24 test files, with fuzz,
+> a Solidity suite of 127 test functions (124 passing, 3 opt-in fork), with fuzz,
 > invariant and gas coverage · every research artifact reproducible under
 > `make verify`.
 >
 > **What is not:** unaudited · testnet only · the hook has not been submitted ·
-> the three reference pools are three fee tiers of **one project-issued pair we
-> move ourselves**, so their agreement is structural, not evidential — live
-> markout demonstrates the mechanism rather than measuring real adverse
-> selection.
+> the three reference pools are three fee tiers of **one project-issued pair, on
+> a different chain from the protected pair, with no arbitrage path between
+> them**, moved together by our own script — so their agreement is structural,
+> not evidential, and live markout demonstrates the mechanism rather than
+> measuring real adverse selection.
 >
 > **Before mainnet:** an independent oracle adapter · audits · monitored
 > redundant keepers · multisig or hardware-backed ownership · incident response.
@@ -553,11 +554,15 @@ make verify     # 20 gates: format, lint, build, Solidity tests, Python tests,
 make diagram    # regenerate docs/THETASHIELD_FLOW.excalidraw from the manifest
 ```
 
-Solidity: **127 test functions across 24 `.t.sol` files** — 111 unit/integration,
-11 fuzz, 5 invariant. Python: **48 tests** across 8 modules. Quote exact
-pass/skip counts from a current `make verify` receipt rather than from any
-document, including this one; the fork tests are opt-in and flake against
-public RPCs.
+Solidity: **127 test functions discovered** across 24 `.t.sol` files — 111
+unit/integration, 11 fuzz, 5 invariant. **124 pass** in an environment-neutral
+run; the remaining **3** are the opt-in fork tests in
+`test/fork/InfrastructureFork.t.sol`, skipped without live RPC configuration.
+That is the reconciliation between the "124 passing" figure in
+`WINNING_PITCH_SCRIPT.md` and the "127" here — one measurement, two
+denominators. Python: **48 tests** across 8 modules. Quote exact counts from a
+current `make verify` receipt rather than from any document, including this one;
+the fork tests also flake against public RPCs.
 
 `check_phase9.py` additionally enforces that the dashboard bundle contains
 exactly H1–H6 with complete policy and scenario coverage, and rejects hardcoded
@@ -587,8 +592,13 @@ outside the critical path, and a permissionless keeper can drive the same cycle.
 
 **Is the live reference price real market data?** No — and this is the sharpest
 limit in the project. `RESEARCH_V1` reads three fee tiers of a project-issued
-pair on Ethereum Sepolia, separate from the protected Unichain pair, seeded and
-moved by us. It exercises the full multi-source path — liquidity floors, robust
+pair on Ethereum Sepolia. The protected pool is a *different* pair on Unichain
+Sepolia: four ERC-20s, two chains, no bridge, no arbitrage path, no economic
+relationship — and all three tiers are moved together by one transaction of
+ours. So dispersion rejection structurally cannot fire: the sampler publishes a
+fixed confidence of 1.0 with no attenuation for depth, spread or age, and stamps
+`observedAt` at sample time, so an untraded pool publishes a stale price with a
+fresh timestamp. It exercises the full multi-source path — liquidity floors, robust
 median, dispersion, confidence — against a market we control. Independent
 evidence needs reference tiers co-located with the protected pair; that is the
 next architectural step, not a claim we make today.
@@ -602,8 +612,20 @@ recommendation, neither raises a fee, and neither blocks a swap. Coordinated
 manipulation of the reference publishers remains a residual risk and is listed
 as such in `docs/THREAT_MODEL.md`.
 
+**What is the coverage ratio on the dashboard?** Bounded telemetry, not a
+closed-loop controller — and we would rather say so than have you find it. The
+coverage premium sits *inside* the toxicity gate, so a coverage deficit alone
+can never move a fee; at shipped values a full deficit is worth about 62 pips of
+a 9,500-pip range, and the rate limiter often clips more than the entire
+coverage contribution. G1 records a negative fee-revenue delta.
+`docs/ARCHITECTURE.md` and `SECOND_PASS_REVIEW.md` R2 carry the analysis and the
+open decision.
+
 **Has it been audited?** No. Unaudited research software on public testnets. The
-hook has not been submitted.
+hook has not been submitted. The automation plane's authentication surface
+(`vmOnly`, `authorizedSenderOnly`, `rvmIdOnly`) lives in un-vendored
+`reactive-lib` submodules — an external audit boundary named in
+`docs/THREAT_MODEL.md`.
 
 ## A7 · Live counters (read on the page, not memorised)
 

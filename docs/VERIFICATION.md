@@ -8,7 +8,8 @@ make verify
 
 This checks Solidity formatting/lint/build/tests and size limits, Python tests,
 golden vectors, reproducible research reports, pinned dependencies, tracked
-secrets, deployment-schema syntax, and the dashboard production build/content.
+secrets, deployment-schema syntax, the generated flow diagram, and the
+dashboard production build/content — twenty gates in all.
 
 ## Current Circle lifecycle
 
@@ -77,6 +78,8 @@ make gas-check
 make dependency-check
 make secret-check
 make research-test
+make diagram-check
+make gap-g1-check
 make phase5-check
 make phase6-check
 make phase61-check
@@ -84,6 +87,7 @@ make reactive-legacy-check
 make phase9-check
 ```
 
-Historical Phase 2/3/4/7 Omni/Lasna commands in old handoffs describe the
-retired implementation and are not current release gates. Use the current
+Historical Phase 2/3/4/7 Omni/Lasna commands in the handoffs under
+`docs/history/` describe the retired implementation and are not current
+release gates. Use the current
 Legacy migration record and G10 runbook.

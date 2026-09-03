@@ -275,8 +275,9 @@ end is delivered at the same pace as the results, not rushed.
 **Show:** back to the hero. Hold two seconds on the footer — *"The pool
 remembers."* — then cut to black.
 
-> ThetaShield is unaudited and testnet only, and the reference market is one we
-> move ourselves — so this proves the machine, not the economics.
+> ThetaShield is unaudited and testnet only, and the reference market is a
+> different pair that we move ourselves — so this proves the machine, not the
+> economics.
 >
 > It measures which direction of flow was harmful, prices it within bounds, and
 > returns to baseline the moment the evidence disappears.

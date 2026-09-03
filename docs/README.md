@@ -1,8 +1,9 @@
 # Documentation index
 
-Thirty documents live here and they are not equally important. This page is the
+Twenty documents live here and they are not equally important. This page is the
 map: the first two tables are what a reviewer wants, the third is working
-history kept for auditability.
+history kept for auditability. The eleven per-phase records that used to sit
+between you and them now live in [`history/`](history/).
 
 Everything below is written against the deployment recorded in
 [the live manifest](../deployments/unichain-sepolia-ethereum-sepolia-reactive-legacy-kaustubh76-live.json),
@@ -42,5 +43,6 @@ documents carry a status banner explaining what has since changed.
 | [Circle migration](CIRCLE_MIGRATION.md) · [Reactive Legacy migration](REACTIVE_LEGACY_MIGRATION.md) | Why the transport and automation planes are what they are |
 | [Dependency review](DEPENDENCY_REVIEW.md) · [Roadmap](ROADMAP.md) | Submodule pinning; what is deliberately not built yet |
 | [Teammate handover](TEAMMATE_HANDOVER_VIDEO.md) | Operational handover, not a pitch |
+| [Research package](../research/README.md) · [deployments](../deployments/README.md) | The Python model and its reports; the manifest and why the earlier records are gone |
 | [Demo script](DEMO_SCRIPT.md) | **Superseded** — predates the Reactive automation plane |
-| `PHASE*_HANDOFF.md` (11 files) | Per-phase verification records. Historical; not deployment instructions |
+| [Phase handoffs](history/) (11 files) | Per-phase verification records, with an [index](history/README.md) saying what each established and what superseded it. Historical; not deployment instructions |

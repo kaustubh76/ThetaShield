@@ -15,7 +15,8 @@ processor work, with an independent keeper fallback. The failed Omni direct
 callback path remains retired.
 
 A complete live testnet deployment and G10 lifecycle is recorded from source revision
-`4b3aff6247349a581275839f280d9902de3ceccd`. The hook, transport, controller,
+`4b3aff6247349a581275839f280d9902de3ceccd`. That revision predates a rebase of
+`main` and is preserved on the `backup-pre-rebase` branch. The hook, transport, controller,
 and origin Lens run on Unichain Sepolia; the three-pool sampler, bounded
 processor, processor Lens, and callback executor run on Ethereum Sepolia; and
 the event-driven scheduler runs on Reactive Legacy Lasna. Finalized Circle
@@ -63,6 +64,13 @@ receipt rather than copied into a submission.
 `notional × signed markout` is a controlled risk proxy. It is not exact LP loss,
 LVR, profit, or evidence of live user behavior.
 
+The live reference market is not independent evidence either. Its three sources
+are three fee tiers of one project-issued pair on Ethereum Sepolia; the
+protected pool is a different pair on Unichain Sepolia, with no bridge and no
+arbitrage path between them, and all three tiers are moved together by our own
+acceptance script. Live markout therefore demonstrates the mechanism rather
+than measuring adverse selection.
+
 ## Security and release boundary
 
 Missing or invalid recommendations return the baseline. Circle recipients
@@ -77,7 +85,7 @@ The remaining blockers for anything beyond a testnet demo are a production
 oracle adapter, independent audits, monitored redundant keepers, hardware-backed
 or multisig ownership, and incident response. The public Phase 8D Circle trace
 remains historical evidence. The G10 Circle + Reactive Legacy trace is complete
-and linked from `the live deployment manifest`; its idle Cron credit must be
+and linked from the live deployment manifest; its idle Cron credit must be
 monitored and replenished as an operational liveness requirement.
 
 ## Reproduce

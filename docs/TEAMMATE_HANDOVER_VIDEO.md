@@ -16,8 +16,8 @@ Open these tabs in order:
 2. [ThetaShield dashboard](https://thetashield.vercel.app)
 3. [Detailed Architecture 4](THETASHIELD_ARCHITECTURE4.png)
 4. [Simplified video architecture](THETASHIELD_VIDEO_ARCHITECTURE.png)
-5. [`the live deployment manifest`](../deployments/unichain-sepolia-ethereum-sepolia-reactive-legacy-kaustubh76-live.json)
-6. [`deployments/unichain-sepolia-ethereum-sepolia-reactive-legacy-kaustubh76-live.json`](../deployments/unichain-sepolia-ethereum-sepolia-reactive-legacy-kaustubh76-live.json)
+5. [the live deployment manifest](../deployments/unichain-sepolia-ethereum-sepolia-reactive-legacy-kaustubh76-live.json)
+6. [`docs/README.md`](README.md) — the documentation map
 7. The repository tree in an editor
 8. A terminal at the repository root
 
@@ -265,8 +265,10 @@ so a different administrative model would require a new factory for future
 hook deployments. The processor itself is configured immutably and its mature
 processing functions are permissionless.
 
-The dashboard is also owner-only right now. GitHub collaborator access does not
-automatically grant dashboard access. If the teammate is eligible under the
+The production dashboard at <https://thetashield.vercel.app> is public and needs
+no login — it is the project's evidence surface. What is owner-only is the
+Vercel *project*: deploying, environment variables, and logs. GitHub
+collaborator access does not automatically grant that. If the teammate is eligible under the
 site workspace policy, add them separately; otherwise they can run the same
 dashboard locally from the repository.
 
@@ -339,8 +341,11 @@ blocks the current trade.
 
 ### Why does the live dashboard show five basis points?
 
-Sequence `1` was a cold-start recommendation with zero shared confidence and
-has expired. Safe fallback therefore returns the configured `500`-pip baseline.
+The installed recommendation carries zero shared confidence and has expired, so
+safe fallback returns the configured `500`-pip baseline. The deeper reason is
+structural: the curve needs sixteen trailing observations per side and the pool
+has settled two across both. Read the current sequence and counters off the
+live page rather than from this document — they move.
 The local end-to-end suite proves the later transition to a directional
 non-baseline fee once sufficient evidence exists.
 

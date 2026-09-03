@@ -37,12 +37,29 @@ correlation; H5 retains `59.70%` toxic coverage with a `20.79` percentage-point
 false-positive reduction. These are synthetic risk-proxy results, not exact LVR
 or profitability claims.
 
-Repository: <https://github.com/kaustubh76/ThetaShield> (private during development)
+Tracks: Uniswap Hook Incubator (UHI10), Circle (CCTP V2 as the authenticated
+bidirectional evidence rail), and Reactive Network (event-driven scheduling of
+delayed work, with a permissionless keeper fallback).
+
+Live proof — read-only, no wallet:
+<https://thetashield.vercel.app/#live-proof>. The six public receipts, the
+deployed addresses and the acceptance record are in
+[the live manifest](../deployments/unichain-sepolia-ethereum-sepolia-reactive-legacy-kaustubh76-live.json).
+
+Repository: <https://github.com/kaustubh76/ThetaShield> (private during
+development; the live dashboard above is the public evidence surface)
 
 Dashboard: <https://thetashield.vercel.app> (public production deployment)
 
-Current boundary: unaudited and testnet-only, with a permissionless
-liquidity-filtered three-pool reference sampler and a completed public
+Current boundary: unaudited and testnet-only, with a completed public
 Unichain → Circle → Ethereum → Reactive → Circle → Unichain acceptance
-lifecycle. The hook has not been submitted, and no submission should occur
+lifecycle measured at 43m 12s across six transactions.
+
+The reference sampler is permissionless and liquidity-filtered, but its three
+sources are three fee tiers of **one project-issued pair, on a different chain
+from the protected pair, with no arbitrage path between them**, and all three
+tiers are moved together by our own acceptance script. Their agreement is
+therefore structural rather than evidential: live markout demonstrates the
+mechanism rather than measuring real adverse selection. Neither feed is a
+production oracle. The hook has not been submitted, and no submission should occur
 until the owner separately approves it.
