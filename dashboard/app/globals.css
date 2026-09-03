@@ -748,6 +748,12 @@ h1 em { color: var(--signal); font-style: normal; }
 .reference-row.head { color: var(--dim); font-family: var(--font-geist-mono), monospace; font-size: 7.5px; letter-spacing: .08em; text-transform: uppercase; }
 .reference-row code { color: var(--muted); font-family: var(--font-geist-mono), monospace; font-size: 9px; }
 
+/* The registry band is the one section that never painted a ground of its own,
+   so it inherited the page's. With a field behind the page that reads as no
+   veil at all, which would put --dim at ~2.2:1 here while every neighbouring
+   band holds 4.58:1. --ground-ink reproduces the colour it always had. */
+.section.registry { background: var(--ground-ink); }
+
 .registry-accordion { margin-top: 12px; border: 1px solid var(--line); background: rgba(13,24,21,.45); }
 .registry-accordion > summary { display: flex; align-items: center; gap: 14px; padding: 18px 20px; cursor: pointer; list-style: none; user-select: none; }
 .registry-accordion > summary::-webkit-details-marker { display: none; }
