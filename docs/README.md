@@ -28,7 +28,7 @@ and every live number is readable at <https://thetashield.vercel.app>.
 | [Four-minute pitch](WINNING_PITCH_SCRIPT.md) | The short narrative, with the honest three-claim split |
 | [Five-minute video script](VIDEO_SCRIPT_5MIN.md) | Shot list and tab order for the recorded demo |
 | [Submission blurb](SUBMISSION.md) | Copy-ready description |
-| [End-to-end flow diagram](THETASHIELD_FLOW.excalidraw) | Generated from the manifest by `script/gen_flow_diagram.py`, so it cannot drift from what is deployed |
+| [End-to-end flow diagram](THETASHIELD_FLOW.png) ([source](THETASHIELD_FLOW.excalidraw)) | The whole system on one canvas, in four bands. Generated from the manifest by `script/gen_flow_diagram.py` and rendered by `make diagram-png`, so neither can drift from what is deployed |
 | [Architecture diagram](THETASHIELD_ARCHITECTURE.drawio) · [detail](THETASHIELD_ARCHITECTURE4.drawio) · [16:9](THETASHIELD_VIDEO_ARCHITECTURE.drawio) | Editable draw.io sources, with rendered `.png` beside each |
 
 ## Working history

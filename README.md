@@ -70,6 +70,12 @@ The current sample is excluded from its own volatility band. A trade therefore c
 ## Architecture
 
 <p align="center">
+  <a href="docs/THETASHIELD_FLOW.png"><img src="docs/THETASHIELD_FLOW.png" alt="ThetaShield end-to-end flow: the swap path, a trade becoming a number, the return, and the proven run" width="100%" /></a>
+</p>
+
+<p align="center"><em>The whole flow on one canvas — the swap path, a trade becoming a number, the return, and the six dated receipts. Generated from the deployment manifest; <a href="docs/THETASHIELD_FLOW.excalidraw">editable source</a>.</em></p>
+
+<p align="center">
   <a href="docs/THETASHIELD_ARCHITECTURE.png">
     <img src="docs/THETASHIELD_ARCHITECTURE.png" alt="ThetaShield system architecture" width="100%" />
   </a>
@@ -289,7 +295,7 @@ The interactive signal-lab cards are explicitly simulated. The separate **Live T
 | [Four-minute pitch](docs/WINNING_PITCH_SCRIPT.md) | Judge-oriented project narrative |
 | [Pitch deck](docs/PITCH_DECK.md) | 21 slides, with an appendix of live counters and an explicit "what not to say" |
 | [Five-minute video script](docs/VIDEO_SCRIPT_5MIN.md) | Shot list and tab order for the recorded demo |
-| [End-to-end flow diagram](docs/THETASHIELD_FLOW.excalidraw) | Generated from the deployment manifest, so it cannot drift from what is deployed |
+| [End-to-end flow diagram](docs/THETASHIELD_FLOW.png) ([source](docs/THETASHIELD_FLOW.excalidraw)) | The whole system on one canvas, in four bands. Generated from the deployment manifest, so it cannot drift from what is deployed |
 | [Teammate handover video](docs/TEAMMATE_HANDOVER_VIDEO.md) | Rough recording script, repository tour, access boundary, and first-day checklist |
 
 The full map, separating reviewer-facing documents from working history, is in [`docs/README.md`](docs/README.md). The eleven per-phase verification records live in [`docs/history/`](docs/history/), with an [index](docs/history/README.md) saying what each established and what superseded it; they are retained for auditability and are not current deployment instructions.

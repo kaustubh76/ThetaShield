@@ -5,7 +5,7 @@ PYTHON ?= $(shell for candidate in python3.13 python3.12 python3.11 python3.10 p
 	  $$candidate -c 'import sys; sys.exit(sys.version_info < (3, 10))' >/dev/null 2>&1 && { echo $$candidate; exit 0; }; \
 	done; echo python3)
 
-.PHONY: boundary-fuzz-check build clean dashboard-bundle dashboard-bundle-check dashboard-check dashboard-deps dashboard-manifest dashboard-manifest-check dependency-check deployment-dry-run deployment-schema-check diagram diagram-check experiment-check experiment-report fmt fmt-check fork-check gap-g1-check gap-g1-report gap-g2-check gap-g3-check gap-g4-check gap-g5-check gap-g6-check gap-g7-check gap-g10-check gas-check golden-check invariant-check lint phase5-check phase6-check phase6-report phase61-check phase61-report phase7-check phase9-check python-check reactive-legacy-check research-report research-test secret-check test verify
+.PHONY: boundary-fuzz-check build clean dashboard-bundle dashboard-bundle-check dashboard-check dashboard-deps dashboard-manifest dashboard-manifest-check dependency-check deployment-dry-run deployment-schema-check diagram diagram-check diagram-png experiment-check experiment-report fmt fmt-check fork-check gap-g1-check gap-g1-report gap-g2-check gap-g3-check gap-g4-check gap-g5-check gap-g6-check gap-g7-check gap-g10-check gas-check golden-check invariant-check lint phase5-check phase6-check phase6-report phase61-check phase61-report phase7-check phase9-check python-check reactive-legacy-check research-report research-test secret-check test verify
 
 build:
 	forge build --sizes
@@ -141,6 +141,12 @@ diagram:
 
 diagram-check:
 	$(PYTHON) script/gen_flow_diagram.py --check
+
+# Not part of `verify`: it needs headless Chrome and the npm CDN, and a release
+# gate should not depend on either. Run it after `make diagram` when the canvas
+# changes, so the committed PNG cannot drift from the .excalidraw beside it.
+diagram-png:
+	node script/render_flow_png.mjs
 
 dashboard-manifest:
 	$(PYTHON) script/mirror_dashboard_manifest.py
