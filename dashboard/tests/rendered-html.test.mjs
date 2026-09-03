@@ -43,6 +43,12 @@ test("server-renders the complete ThetaShield research dashboard", async () => {
   // Server-rendered rather than mounted on the client, so the ambient background
   // layer is in the document at first paint and the page never flashes without it.
   assert.match(html, /<canvas\b[^>]*signal-field/);
+  // The execution log must be in the server HTML before any read lands. The
+  // component it replaced returned null when the scan window was quiet, which
+  // is how the page came to show no record of anything ever having run.
+  assert.match(html, /id="execution-log"/);
+  assert.match(html, /Everything the queue has done/i);
+  assert.match(html, /Reading the queue/i);
   assert.match(html, /markout-trace/);
   assert.match(html, /Research replay from the locked evidence bundle/);
   assert.match(html, /policy-scatter/);
@@ -145,6 +151,12 @@ test("live API defaults to the paired G10 lenses with a named direct fallback", 
   // The Reactive counters live in the ReactiveVM, so they must be read with the
   // RVM-scoped call, not eth_call.
   assert.match(route, /rnk_call/);
+  // The execution log's scan is anchored at the deployment. head - window
+  // silently stops covering the deploy block as the chain advances, dropping
+  // the earliest observations out of a ledger that calls itself complete.
+  assert.match(route, /Math\.max\(\s*DEPLOY_BLOCKS\.processor/);
+  assert.match(route, /pageRanges\(processorFrom, processorHead/);
+  assert.doesNotMatch(route, /const processorFrom = processorHead - PROCESSOR_EVENT_WINDOW/);
   // The callback authentication is checked, not asserted: both of the
   // executor's immutable guard values are read, and the proven callback is read
   // back so its calldata can be compared against them. The transaction must be

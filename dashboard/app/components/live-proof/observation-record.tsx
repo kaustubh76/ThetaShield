@@ -1,8 +1,11 @@
-import type { DeploymentView } from "../../deployment-data";
+// One observation's lifecycle, rendered as a sequence. Shared so the execution
+// log's rows and any single-record view stay one implementation: the
+// "matured on arrival" and closing-window reasoning is subtle enough that a
+// second copy would drift.
 import { shortHex } from "../format";
-import type { LatestAttemptView } from "./types";
+import type { ObservationRecordView } from "./types";
 
-function clock(seconds: number): string {
+export function clock(seconds: number): string {
   return new Date(seconds * 1_000).toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
@@ -18,25 +21,32 @@ function span(seconds: number): string {
   return minutes ? `${minutes}m ${whole % 60}s` : `${whole % 60}s`;
 }
 
-const OUTCOME: Record<LatestAttemptView["outcome"], { label: string; tone: string }> = {
+export const OUTCOME: Record<ObservationRecordView["outcome"], { label: string; tone: string }> = {
   settled: { label: "SCORED", tone: "ok" },
   expired: { label: "EXPIRED UNSCORED", tone: "bad" },
   dropped: { label: "DROPPED", tone: "bad" },
   pending: { label: "IN FLIGHT", tone: "wait" },
 };
 
-export default function LatestAttempt({
+export function attemptHeadline(attempt: ObservationRecordView): string {
+  const id = `Observation ${attempt.observationId}`;
+  if (attempt.outcome === "expired") return `${id} arrived, was never scored, and expired`;
+  if (attempt.outcome === "settled") return `${id} was carried through to an epoch`;
+  if (attempt.outcome === "dropped") return `${id} was dropped before scoring`;
+  return `${id} is in flight`;
+}
+
+export function AttemptSteps({
   attempt,
-  deployment,
+  processorName,
   referenceWindowSeconds,
+  txUrl,
 }: {
-  attempt: LatestAttemptView | null;
-  deployment: DeploymentView;
+  attempt: ObservationRecordView;
+  processorName: string;
   referenceWindowSeconds: number | null;
+  txUrl: (hash: string) => string;
 }) {
-  if (!attempt) return null;
-  const processor = deployment.networks.find((network) => network.role === "processor");
-  const txUrl = (hash: string) => `${processor?.explorerBase}/tx/${hash}`;
   const outcome = OUTCOME[attempt.outcome];
 
   // Circle's transport can take longer than the markout horizon, in which case
@@ -50,25 +60,10 @@ export default function LatestAttempt({
     attempt.outcome !== "settled" || attempt.outcomeAt === null || attempt.outcomeAt > windowCloses;
 
   return (
-    <section aria-labelledby="attempt-heading" className={`latest-attempt ${outcome.tone}`}>
-      <div className="attempt-head">
-        <p className="kicker">Most recent attempt · read from the queue’s own lifecycle</p>
-        <span className={`attempt-verdict ${outcome.tone}`}>{outcome.label}</span>
-      </div>
-      <h3 id="attempt-heading">
-        {attempt.outcome === "expired"
-          ? `Observation ${attempt.observationId} arrived, was never scored, and expired`
-          : attempt.outcome === "settled"
-            ? `Observation ${attempt.observationId} was carried through to an epoch`
-            : attempt.outcome === "dropped"
-              ? `Observation ${attempt.observationId} was dropped before scoring`
-              : `Observation ${attempt.observationId} is in flight`}
-      </h3>
-
       <ol className="attempt-steps">
         <li>
           <time>{attempt.queuedAt !== null ? clock(attempt.queuedAt) : "—"}</time>
-          <b>Queued on {processor?.name}</b>
+          <b>Queued on {processorName}</b>
           <span>
             {matureOnArrival
               ? `already past its ${clock(attempt.matureAt)} maturity on arrival — Circle's transport outran the markout horizon, so its scoring window was open from the moment it landed`
@@ -115,7 +110,6 @@ export default function LatestAttempt({
             </a>
           ) : null}
         </li>
-      </ol>
-    </section>
+    </ol>
   );
 }

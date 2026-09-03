@@ -9,6 +9,7 @@ import {
   RUN_RECEIPTS,
   REFERENCE_SOURCE_IDS,
   RPC,
+  DEPLOY_BLOCKS,
 } from "../../live-config";
 import {
   addressFromWord,
@@ -23,7 +24,9 @@ import {
   decodeReferenceSource,
   decodeSideState,
   decodeSingle,
+  correlateObservations,
   fillTimelineGaps,
+  pageRanges,
   unsigned,
   words,
 } from "./decode";
@@ -89,6 +92,30 @@ const eventTopics = EVENT_TOPICS;
 // than 10000 max"); Ethereum Sepolia via publicnode accepts 50,000.
 const ORIGIN_EVENT_WINDOW = 10_000;
 const PROCESSOR_EVENT_WINDOW = 50_000;
+
+// A ceiling on how far back the execution log will page. Twelve windows is
+// ~83 days of Sepolia; past that the ledger reports itself incomplete rather
+// than issuing an unbounded number of reads to keep calling itself full.
+const LEDGER_MAX_PAGES = 12;
+
+// Passes over the processor log scan. Each one unions into the result, so this
+// is a ceiling on how hard the route tries to converge, not a fixed cost: a
+// node answering completely settles in two.
+const LOG_SCAN_MAX_PASSES = 6;
+
+// Blocks below head - REORG_DEPTH are treated as settled history. Logs that old
+// are unioned into a process-lifetime cache so a poll that the node answers
+// badly still renders everything earlier polls established, rather than
+// reporting that nothing has ever run. Per-isolate and best effort, like
+// runTimelineCache: a cold isolate rebuilds it from the convergence loop.
+const REORG_DEPTH = 64;
+const processorLogUnion: Map<string, RpcLog>[] = Array.from({ length: 6 }, () => new Map());
+
+// A mined block's timestamp never changes, so this is the same justification as
+// runTimelineCache: per-isolate, best effort, and never a correctness
+// dependency — a cold isolate simply re-reads them.
+const blockTimeCache = new Map<number, number>();
+const BLOCK_TIME_BATCH = 50;
 
 function addressWord(address: string): string {
   if (!/^0x[0-9a-fA-F]{40}$/.test(address)) throw new Error(`Invalid contract address: ${address}`);
@@ -619,7 +646,15 @@ async function readEvents() {
   const originHead = Number(BigInt(originBlockHex));
   const processorHead = Number(BigInt(processorBlockHex));
   const originFrom = originHead - ORIGIN_EVENT_WINDOW;
-  const processorFrom = processorHead - PROCESSOR_EVENT_WINDOW;
+  // Anchored at the deployment, not at head - window. A window that reaches the
+  // deploy block today stops reaching it as the chain advances, and the
+  // earliest observations would fall out of the execution log with nothing
+  // saying they had.
+  const processorFrom = Math.max(
+    DEPLOY_BLOCKS.processor,
+    processorHead - LEDGER_MAX_PAGES * PROCESSOR_EVENT_WINDOW,
+  );
+  const ledgerComplete = processorFrom === DEPLOY_BLOCKS.processor;
   // A failed scan is NOT the same finding as an empty scan: the UI states
   // "no events in the last N blocks" as fact, so a thrown query must be
   // reported as unavailable rather than silently degraded to zero results.
@@ -661,21 +696,83 @@ async function readEvents() {
     return logs;
   }
 
+  // Address/topic per lane, in the order the caller destructures them.
+  const PROCESSOR_LANES = [
+    { address: PROCESSOR, topic: eventTopics.epochFinalized },
+    { address: EXECUTOR, topic: eventTopics.automationCycleCompleted },
+    { address: PROCESSOR, topic: eventTopics.observationQueued },
+    { address: PROCESSOR, topic: eventTopics.observationExpired },
+    { address: PROCESSOR, topic: eventTopics.observationDropped },
+    { address: PROCESSOR, topic: eventTopics.observationSettled },
+  ];
+
   async function scanProcessor(): Promise<RpcLog[][]> {
-    const calls = [
-      logsCall(PROCESSOR, eventTopics.epochFinalized, processorFrom, processorHead),
-      logsCall(EXECUTOR, eventTopics.automationCycleCompleted, processorFrom, processorHead),
-      logsCall(PROCESSOR, eventTopics.observationQueued, processorFrom, processorHead),
-      logsCall(PROCESSOR, eventTopics.observationExpired, processorFrom, processorHead),
-      logsCall(PROCESSOR, eventTopics.observationDropped, processorFrom, processorHead),
-      logsCall(PROCESSOR, eventTopics.observationSettled, processorFrom, processorHead),
-    ];
-    const read = () => batchOrSingle(PROCESSOR_RPC, calls) as Promise<RpcLog[][]>;
-    let logs = await read();
-    for (let attempt = 0; attempt < EMPTY_RESCANS && !logs.some((entry) => entry.length); attempt += 1) {
-      logs = await read().catch(() => logs);
+    const pages = pageRanges(processorFrom, processorHead, PROCESSOR_EVENT_WINDOW);
+    const keyOf = (log: RpcLog) => `${log.transactionHash}-${log.logIndex ?? ""}`;
+    const settledBelow = processorHead - REORG_DEPTH;
+
+    // Start from everything this isolate has ever established.
+    const lanes: RpcLog[][] = processorLogUnion.map((cached) => [...cached.values()]);
+    const seen = lanes.map((lane) => new Set(lane.map(keyOf)));
+
+    const absorb = (lane: number, logs: RpcLog[]) => {
+      let added = 0;
+      for (const log of logs) {
+        const key = keyOf(log);
+        if (Number(BigInt(log.blockNumber)) <= settledBelow) processorLogUnion[lane].set(key, log);
+        if (seen[lane].has(key)) continue;
+        seen[lane].add(key);
+        lanes[lane].push(log);
+        added += 1;
+      }
+      return added;
+    };
+
+    // Returns how many logs the node actually handed back this pass, which is
+    // not the same as how many were new.
+    const readLanes = async (indices: number[]) => {
+      let received = 0;
+      for (const [from, to] of pages) {
+        const results = (await batchOrSingle(
+          PROCESSOR_RPC,
+          indices.map((lane) =>
+            logsCall(PROCESSOR_LANES[lane].address, PROCESSOR_LANES[lane].topic, from, to),
+          ),
+        )) as RpcLog[][];
+        results.forEach((logs, position) => {
+          received += logs.length;
+          absorb(indices[position], logs);
+        });
+      }
+      return received;
+    };
+
+    // Ask repeatedly and union, until two productive passes in a row add
+    // nothing new.
+    //
+    // This node does not merely fail closed — it answers PARTIALLY. Measured
+    // against this deployment on 2026-09-03, ten identical full-range queries
+    // for ObservationQueued returned 0 logs five times and 2 logs the other
+    // five, while the true answer is 3. So neither "the lane came back empty"
+    // nor "this pass added nothing" can stand alone as a stopping rule: an
+    // empty answer is silence, not evidence of completeness, and treating it as
+    // convergence is what made a correct ledger collapse to nothing on roughly
+    // one poll in four.
+    const total = () => lanes.reduce((sum, lane) => sum + lane.length, 0);
+    let stable = 0;
+    const everyLane = PROCESSOR_LANES.map((_, lane) => lane);
+    for (let attempt = 0; attempt < LOG_SCAN_MAX_PASSES && stable < 2; attempt += 1) {
+      const before = total();
+      const received = await readLanes(everyLane).catch((cause) => {
+        // The first pass decides whether the scan happened at all; a later one
+        // failing only means this poll converged on less.
+        if (attempt === 0) throw cause;
+        return 0;
+      });
+      if (!received) continue;
+      stable = total() === before ? stable + 1 : 0;
     }
-    return logs;
+    return lanes;
   }
 
   const [swapLogs, processorLogs] = await Promise.all([
@@ -703,18 +800,31 @@ async function readEvents() {
       ),
     ),
   ];
-  if (distinctBlocks.length) {
+  for (const blockNumber of distinctBlocks) {
+    const cached = blockTimeCache.get(blockNumber);
+    if (cached !== undefined) processorTimes.set(blockNumber, cached);
+  }
+  // Chunked: with the full history in scope this set grows with the
+  // deployment, and one unbounded batch is what a public node refuses first.
+  const missingBlocks = distinctBlocks.filter((blockNumber) => !processorTimes.has(blockNumber));
+  if (missingBlocks.length) {
     try {
-      const blocks = (await batchOrSingle(
-        PROCESSOR_RPC,
-        distinctBlocks.map((blockNumber) => ({
-          method: "eth_getBlockByNumber",
-          params: [`0x${blockNumber.toString(16)}`, false],
-        })),
-      )) as ({ timestamp?: string } | null)[];
-      blocks.forEach((block, position) => {
-        if (block?.timestamp) processorTimes.set(distinctBlocks[position], unsigned(block.timestamp.slice(2)));
-      });
+      for (let start = 0; start < missingBlocks.length; start += BLOCK_TIME_BATCH) {
+        const chunk = missingBlocks.slice(start, start + BLOCK_TIME_BATCH);
+        const blocks = (await batchOrSingle(
+          PROCESSOR_RPC,
+          chunk.map((blockNumber) => ({
+            method: "eth_getBlockByNumber",
+            params: [`0x${blockNumber.toString(16)}`, false],
+          })),
+        )) as ({ timestamp?: string } | null)[];
+        blocks.forEach((block, position) => {
+          if (!block?.timestamp) return;
+          const seconds = unsigned(block.timestamp.slice(2));
+          processorTimes.set(chunk[position], seconds);
+          blockTimeCache.set(chunk[position], seconds);
+        });
+      }
     } catch {
       // Undated events are still events; a wrong time would be worse.
     }
@@ -785,68 +895,37 @@ async function readEvents() {
     .sort((left, right) => right.blockNumber - left.blockNumber)
     .slice(0, 6);
 
-  // The most recent attempt, assembled from the queue's own lifecycle rather
-  // than from the manifest. The manifest records the one run that succeeded;
-  // this records what the system last actually did, including failing. Built
-  // from the full log set rather than the truncated ticker list.
-  const latestQueued = queuedLogs.at(-1) ?? null;
-  let latestAttempt: {
-    observationId: number;
-    queuedAt: number | null;
-    queuedTx: string;
-    matureAt: number;
-    expiresAt: number;
-    outcome: "settled" | "expired" | "dropped" | "pending";
-    outcomeAt: number | null;
-    outcomeTx: string | null;
-    outcomeDetail: string | null;
-    sweptByCycle: number | null;
-    sweptByReactive: boolean | null;
-  } | null = null;
-  if (latestQueued) {
-    const observationId = Number(BigInt(latestQueued.topics[1]));
-    const body = words(latestQueued.data);
-    const sameId = (log: RpcLog) => Number(BigInt(log.topics[1])) === observationId;
-    const expired = expiredLogs.find(sameId) ?? null;
-    const dropped = droppedLogs.find(sameId) ?? null;
-    // ObservationSettled names the observation directly. Inferring success from
-    // EpochFinalized was wrong: one observation settles into an OPEN epoch
-    // without finalising one, so a scored observation reported as still pending
-    // — seen live on 2026-09-01 with observation 4.
-    const settled = settledLogs.find(sameId) ?? null;
-    const outcomeLog = expired ?? dropped ?? settled;
-    const sweep = outcomeLog
-      ? cycleLogs.find(
-          (log) => Number(BigInt(log.blockNumber)) === Number(BigInt(outcomeLog.blockNumber)),
-        ) ?? null
-      : null;
-    latestAttempt = {
-      observationId,
-      queuedAt: timeOf(latestQueued),
-      queuedTx: latestQueued.transactionHash,
-      matureAt: unsigned(body[2]),
-      expiresAt: unsigned(body[3]),
-      outcome: expired ? "expired" : dropped ? "dropped" : settled ? "settled" : "pending",
-      outcomeAt: outcomeLog ? timeOf(outcomeLog) : null,
-      outcomeTx: outcomeLog?.transactionHash ?? null,
-      outcomeDetail: dropped
-        ? (["queue capacity", "markout out of bounds", "epoch capacity"][unsigned(words(dropped.data)[0])] ?? "unknown reason")
-        : null,
-      sweptByCycle: sweep ? Number(BigInt(sweep.topics[1])) : null,
-      // topic_3 == 1 means the cycle came through executeFromReactive; 0 means
-      // a permissionless keeper advanced the same bounded work instead.
-      sweptByReactive: sweep ? BigInt(sweep.topics[3]) !== BigInt(0) : null,
-    };
-  }
+  // Every observation the processor has queued since it was deployed, with the
+  // outcome each one reached. The manifest records the one run that succeeded;
+  // this records every run, including the ones that died unscored.
+  const ledger = {
+    ...correlateObservations(
+      {
+        queued: queuedLogs,
+        settled: settledLogs,
+        expired: expiredLogs,
+        dropped: droppedLogs,
+        cycles: cycleLogs,
+      },
+      timeOf,
+    ),
+    fromBlock: processorFrom,
+    toBlock: processorHead,
+    complete: ledgerComplete,
+  };
+  // One builder, so the panel's newest attempt and the execution log can never
+  // describe the same observation differently.
+  const latestAttempt = ledger.observations[0] ?? null;
 
   return {
     origin: origin.reverse(),
     processor,
     latestAttempt,
+    ledger,
     // The heads travel with the window so the page can state the scan's span in
     // wall-clock time as well as blocks — derived against a dated block from the
     // run timeline rather than an assumed block interval.
-    window: { origin: ORIGIN_EVENT_WINDOW, processor: PROCESSOR_EVENT_WINDOW },
+    window: { origin: ORIGIN_EVENT_WINDOW, processor: processorHead - processorFrom },
     head: { origin: originHead, processor: processorHead },
     scanned: { origin: originScanned, processor: processorScanned },
   };
@@ -962,7 +1041,7 @@ export async function GET() {
     // Immutable history, memoised after the first read, so this resolves
     // instantly on every poll but the second.
     const timelinePromise = optional(readRunTimeline(), 6_000);
-    const eventsPromise = optional(readEvents(), 5_000);
+    const eventsPromise = optional(readEvents(), 6_000);
     // The lenses are a convenience aggregate; the audited getters on the hook,
     // controller and processor are the contract of record. A lens fault
     // therefore degrades the read to those getters rather than the whole panel,

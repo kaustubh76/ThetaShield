@@ -178,8 +178,13 @@ export type LiveEvent = {
 // The most recent thing the system actually did, assembled from the queue's own
 // lifecycle. The run timeline records the one run that succeeded; this records
 // the latest attempt, including one that failed.
-export type LatestAttemptView = {
+// One observation's whole life, read from the processor's own queue events:
+// queued, then whichever of settled / expired / dropped it reached, with the
+// transaction for each transition and the automation cycle that swept it.
+export type ObservationRecordView = {
   observationId: number;
+  side: "buy" | "sell";
+  blockNumber: number;
   queuedAt: number | null;
   queuedTx: string;
   matureAt: number;
@@ -192,10 +197,59 @@ export type LatestAttemptView = {
   sweptByReactive: boolean | null;
 };
 
+/** The newest record, under the name the live panel already imports. */
+export type LatestAttemptView = ObservationRecordView;
+
+// One bounded pass of the executor. Every field is rendered: a cycle that swept
+// nothing is a fact about the scheduler, and the before/after pairs show it.
+export type AutomationCycleRecordView = {
+  cycleId: number;
+  reactiveTrigger: boolean;
+  publishedSources: number;
+  syncedSources: number;
+  pendingBefore: number;
+  pendingAfter: number;
+  settledBefore: number;
+  settledAfter: number;
+  expiredBefore: number;
+  expiredAfter: number;
+  recommendationBefore: number;
+  recommendationAfter: number;
+  samplerSucceeded: boolean;
+  processSucceeded: boolean;
+  recommendationDispatched: boolean;
+  blockNumber: number;
+  txHash: string;
+  observedAt: number | null;
+};
+
+// Everything the processor has done since it was deployed. `complete` is false
+// when the scan floor was the page cap rather than the deploy block, so the
+// page can say "history from block N" instead of implying it covered all of it.
+export type LedgerView = {
+  observations: ObservationRecordView[];
+  cycles: AutomationCycleRecordView[];
+  totals: {
+    queued: number;
+    settled: number;
+    expired: number;
+    dropped: number;
+    pending: number;
+    cycles: number;
+  };
+  /** Terminal events whose queue event fell outside the scan. Zero is expected. */
+  orphanTerminals: number;
+  truncated: { observations: number; cycles: number };
+  fromBlock: number;
+  toBlock: number;
+  complete: boolean;
+};
+
 export type EventsView = {
   origin: LiveEvent[];
   processor: LiveEvent[];
   latestAttempt: LatestAttemptView | null;
+  ledger: LedgerView | null;
   window: { origin: number; processor: number };
   head: { origin: number; processor: number };
   scanned: { origin: boolean; processor: boolean };

@@ -1,7 +1,7 @@
 import manifestJson from "../data/deployment_manifest.json";
 
 type ManifestShape = {
-  components: { name: string; address: string }[];
+  components: { name: string; address: string; block_number: number }[];
   reference_sampler: { sources: { source_id: string }[] };
   circle_messages: {
     kind: string;
@@ -30,6 +30,12 @@ function componentAddress(name: string): string {
   return entry.address;
 }
 
+function componentBlock(name: string): number {
+  const entry = manifest.components.find((candidate) => candidate.name === name);
+  if (!entry) throw new Error(`deployment manifest is missing component: ${name}`);
+  return entry.block_number;
+}
+
 function env(name: string): string | undefined {
   const value = process.env[name]?.trim();
   return value ? value : undefined;
@@ -45,6 +51,19 @@ export const ADDRESSES = {
     env("THETASHIELD_PROCESSOR_LENS_ADDRESS") ?? componentAddress("ThetaShieldProcessorLens"),
   executor: componentAddress("ThetaShieldAutomationExecutor"),
   reactiveRsc: manifest.reactive_automation.rsc_address,
+} as const;
+
+// The floor of the execution log's scan. Anchoring at head - window instead
+// walks past the deployment as the chain advances: 50,000 Sepolia blocks is
+// ~6.9 days, so a window that reaches the deploy block today stops reaching it
+// in two, dropping the earliest observations out of a ledger that claims to be
+// complete with nothing on the page saying so. Math.min because the scan reads
+// two addresses and one floor has to cover both.
+export const DEPLOY_BLOCKS = {
+  processor: Math.min(
+    componentBlock("ThetaShieldCircleProcessor"),
+    componentBlock("ThetaShieldAutomationExecutor"),
+  ),
 } as const;
 
 // An RSC's counters are mutated by react(), which runs in the deployer's

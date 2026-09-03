@@ -398,3 +398,141 @@ test("timeline gaps are stated only between adjacent dated steps", () => {
 
   assert.deepEqual(decode.fillTimelineGaps([]), []);
 });
+
+// --- the execution log ------------------------------------------------------
+
+const topic = (value) => `0x${BigInt(value).toString(16).padStart(64, "0")}`;
+// A bare ABI word: words() strips the 0x, so the decoders never see one.
+const word = (value) => BigInt(value).toString(16).padStart(64, "0");
+
+function queuedLog(id, { side = 1, block = 100, tx = "0xq" } = {}) {
+  return {
+    topics: [topic(0), topic(id), topic(7), topic(side)],
+    data: rampResponse(4),
+    blockNumber: topic(block),
+    transactionHash: tx,
+  };
+}
+const terminalLog = (id, { block = 200, tx = "0xt", word = 0 } = {}) => ({
+  topics: [topic(0), topic(id), topic(1)],
+  data: `0x${BigInt(word).toString(16).padStart(64, "0")}`,
+  blockNumber: topic(block),
+  transactionHash: tx,
+});
+const cycleLog = (cycleId, { reactive = 1, block = 200, tx = "0xt" } = {}) => ({
+  topics: [topic(0), topic(cycleId), topic(0), topic(reactive)],
+  data: rampResponse(13),
+  blockNumber: topic(block),
+  transactionHash: tx,
+});
+const empty = { queued: [], settled: [], expired: [], dropped: [], cycles: [] };
+const noTime = () => null;
+
+test("queued and cycle logs read their declared word offsets", () => {
+  const queued = decode.decodeQueuedLog(queuedLog(4));
+  assert.equal(queued.observationId, 4);
+  assert.equal(queued.side, "sell");
+  // matureAt and expiresAt sit after executionPriceWad and notionalWad.
+  assert.equal(queued.matureAt, WORD_BASE + 2);
+  assert.equal(queued.expiresAt, WORD_BASE + 3);
+  assert.equal(decode.decodeQueuedLog(queuedLog(4, { side: 0 })).side, "buy");
+
+  const cycle = decode.decodeCycleLog(cycleLog(6));
+  assert.equal(cycle.cycleId, 6);
+  assert.equal(cycle.reactiveTrigger, true);
+  assert.equal(cycle.publishedSources, WORD_BASE + 0);
+  assert.equal(cycle.pendingBefore, WORD_BASE + 2);
+  assert.equal(cycle.settledBefore, WORD_BASE + 4);
+  assert.equal(cycle.expiredBefore, WORD_BASE + 6);
+  assert.equal(cycle.recommendationAfter, WORD_BASE + 9);
+  assert.equal(decode.decodeCycleLog(cycleLog(6, { reactive: 0 })).reactiveTrigger, false);
+
+  // A keeper cycle reads the flags from words 10-12, not from the ramp above.
+  const flags = decode.decodeCycleLog({ ...cycleLog(6), data: singleWordResponse(13, 11) });
+  assert.equal(flags.samplerSucceeded, false);
+  assert.equal(flags.processSucceeded, true);
+  assert.equal(flags.recommendationDispatched, false);
+});
+
+test("drop reasons map to their enum order", () => {
+  assert.equal(decode.dropReason(word(0)), "queue capacity");
+  assert.equal(decode.dropReason(word(1)), "markout out of bounds");
+  assert.equal(decode.dropReason(word(2)), "epoch capacity");
+  // A reason we cannot read is a different finding from one that does not exist.
+  assert.equal(decode.dropReason(word(3)), "unknown reason");
+});
+
+test("observations correlate to their outcome, newest first", () => {
+  const ledger = decode.correlateObservations({
+    ...empty,
+    queued: [queuedLog(1), queuedLog(2), queuedLog(3), queuedLog(4)],
+    settled: [terminalLog(2)],
+    expired: [terminalLog(3)],
+  }, noTime);
+
+  assert.deepEqual(ledger.observations.map((r) => r.observationId), [4, 3, 2, 1]);
+  assert.deepEqual(ledger.observations.map((r) => r.outcome),
+    ["pending", "expired", "settled", "pending"]);
+  assert.deepEqual(ledger.totals,
+    { queued: 4, settled: 1, expired: 1, dropped: 0, pending: 2, cycles: 0 });
+});
+
+test("an expiry outranks a settlement for the same observation", () => {
+  const ledger = decode.correlateObservations(
+    { ...empty, queued: [queuedLog(1)], settled: [terminalLog(1)], expired: [terminalLog(1)] },
+    noTime);
+  assert.equal(ledger.observations[0].outcome, "expired");
+});
+
+test("a dropped observation names its reason", () => {
+  const ledger = decode.correlateObservations(
+    { ...empty, queued: [queuedLog(1)], dropped: [terminalLog(1, { word: 2 })] }, noTime);
+  assert.equal(ledger.observations[0].outcome, "dropped");
+  assert.equal(ledger.observations[0].outcomeDetail, "epoch capacity");
+});
+
+test("the sweeping cycle is matched by transaction, not by block", () => {
+  const swept = decode.correlateObservations({
+    ...empty,
+    queued: [queuedLog(1)],
+    settled: [terminalLog(1, { block: 200, tx: "0xsweep" })],
+    cycles: [cycleLog(5, { block: 200, tx: "0xsweep" })],
+  }, noTime);
+  assert.equal(swept.observations[0].sweptByCycle, 5);
+  assert.equal(swept.observations[0].sweptByReactive, true);
+
+  // Same block, different transaction: attributing this would be a guess.
+  const collided = decode.correlateObservations({
+    ...empty,
+    queued: [queuedLog(1)],
+    settled: [terminalLog(1, { block: 200, tx: "0xsweep" })],
+    cycles: [cycleLog(5, { block: 200, tx: "0xunrelated" })],
+  }, noTime);
+  assert.equal(collided.observations[0].sweptByCycle, null);
+  assert.equal(collided.observations[0].sweptByReactive, null);
+});
+
+test("a terminal event with no queue event is counted, not synthesised", () => {
+  const ledger = decode.correlateObservations(
+    { ...empty, queued: [queuedLog(9)], settled: [terminalLog(1), terminalLog(9)] }, noTime);
+  assert.equal(ledger.observations.length, 1);
+  assert.equal(ledger.orphanTerminals, 1);
+});
+
+test("the ledger is capped and reports what it elided", () => {
+  const many = Array.from({ length: decode.LEDGER_MAX_OBSERVATIONS + 50 },
+    (_, index) => queuedLog(index + 1));
+  const ledger = decode.correlateObservations({ ...empty, queued: many }, noTime);
+  assert.equal(ledger.observations.length, decode.LEDGER_MAX_OBSERVATIONS);
+  assert.equal(ledger.truncated.observations, 50);
+  // Newest survive the cap.
+  assert.equal(ledger.observations[0].observationId, decode.LEDGER_MAX_OBSERVATIONS + 50);
+  assert.equal(ledger.totals.queued, decode.LEDGER_MAX_OBSERVATIONS + 50);
+});
+
+test("page ranges are inclusive at both ends", () => {
+  assert.deepEqual(decode.pageRanges(0, 99, 50), [[0, 49], [50, 99]]);
+  assert.deepEqual(decode.pageRanges(0, 49, 50), [[0, 49]]);
+  assert.deepEqual(decode.pageRanges(10, 10, 50), [[10, 10]]);
+  assert.deepEqual(decode.pageRanges(0, 100, 50), [[0, 49], [50, 99], [100, 100]]);
+});

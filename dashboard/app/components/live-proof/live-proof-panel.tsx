@@ -6,7 +6,6 @@ import { feeBps, formatInt, shortHex } from "../format";
 import AutomationCard from "./automation-card";
 import EventsTicker from "./events-ticker";
 import ReactivePanel from "./reactive-panel";
-import LatestAttempt from "./latest-attempt";
 import RunConsole, { type ExercisedStep } from "./run-console";
 import { schedulerHealth } from "./scheduler-health";
 import ReferenceSources from "./reference-sources";
@@ -385,12 +384,6 @@ export default function LiveProofPanel({
         exercised={exercised}
         health={schedulerHealth(proof)}
         onRan={() => void refresh()}
-      />
-
-      <LatestAttempt
-        attempt={proof?.events?.latestAttempt ?? null}
-        deployment={deployment}
-        referenceWindowSeconds={proof?.processor.deployedConfig?.scheduler.referenceSelectionWindowSeconds ?? null}
       />
 
       <RunTimeline deployment={deployment} onOpenPhase={onOpenPhase} timeline={proof?.runTimeline ?? null} />

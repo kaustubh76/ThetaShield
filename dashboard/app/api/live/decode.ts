@@ -269,3 +269,183 @@ export function fillTimelineGaps<T extends { observedAt: number | null; gapSecon
   }
   return steps;
 }
+
+// ---------------------------------------------------------------------------
+// The execution log.
+//
+// The processor's queue events are the only durable record of what the system
+// has actually done: the manifest records the one run that succeeded, these
+// record every run, including the ones that died unscored. Correlation lives
+// here rather than in the route so it can be tested without a chain.
+
+export type EventLog = {
+  topics: string[];
+  data: string;
+  blockNumber: string;
+  logIndex?: string;
+  transactionHash: string;
+};
+
+// DropReason in declaration order (Capacity, InvalidMarkout, EpochCapacity).
+// An unknown index is named rather than dropped: a reason we cannot read is a
+// different finding from a reason that does not exist.
+export const DROP_REASONS = ["queue capacity", "markout out of bounds", "epoch capacity"] as const;
+
+export function dropReason(word: string): string {
+  return DROP_REASONS[unsigned(word)] ?? "unknown reason";
+}
+
+// zeroForOne is the sell side. Named here once so the ledger's rows and the
+// ticker's summaries cannot disagree about which direction an id belongs to.
+function sideOf(topic: string): "buy" | "sell" {
+  return BigInt(topic) !== BigInt(0) ? "sell" : "buy";
+}
+
+const blockOf = (log: EventLog) => Number(BigInt(log.blockNumber));
+const idOf = (log: EventLog) => Number(BigInt(log.topics[1]));
+
+// ObservationQueued(uint64 indexed, uint16 indexed, bool indexed, uint128,
+// uint128, uint64 matureAt, uint64 expiresAt) — the two deadlines are words
+// 2 and 3, after the price and notional.
+export function decodeQueuedLog(log: EventLog) {
+  const body = words(log.data);
+  return {
+    observationId: idOf(log),
+    side: sideOf(log.topics[3]),
+    matureAt: unsigned(body[2]),
+    expiresAt: unsigned(body[3]),
+    blockNumber: blockOf(log),
+    queuedTx: log.transactionHash,
+  };
+}
+
+// AutomationCycleCompleted(uint64 indexed, address indexed, bool indexed, then
+// 13 non-indexed words). Every one is rendered: a cycle that swept nothing is
+// a fact about the scheduler, and the before/after pairs are what show it.
+export function decodeCycleLog(log: EventLog) {
+  const body = words(log.data);
+  return {
+    cycleId: idOf(log),
+    // topic_3 == 1 means the cycle came through executeFromReactive; 0 means a
+    // permissionless keeper advanced the same bounded work instead.
+    reactiveTrigger: BigInt(log.topics[3]) !== BigInt(0),
+    publishedSources: unsigned(body[0]),
+    syncedSources: unsigned(body[1]),
+    pendingBefore: unsigned(body[2]),
+    pendingAfter: unsigned(body[3]),
+    settledBefore: unsigned(body[4]),
+    settledAfter: unsigned(body[5]),
+    expiredBefore: unsigned(body[6]),
+    expiredAfter: unsigned(body[7]),
+    recommendationBefore: unsigned(body[8]),
+    recommendationAfter: unsigned(body[9]),
+    samplerSucceeded: unsigned(body[10]) !== 0,
+    processSucceeded: unsigned(body[11]) !== 0,
+    recommendationDispatched: unsigned(body[12]) !== 0,
+    blockNumber: blockOf(log),
+    txHash: log.transactionHash,
+  };
+}
+
+// Bounded so the payload cannot grow without limit as the deployment runs —
+// there is no persistence layer to prune it later.
+export const LEDGER_MAX_OBSERVATIONS = 100;
+export const LEDGER_MAX_CYCLES = 100;
+
+export type ObservationRecord = ReturnType<typeof decodeQueuedLog> & {
+  queuedAt: number | null;
+  outcome: "settled" | "expired" | "dropped" | "pending";
+  outcomeAt: number | null;
+  outcomeTx: string | null;
+  outcomeDetail: string | null;
+  sweptByCycle: number | null;
+  sweptByReactive: boolean | null;
+};
+
+export type CycleRecord = ReturnType<typeof decodeCycleLog> & { observedAt: number | null };
+
+export function correlateObservations(
+  logs: {
+    queued: EventLog[];
+    settled: EventLog[];
+    expired: EventLog[];
+    dropped: EventLog[];
+    cycles: EventLog[];
+  },
+  timeOf: (log: EventLog) => number | null,
+) {
+  const cycles: CycleRecord[] = logs.cycles
+    .map((log) => ({ ...decodeCycleLog(log), observedAt: timeOf(log) }))
+    .sort((left, right) => right.cycleId - left.cycleId);
+
+  const observations: ObservationRecord[] = logs.queued
+    .map((log) => {
+      const queued = decodeQueuedLog(log);
+      const sameId = (candidate: EventLog) => idOf(candidate) === queued.observationId;
+      const expired = logs.expired.find(sameId) ?? null;
+      const dropped = logs.dropped.find(sameId) ?? null;
+      // ObservationSettled names the observation directly. Inferring success
+      // from EpochFinalized was wrong: one observation settles into an OPEN
+      // epoch without finalising one, so a scored observation reported as still
+      // pending — seen live on 2026-09-01 with observation 4.
+      const settled = logs.settled.find(sameId) ?? null;
+      const outcomeLog = expired ?? dropped ?? settled;
+      // Matched on transaction, not block: the executor emits its cycle event
+      // in the same transaction that sweeps the observation, whereas two
+      // transactions sharing a block would attribute the sweep to whichever
+      // cycle happened to land alongside it.
+      const sweep = outcomeLog
+        ? cycles.find((cycle) => cycle.txHash === outcomeLog.transactionHash) ?? null
+        : null;
+      return {
+        ...queued,
+        queuedAt: timeOf(log),
+        outcome: expired ? "expired" : dropped ? "dropped" : settled ? "settled" : "pending",
+        outcomeAt: outcomeLog ? timeOf(outcomeLog) : null,
+        outcomeTx: outcomeLog?.transactionHash ?? null,
+        outcomeDetail: dropped ? dropReason(words(dropped.data)[0]) : null,
+        sweptByCycle: sweep ? sweep.cycleId : null,
+        sweptByReactive: sweep ? sweep.reactiveTrigger : null,
+      } satisfies ObservationRecord;
+    })
+    .sort((left, right) => right.observationId - left.observationId);
+
+  // A terminal event whose queue event fell outside the scan is counted, not
+  // synthesised: matureAt and expiresAt exist only on the queued log, so a
+  // half-record would render deadlines it never read.
+  const queuedIds = new Set(observations.map((record) => record.observationId));
+  const orphanTerminals = [...logs.settled, ...logs.expired, ...logs.dropped].filter(
+    (log) => !queuedIds.has(idOf(log)),
+  ).length;
+
+  const totals = {
+    queued: observations.length,
+    settled: observations.filter((record) => record.outcome === "settled").length,
+    expired: observations.filter((record) => record.outcome === "expired").length,
+    dropped: observations.filter((record) => record.outcome === "dropped").length,
+    pending: observations.filter((record) => record.outcome === "pending").length,
+    cycles: cycles.length,
+  };
+
+  return {
+    observations: observations.slice(0, LEDGER_MAX_OBSERVATIONS),
+    cycles: cycles.slice(0, LEDGER_MAX_CYCLES),
+    totals,
+    orphanTerminals,
+    truncated: {
+      observations: Math.max(0, observations.length - LEDGER_MAX_OBSERVATIONS),
+      cycles: Math.max(0, cycles.length - LEDGER_MAX_CYCLES),
+    },
+  };
+}
+
+// eth_getLogs ranges are inclusive at both ends, so a page spans `window`
+// blocks, not window + 1. Pages run oldest-first so a partial failure is a hole
+// at a known depth rather than an unlabelled gap.
+export function pageRanges(from: number, to: number, window: number): [number, number][] {
+  const pages: [number, number][] = [];
+  for (let start = from; start <= to; start += window) {
+    pages.push([start, Math.min(start + window - 1, to)]);
+  }
+  return pages;
+}

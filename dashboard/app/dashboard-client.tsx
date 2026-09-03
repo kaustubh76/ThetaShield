@@ -7,6 +7,7 @@ import MarkoutTrace from "./components/charts/markout-trace";
 import PolicyScatter from "./components/charts/policy-scatter";
 import SensitivityMultiples from "./components/charts/sensitivity-multiples";
 import DistinctionStrip from "./components/distinction-strip";
+import ExecutionLog from "./components/live-proof/execution-log";
 import LiveProofPanel from "./components/live-proof/live-proof-panel";
 import { useLiveProof } from "./components/live-proof/use-live-proof";
 import LpOutcome from "./components/lp-outcome";
@@ -136,6 +137,7 @@ export default function DashboardClient({
           <a href="#mechanism">Mechanism</a>
           <a href="#simulator">Replay</a>
           <a href="#live-proof">Live proof</a>
+          <a href="#execution-log">Execution log</a>
           <a href="#registry">Registry</a>
           <a href="#evidence">Evidence</a>
         </nav>
@@ -235,6 +237,8 @@ export default function DashboardClient({
         </div>
         <LiveProofPanel deployment={deployment} live={live} onOpenPhase={openPhase} />
       </section>
+
+      <ExecutionLog deployment={deployment} live={live} />
 
       <RegistrySection
         deployedConfig={live.proof?.processor.deployedConfig ?? null}

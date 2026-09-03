@@ -11,6 +11,7 @@ function EventLane({
   scanned,
   hideWhenEmpty,
   generatedAt,
+  wholeDeployment = false,
 }: {
   label: string;
   events: LiveEvent[];
@@ -21,6 +22,9 @@ function EventLane({
   /** Drop a successfully-scanned empty lane instead of explaining the blank. */
   hideWhenEmpty: boolean;
   generatedAt: string;
+  /** The lane's scan reaches the deploy block, so an empty result is a finding
+      about the deployment rather than about the window. */
+  wholeDeployment?: boolean;
 }) {
   // A lane whose window structurally cannot reach the activity has nothing to
   // say, and a paragraph explaining that is worse than no lane: it reads as a
@@ -57,7 +61,9 @@ function EventLane({
       ) : (
         <p className={scanned ? "event-empty" : "event-empty unavailable"}>
           {scanned
-            ? `no events in the last ${formatInt(windowBlocks)} blocks${span} — this is a bounded scan, not the full history. The proven run is dated in the trail below.`
+            ? wholeDeployment
+              ? `no events in the ${formatInt(windowBlocks)} blocks${span} since this deployment — every block since it was deployed was scanned. The execution log below lists each observation and cycle.`
+              : `no events in the last ${formatInt(windowBlocks)} blocks${span} — this is a bounded scan, not the full history. The proven run is dated in the trail below.`
             : "log scan unavailable this cycle — no claim is made about recent activity; the receipt trail below is permanent"}
         </p>
       )}
@@ -86,7 +92,7 @@ export default function EventsTicker({
 
   return (
     <div className="events-ticker">
-      <div className="card-title"><span>RECENT ON-CHAIN EVENTS</span><b>{`bounded scan · ${formatInt(events.window.origin)} / ${formatInt(events.window.processor)} blocks · read-only`}</b></div>
+      <div className="card-title"><span>RECENT ON-CHAIN EVENTS</span><b>{`recent · ${formatInt(events.window.origin)} blocks / whole deployment · read-only`}</b></div>
       <div className="event-lanes">
         <EventLane
           events={events.origin}
@@ -105,6 +111,7 @@ export default function EventsTicker({
           label={`${processor.name.toUpperCase()} · EPOCHS + AUTOMATION`}
           hideWhenEmpty={false}
           scanned={events.scanned.processor}
+          wholeDeployment
           windowBlocks={events.window.processor}
           windowSeconds={blockSeconds.processor === null ? null : blockSeconds.processor * events.window.processor}
         />
