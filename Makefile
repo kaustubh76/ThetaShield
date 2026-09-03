@@ -5,7 +5,7 @@ PYTHON ?= $(shell for candidate in python3.13 python3.12 python3.11 python3.10 p
 	  $$candidate -c 'import sys; sys.exit(sys.version_info < (3, 10))' >/dev/null 2>&1 && { echo $$candidate; exit 0; }; \
 	done; echo python3)
 
-.PHONY: boundary-fuzz-check build clean dashboard-bundle dashboard-bundle-check dashboard-check dashboard-deps dashboard-manifest dashboard-manifest-check dependency-check deployment-dry-run deployment-schema-check experiment-check experiment-report fmt fmt-check fork-check gap-g1-check gap-g1-report gap-g2-check gap-g3-check gap-g4-check gap-g5-check gap-g6-check gap-g7-check gap-g10-check gas-check golden-check invariant-check lint phase5-check phase6-check phase6-report phase61-check phase61-report phase7-check phase9-check python-check reactive-legacy-check research-report research-test secret-check test verify
+.PHONY: boundary-fuzz-check build clean dashboard-bundle dashboard-bundle-check dashboard-check dashboard-deps dashboard-manifest dashboard-manifest-check dependency-check deployment-dry-run deployment-schema-check diagram diagram-check experiment-check experiment-report fmt fmt-check fork-check gap-g1-check gap-g1-report gap-g2-check gap-g3-check gap-g4-check gap-g5-check gap-g6-check gap-g7-check gap-g10-check gas-check golden-check invariant-check lint phase5-check phase6-check phase6-report phase61-check phase61-report phase7-check phase9-check python-check reactive-legacy-check research-report research-test secret-check test verify
 
 build:
 	forge build --sizes
@@ -136,6 +136,12 @@ deployment-schema-check:
 
 phase7-check: dependency-check secret-check boundary-fuzz-check invariant-check gas-check fork-check deployment-schema-check deployment-dry-run
 
+diagram:
+	$(PYTHON) script/gen_flow_diagram.py
+
+diagram-check:
+	$(PYTHON) script/gen_flow_diagram.py --check
+
 dashboard-manifest:
 	$(PYTHON) script/mirror_dashboard_manifest.py
 
@@ -154,4 +160,4 @@ phase9-check: dashboard-check
 test:
 	forge test --force
 
-verify: fmt-check lint build test python-check research-test dependency-check secret-check deployment-schema-check golden-check experiment-check phase5-check phase6-check phase61-check gap-g1-check reactive-legacy-check dashboard-bundle-check dashboard-manifest-check phase9-check
+verify: fmt-check lint build test python-check research-test dependency-check secret-check deployment-schema-check diagram-check golden-check experiment-check phase5-check phase6-check phase61-check gap-g1-check reactive-legacy-check dashboard-bundle-check dashboard-manifest-check phase9-check
