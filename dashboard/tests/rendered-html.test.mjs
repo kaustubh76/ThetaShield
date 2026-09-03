@@ -157,6 +157,17 @@ test("live API defaults to the paired G10 lenses with a named direct fallback", 
   assert.match(route, /Math\.max\(\s*DEPLOY_BLOCKS\.processor/);
   assert.match(route, /pageRanges\(processorFrom, processorHead/);
   assert.doesNotMatch(route, /const processorFrom = processorHead - PROCESSOR_EVENT_WINDOW/);
+
+  // A scan that came back empty is not a finding that nothing ever ran. The
+  // processor's own counters are the check, and the "no observation has
+  // reached the processor" copy must sit on the far side of that guard — it
+  // shipped unguarded once and stated the opposite of the truth in production.
+  const executionLog = await readFile(
+    new URL("app/components/live-proof/execution-log.tsx", root),
+    "utf8",
+  );
+  assert.match(executionLog, /contractSaysRan/);
+  assert.match(executionLog, /contractSaysRan \? \([\s\S]{0,900}No observation has reached/);
   // The callback authentication is checked, not asserted: both of the
   // executor's immutable guard values are read, and the proven callback is read
   // back so its calldata can be compared against them. The transaction must be

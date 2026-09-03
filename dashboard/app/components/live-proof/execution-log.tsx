@@ -104,6 +104,19 @@ export default function ExecutionLog({
         dropped: proof.processor.droppedCount,
       }
     : null;
+  // The processor's own lifetime counters are read separately from the log
+  // scan, so they are the check on it: if they report finished work and the
+  // scan found no observations at all, the scan is incomplete and the history
+  // is not empty. Reporting that as "nothing has ever run" is the exact error
+  // this file's scan warns about — a failed read is not a finding of zero.
+  const contractSaysRan =
+    contract !== null && contract.settled + contract.expired + (contract.dropped ?? 0) > 0;
+  const agreesWithContract =
+    contract !== null &&
+    ledger !== null &&
+    contract.settled === ledger.totals.settled &&
+    contract.expired === ledger.totals.expired &&
+    (contract.dropped === null || contract.dropped === ledger.totals.dropped);
 
   // This section never returns null. The component it replaces did, and that is
   // precisely why the page could look as though nothing had ever run: with a
@@ -119,7 +132,11 @@ export default function ExecutionLog({
       </p>
     );
   } else if (!ledger.observations.length) {
-    body = (
+    body = contractSaysRan ? (
+      <p className="ledger-empty unavailable">
+        {`The queue scan returned nothing on this read, but the processor's own counters report ${formatInt(contract!.settled)} scored and ${formatInt(contract!.expired)} expired. So this is an incomplete read, not an empty history — no claim is made about what has run until the two agree.`}
+      </p>
+    ) : (
       <p className="ledger-empty">
         {`No observation has reached the processor since it was deployed. This is a finding, not a gap: the scan covers every block from ${formatInt(ledger.fromBlock)} to ${formatInt(ledger.toBlock)}.`}
       </p>
@@ -159,7 +176,7 @@ export default function ExecutionLog({
         </ul>
 
         <p className="ledger-foot">
-          {`Read from blocks ${formatInt(ledger.fromBlock)}–${formatInt(ledger.toBlock)} on ${processorName}${ledger.complete ? ", the whole life of the deployment" : ", a bounded span rather than the whole deployment"}.`}
+          {`Read from blocks ${formatInt(ledger.fromBlock)}–${formatInt(ledger.toBlock)} on ${processorName}${ledger.complete && agreesWithContract ? ", the whole life of the deployment" : ledger.complete ? ", though this read disagrees with the processor's counters" : ", a bounded span rather than the whole deployment"}.`}
           {ledger.orphanTerminals
             ? ` ${formatInt(ledger.orphanTerminals)} outcome event(s) had no queue event inside the scan and are counted but not listed.`
             : ""}
