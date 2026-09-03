@@ -157,7 +157,9 @@ export default function RegistrySection({
         badge="03"
         id="registry-parameters"
         meta={`${researchConfig.length} research keys · ${
-          liveStatus === "ready" || liveStatus === "stale" ? "deployed values read from chain" : "reading deployed values"
+          (liveStatus === "ready" || liveStatus === "stale") && deployedConfig !== null
+            ? "deployed values read from chain"
+            : "reading deployed values"
         }`}
         title="Deployed parameters"
       >

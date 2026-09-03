@@ -98,7 +98,7 @@ test("server-renders the complete ThetaShield research dashboard", async () => {
   // evidences, and out to the explorer.
   assert.match(html, /show this step in the loop/i);
   assert.match(html, /walk the trail, or open any receipt/i);
-  assert.match(html, /Read-only proof/i);
+  assert.match(html, /Reading this page is read-only/i);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton/i);
 });
 
@@ -157,6 +157,23 @@ test("live API defaults to the paired G10 lenses with a named direct fallback", 
   assert.match(route, /Math\.max\(\s*DEPLOY_BLOCKS\.processor/);
   assert.match(route, /pageRanges\(processorFrom, processorHead/);
   assert.doesNotMatch(route, /const processorFrom = processorHead - PROCESSOR_EVENT_WINDOW/);
+
+  // A failed processor scan must return one empty lane per lane. It returned
+  // two while six are destructured, so the spread that builds the timestamp set
+  // threw and readEvents rejected — shipping events as null and taking the
+  // ledger, the latest attempt and the console's receipts with it, while making
+  // `scanned.processor: false` unreachable. The failure is a runtime TypeError
+  // that no rendering test can see, so it is pinned structurally.
+  assert.match(route, /return PROCESSOR_LANES\.map\(\(\) => \[\] as RpcLog\[\]\)/);
+  assert.doesNotMatch(route, /return \[\[\], \[\]\] as RpcLog\[\]\[\]/);
+
+  // An unreachable Circle API is reported under its own guard code, so the
+  // console can decline to poll a broken dependency at the attestation cadence.
+  const runRoute = await readFile(new URL("app/api/run/route.ts", root), "utf8");
+  assert.match(runRoute, /attestation-unreachable/);
+  // The CSRF boundary: this endpoint holds a signing key and has no auth.
+  assert.match(runRoute, /application\/json/);
+  assert.match(runRoute, /sec-fetch-site/);
 
   // A scan that came back empty is not a finding that nothing ever ran. The
   // processor's own counters are the check, and the "no observation has

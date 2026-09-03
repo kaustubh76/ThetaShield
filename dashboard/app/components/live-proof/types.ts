@@ -197,7 +197,12 @@ export type ObservationRecordView = {
   sweptByReactive: boolean | null;
 };
 
-/** The newest record, under the name the live panel already imports. */
+/**
+ * The newest record. Kept under its own name because the events payload still
+ * carries it: schedulerHealth reads it to decide whether the scheduler woke,
+ * and the run console derives its "last run" receipts from it. The execution
+ * log renders the lifecycle itself, so this is not a second rendering of it.
+ */
 export type LatestAttemptView = ObservationRecordView;
 
 // One bounded pass of the executor. Every field is rendered: a cycle that swept

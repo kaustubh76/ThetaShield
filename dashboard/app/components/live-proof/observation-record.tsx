@@ -99,9 +99,15 @@ export function AttemptSteps({
                   : "Still waiting"}
           </b>
           <span>
+            {/* Selected on the outcome, not on whether the sweeping cycle was
+                identified. Keyed on sweptByCycle, an observation that settled
+                but whose cycle lane came back empty read "Scored into an epoch"
+                and then "Expires 14:22 if nothing advances it" directly below. */}
             {attempt.sweptByCycle !== null
               ? `Cycle ${attempt.sweptByCycle}, advanced by ${attempt.sweptByReactive ? "an authenticated Reactive callback" : "a permissionless keeper — not by the scheduler"}.`
-              : `Expires ${clock(attempt.expiresAt)} if nothing advances it.`}
+              : attempt.outcome === "pending"
+                ? `Expires ${clock(attempt.expiresAt)} if nothing advances it.`
+                : "The cycle that swept it was not identified on this read."}
             {lifetime !== null ? ` ${span(lifetime)} after it was queued.` : ""}
           </span>
           {attempt.outcomeTx ? (

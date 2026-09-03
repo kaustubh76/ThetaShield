@@ -781,8 +781,15 @@ async function readEvents() {
       return [] as RpcLog[];
     }),
     scanProcessor().catch(() => {
+      // One empty lane per lane, derived rather than written out: this returned
+      // two while six are destructured below, so a failed scan left four lanes
+      // undefined, the spread that builds distinctBlocks threw, and readEvents
+      // rejected. The whole events payload then shipped as null — taking the
+      // ledger, the latest attempt, scheduler health and the console's receipts
+      // with it, and making `scanned.processor: false` unreachable, so the
+      // "log scan unavailable this cycle" line below could never render.
       processorScanned = false;
-      return [[], []] as RpcLog[][];
+      return PROCESSOR_LANES.map(() => [] as RpcLog[]);
     }),
   ]);
   const [epochLogs, cycleLogs, queuedLogs, expiredLogs, droppedLogs, settledLogs] =

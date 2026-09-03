@@ -40,7 +40,21 @@ function CycleRow({
       <span className="cycle-counts">
         {`pending ${cycle.pendingBefore}→${cycle.pendingAfter} · scored ${cycle.settledBefore}→${cycle.settledAfter} · expired ${cycle.expiredBefore}→${cycle.expiredAfter} · sources ${cycle.syncedSources}/${cycle.publishedSources}`}
       </span>
-      <time>{cycle.observedAt !== null ? clock(cycle.observedAt) : "—"}</time>
+      {/* The three sub-calls report separately, and a cycle can succeed at one
+          and not another — the executor wraps each in its own try/catch. Shown
+          because a cycle that sampled but could not process is a different
+          finding from one that found no work. */}
+      <span className="cycle-flags">
+        <b className={cycle.samplerSucceeded ? "ok" : "bad"}>{`sampler ${cycle.samplerSucceeded ? "ok" : "failed"}`}</b>
+        <b className={cycle.processSucceeded ? "ok" : "bad"}>{`process ${cycle.processSucceeded ? "ok" : "failed"}`}</b>
+        <b className={cycle.recommendationDispatched ? "ok" : "idle"}>
+          {cycle.recommendationDispatched ? "recommendation sent" : "no recommendation"}
+        </b>
+      </span>
+      <time dateTime={cycle.observedAt !== null ? new Date(cycle.observedAt * 1_000).toISOString() : undefined}>
+        {cycle.observedAt !== null ? clock(cycle.observedAt) : "—"}
+        <small>{`block ${formatInt(cycle.blockNumber)}`}</small>
+      </time>
       <a href={txUrl(cycle.txHash)} rel="noreferrer" target="_blank">
         <code>{shortHex(cycle.txHash)}</code> ↗
       </a>
@@ -109,8 +123,16 @@ export default function ExecutionLog({
   // scan found no observations at all, the scan is incomplete and the history
   // is not empty. Reporting that as "nothing has ever run" is the exact error
   // this file's scan warns about — a failed read is not a finding of zero.
+  // Terminal counters alone were not enough: for the ~30 minutes an
+  // observation is in flight nothing has settled, expired or dropped yet, so a
+  // queue scan that came back empty during a live run still read as "nothing
+  // has ever run" while the panel above showed it pending. The queue depth and
+  // the highest id ever issued close that window.
+  const terminalCount = contract ? contract.settled + contract.expired + (contract.dropped ?? 0) : 0;
   const contractSaysRan =
-    contract !== null && contract.settled + contract.expired + (contract.dropped ?? 0) > 0;
+    terminalCount > 0 ||
+    (proof?.processor.pendingCount ?? 0) > 0 ||
+    (proof?.processor.lastObservationId ?? 0) > 0;
   const agreesWithContract =
     contract !== null &&
     ledger !== null &&
@@ -134,11 +156,13 @@ export default function ExecutionLog({
   } else if (!ledger.observations.length) {
     body = contractSaysRan ? (
       <p className="ledger-empty unavailable">
-        {`The queue scan returned nothing on this read, but the processor's own counters report ${formatInt(contract!.settled)} scored and ${formatInt(contract!.expired)} expired. So this is an incomplete read, not an empty history — no claim is made about what has run until the two agree.`}
+        {`The queue scan returned nothing on this read, but the processor's own counters report ${formatInt(contract?.settled ?? 0)} scored, ${formatInt(contract?.expired ?? 0)} expired and ${formatInt(proof?.processor.pendingCount ?? 0)} still queued, against ${formatInt(proof?.processor.lastObservationId ?? 0)} observations issued. So this is an incomplete read, not an empty history — no claim is made about what has run until the two agree.`}
       </p>
     ) : (
       <p className="ledger-empty">
-        {`No observation has reached the processor since it was deployed. This is a finding, not a gap: the scan covers every block from ${formatInt(ledger.fromBlock)} to ${formatInt(ledger.toBlock)}.`}
+        {ledger.complete
+          ? `No observation has reached the processor since it was deployed. This is a finding, not a gap: the scan covers every block from ${formatInt(ledger.fromBlock)} to ${formatInt(ledger.toBlock)}.`
+          : `No observation appears in blocks ${formatInt(ledger.fromBlock)} to ${formatInt(ledger.toBlock)}. That span does not reach the deployment, so this is a finding about the window rather than about the history.`}
       </p>
     );
   } else {

@@ -51,6 +51,9 @@ function awaitingAttestation(status: RunStatus | null): boolean {
   const relay = status?.steps.find((entry) => entry.step === "relay");
   if (!relay) return false;
   const leg = relay.guards.find((guard) => guard.code === "leg");
+  // Only a message Circle is genuinely still finalising is worth polling hard
+  // for. An unreachable API carries its own code and is left on the idle
+  // cadence, so a broken dependency does not become a 20-second loop.
   const attestation = relay.guards.find((guard) => guard.code === "attestation");
   return Boolean(leg?.ok && attestation && !attestation.ok);
 }
@@ -102,6 +105,7 @@ export function useRunStatus(): RunStatusState {
               ...previous,
               enabled: payload.enabled,
               operator: payload.operator,
+              swap: payload.swap,
               steps: previous.steps.map(
                 (entry) => payload.steps.find((fresh) => fresh.step === entry.step) ?? entry,
               ),

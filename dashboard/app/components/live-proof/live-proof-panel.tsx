@@ -109,6 +109,10 @@ export default function LiveProofPanel({
       );
     }
     if (!proof.automation && proof.readPath === "lens") withheld.push("the automation cycle — the executor returned no readable cycle");
+    // An executor that has never run decodes to all zeros, which is a readable
+    // cycle reporting nothing rather than a failed read. Rendering it would
+    // have shown six failed checks for work that was never attempted.
+    if (proof.automation && proof.automation.cycleCount === 0) withheld.push("the automation cycle — the executor has not completed one yet, so there is no last cycle to report");
     if (!proof.events) withheld.push("recent on-chain events — the bounded scan did not complete, which is not a finding that nothing happened");
     if (!proof.reactive) withheld.push("the Reactive counters — that plane did not answer within the read budget");
   }
@@ -350,7 +354,9 @@ export default function LiveProofPanel({
               <SideStateCard config={proof.processor.deployedConfig} label="SELL-BASE" side={proof.processor.sides.sell} />
             </>
           ) : null}
-          {proof.automation ? <AutomationCard automation={proof.automation} /> : null}
+          {proof.automation && proof.automation.cycleCount > 0 ? (
+            <AutomationCard automation={proof.automation} />
+          ) : null}
         </div>
 
         {/* One line instead of five. A withheld card and an empty one are still
@@ -395,7 +401,7 @@ export default function LiveProofPanel({
       <p className="registry-pointer">
         <a href="#registry">{`Read the contracts → all ${deployment.components.length} deployed components, with block, verification status and explorer links`}</a>
       </p>
-      <p className="proof-disclosure">Read-only proof. Refreshing performs public RPC reads; it never connects a wallet, signs a message, or spends testnet funds.</p>
+      <p className="proof-disclosure">Reading this page is read-only: refreshing performs public RPC reads and never connects a wallet, signs a message, or spends testnet funds. The run console above is the one control that broadcasts, and it says so.</p>
       {/* Three states, because the direct path is now reachable two ways: the
           lenses can be disabled by configuration, or they can fail and be
           fallen back from. Neither may be asserted before a read returns. */}

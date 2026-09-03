@@ -127,17 +127,32 @@ export function useLiveProof(intervalMs = 60_000): LiveProofState {
 
     const run = async () => {
       if (cancelled) return;
+      // A hidden tab is not reading the panel, and this request reaches three
+      // chains. Nothing is scheduled while it is away; returning to the tab
+      // refreshes immediately, so what it shows is never stale on arrival.
+      if (document.visibilityState === "hidden") {
+        setNextPollAt(null);
+        return;
+      }
       setNextPollAt(null);
       await refresh();
       if (cancelled) return;
       schedule();
     };
 
+    const onVisible = () => {
+      if (document.visibilityState !== "visible" || cancelled) return;
+      window.clearTimeout(timer);
+      void run();
+    };
+
     void run();
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       cancelled = true;
       setNextPollAt(null);
       window.clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [refresh, intervalMs]);
 

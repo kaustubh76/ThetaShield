@@ -110,6 +110,49 @@ export default function CallbackAuthentication({
       },
       agrees: sameAddress(callback.targetArg, networkConfig.executor),
     });
+
+    // The scheduler's own view of the deployment names more than the executor.
+    // Comparing the processor and the subscribed topic too is what makes this
+    // agreement in both directions rather than a single term checked twice —
+    // these were decoded for exactly this and never compared.
+    const deployedProcessor = deployment.components.find(
+      (component) => component.role === "processor" && /Processor$/.test(component.name),
+    );
+    if (deployedProcessor) {
+      checks.push({
+        id: "processor",
+        claim: "the scheduler drives the processor this page reads",
+        left: {
+          label: "deployed processor",
+          value: deployedProcessor.address,
+          provenance: `${processorChain?.name} · deployment registry`,
+        },
+        right: {
+          label: "scheduler names",
+          value: networkConfig.processor,
+          provenance: `${reactiveChain?.name} · rnk_call inside the ReactiveVM · networkConfig()`,
+        },
+        agrees: sameAddress(deployedProcessor.address, networkConfig.processor),
+      });
+    }
+
+    checks.push({
+      id: "cron-topic",
+      claim: `it is subscribed to the ${deployment.automation.cronName} topic the deployment records`,
+      left: {
+        label: "recorded topic",
+        value: deployment.automation.cronTopic,
+        provenance: "deployment registry",
+      },
+      right: {
+        label: "scheduler subscribes to",
+        value: networkConfig.cronTopic,
+        provenance: `${reactiveChain?.name} · rnk_call inside the ReactiveVM · networkConfig()`,
+      },
+      agrees:
+        deployment.automation.cronTopic.toLowerCase() === networkConfig.cronTopic.toLowerCase() &&
+        BigInt(networkConfig.cronTopic) !== BigInt(0),
+    });
   }
 
   const failing = checks.filter((check) => !check.agrees);
@@ -165,7 +208,11 @@ export default function CallbackAuthentication({
           <code>{shortHex(authentication.transactionHash)}</code>
         )}
         {callback.blockNumber ? ` · block ${callback.blockNumber.toLocaleString("en")}` : ""}
+        {callback.observedAt ? ` · ${new Date(callback.observedAt * 1_000).toISOString().replace("T", " ").slice(0, 19)}Z` : ""}
         {"."}
+        {networkConfig
+          ? ` The scheduler is configured to watch chain ${networkConfig.monitoredChainId}, act on chain ${networkConfig.destinationChainId}, and run on chain ${networkConfig.reactiveChainId}.`
+          : ""}
       </p>
     </div>
   );

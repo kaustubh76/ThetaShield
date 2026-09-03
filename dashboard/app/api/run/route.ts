@@ -365,12 +365,23 @@ async function guardsFor(step: RunStep): Promise<Guard[]> {
       return guards;
     }
     const attestation = await fetchAttestation(leg.sourceDomain, sourceTx);
+    const unreachable = !attestation.ready && UNREACHABLE_ATTESTATION.test(attestation.status);
     guards.push({
       ok: attestation.ready,
-      code: "attestation",
+      // A distinct code, so the console can tell a message that is still
+      // finalising from an API it could not reach, and decline to poll the
+      // second one at the fast attestation cadence.
+      code: unreachable ? "attestation-unreachable" : "attestation",
       reason: attestation.ready
         ? "Circle has attested the message and it is ready to deliver"
-        : `Circle reports "${attestation.status}"${attestation.detail ? ` — ${attestation.detail}` : ""}; it holds the message until the source chain finalises`,
+        : // An unreachable API is not a reading of the message. Saying Circle
+          // "holds the message until the source chain finalises" asserts a fact
+          // that was never fetched, and reads as an ordinary wait rather than a
+          // broken dependency — which also kept the console polling at the fast
+          // attestation cadence indefinitely.
+          unreachable
+          ? `Circle's attestation API could not be reached on this read (${attestation.status}), so no claim is made about the message.`
+          : `Circle reports "${attestation.status}"${attestation.detail ? ` — ${attestation.detail}` : ""}; it holds the message until the source chain finalises`,
     });
     guards.push(await inFlightGuard(destination, address));
     guards.push(await feeGuard(destination, leg.name === "outbound" ? "Ethereum Sepolia" : "Unichain Sepolia"));
@@ -426,6 +437,12 @@ export async function GET(request: Request) {
     );
   }
 }
+
+// Statuses fetchAttestation returns when it never got an answer, as opposed to
+// a status Circle itself reported about the message. "not found" and "unknown"
+// are Circle answering — the message is simply not ready — so they stay on the
+// ordinary waiting path.
+const UNREACHABLE_ATTESTATION = /^(unavailable|circle http )/;
 
 const NO_STORE = { "cache-control": "no-store" } as const;
 

@@ -75,7 +75,6 @@ export const REACTIVE_RVM_ID = manifest.reactive_automation.deployer_rvm_id;
 // executor's guards compare against, so the route reads the transaction back
 // and the page checks them rather than restating them from this manifest.
 export const REACTIVE_CALLBACK_TX = manifest.reactive_automation.callback_transaction_hash;
-export const REACTIVE_CALLBACK_PROXY = manifest.reactive_automation.callback_proxy;
 
 function circleMessage(kind: string) {
   const entry = manifest.circle_messages.find((candidate) => candidate.kind === kind);

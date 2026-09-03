@@ -10,8 +10,9 @@ export function feeBps(feePips: number): string {
 // Both the research replay and the live side card draw this strip; they used to
 // carry byte-identical copies of it.
 export function bitmapBits(bitmap: number, window: number): number[] {
-  return Array.from({ length: window }, (_, index) =>
-    Math.floor(bitmap / 2 ** (window - index - 1)) % 2,
+  const width = Math.max(0, Math.min(window, 64));
+  return Array.from({ length: width }, (_, index) =>
+    Number((BigInt(Math.trunc(bitmap)) >> BigInt(width - index - 1)) & BigInt(1)),
   );
 }
 

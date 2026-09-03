@@ -19,7 +19,8 @@ export type GuardCode =
   | "gas-ceiling"
   | "leg"
   | "source-window"
-  | "attestation";
+  | "attestation"
+  | "attestation-unreachable";
 
 export type Guard = { ok: boolean; reason: string; code: GuardCode };
 

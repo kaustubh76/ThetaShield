@@ -37,6 +37,11 @@ function GuardList({ guards, className }: { guards: RunGuard[]; className?: stri
         // and keying on it remounts the row on every poll and makes it flicker.
         <li className={guard.ok ? "guard ok" : "guard blocked"} key={guard.code}>
           <i aria-hidden="true">{guard.ok ? "✓" : "✕"}</i>
+          {/* Several reasons state only a measurement — "origin balance 0.05 ETH
+              against a 0.002 ETH floor" reads the same whether it passed or
+              failed — so the verdict cannot live in the glyph and the colour
+              alone. Same treatment automation-card already gives its checks. */}
+          <span className="sr-only">{guard.ok ? "passed: " : "blocked: "}</span>
           {guard.reason}
         </li>
       ))}
@@ -87,14 +92,22 @@ export default function RunConsole({
     }
     setBusy(step);
     setArmedStep(null);
+    let timeout = 0;
     setSent((previous) => ({ ...previous, [step]: undefined }));
     setRefusals((previous) => ({ ...previous, [step]: undefined }));
     setFailures((previous) => ({ ...previous, [step]: undefined }));
     try {
+      // Both pollers abort; this did not, so a connection dropped mid-broadcast
+      // left the promise pending, `busy` set, and all three buttons disabled
+      // reading "broadcasting…" with no recovery short of a reload. The budget
+      // is just over the route's own maxDuration of 60.
+      const controller = new AbortController();
+      timeout = window.setTimeout(() => controller.abort(), 70_000);
       const response = await fetch("/api/run", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ step }),
+        signal: controller.signal,
       });
       const payload = (await response.json()) as {
         ok?: boolean;
@@ -118,9 +131,14 @@ export default function RunConsole({
     } catch (pressError) {
       setFailures((previous) => ({
         ...previous,
-        [step]: pressError instanceof Error ? pressError.message : "the run endpoint refused",
+        [step]: pressError instanceof DOMException && pressError.name === "AbortError"
+          ? "The broadcast did not answer in time. It may still have been sent — check the explorer before pressing again."
+          : pressError instanceof Error
+            ? pressError.message
+            : "the run endpoint refused",
       }));
     } finally {
+      window.clearTimeout(timeout);
       setBusy(null);
       boost();
       void refresh();
@@ -157,6 +175,18 @@ export default function RunConsole({
         </div>
         <span className={`console-state ${badge.className}`}>{badge.text}</span>
       </div>
+      {/* The signing account, so a reader can check the configured key resolved
+          to the address they expect. Without it the balance guards look
+          identical either way, because an unarmed deployment evaluates them
+          against the same public deployer address. */}
+      {status?.operator ? (
+        <p className="console-operator">
+          {"signing as "}
+          <a href={`${explorer("processor")}/address/${status.operator}`} rel="noreferrer" target="_blank">
+            <code>{shortHex(status.operator)}</code> ↗
+          </a>
+        </p>
+      ) : null}
 
       <p className="console-warning">{warning}</p>
       {stale ? (
@@ -175,6 +205,10 @@ export default function RunConsole({
           const entry = status?.steps.find((candidate) => candidate.step === step) ?? null;
           const isArmed = armedStep === step;
           const canPress = phase === "armed" && Boolean(entry?.allowed);
+          // Arming survives a poll, but permission may not: if a guard closed
+          // between the two presses the button is disabled, and leaving it
+          // labelled "press again to broadcast" invites a press that cannot land.
+          const isArmedAndPressable = isArmed && canPress;
           const receipt = sent[step];
           const refused = refusals[step];
           return (
@@ -184,6 +218,14 @@ export default function RunConsole({
                 <span>{deployment.networks.find((network) => network.role === copy.chain)?.name}</span>
               </div>
               <p>{copy.detail}</p>
+              {/* The bound the copy above claims, stated rather than asserted:
+                  the amount and direction are fixed in the source and are not
+                  chosen by whoever presses the button. */}
+              {step === "swap" && status?.swap ? (
+                <p className="console-bound">
+                  {`fixed at ${(Number(BigInt(status.swap.amountWei) < 0n ? -BigInt(status.swap.amountWei) : BigInt(status.swap.amountWei)) / 1e18).toFixed(3)} token exact input · ${status.swap.zeroForOne ? "sell" : "buy"} side`}
+                </p>
+              ) : null}
               {/* Only on the step that starts a run: the reader is about to
                   spend gas on something whose outcome is already predictable
                   from what happened to the last one. */}
@@ -223,14 +265,14 @@ export default function RunConsole({
               ) : null}
 
               <button
-                className={isArmed ? "console-action armed" : "console-action"}
+                className={isArmedAndPressable ? "console-action armed" : "console-action"}
                 disabled={busy !== null || !canPress}
                 onClick={() => void press(step)}
                 type="button"
               >
                 {busy === step
                   ? "broadcasting…"
-                  : isArmed
+                  : isArmedAndPressable
                     ? "press again to broadcast"
                     : phase === "loading"
                       ? "checking…"
@@ -243,6 +285,10 @@ export default function RunConsole({
                             : "not armed here"}
               </button>
 
+              {/* The console is the page's only state-changing control, and a
+                  refusal or a receipt was appearing silently under a button
+                  that had already changed label. */}
+              <div aria-live="polite">
               {refused?.length ? (
                 <>
                   <p className="console-refusal-head">refused when you pressed it — the chain said:</p>
@@ -261,6 +307,7 @@ export default function RunConsole({
                   {`${receipt.outcome === "reverted" ? "REVERTED" : receipt.outcome === "success" ? "mined" : "sent"} · ${shortHex(receipt.hash)} ↗`}
                 </a>
               ) : null}
+              </div>
             </li>
           );
         })}

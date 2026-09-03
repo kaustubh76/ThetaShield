@@ -74,7 +74,11 @@ export default function RunTimeline({
         <p className="run-verdict">
           {`Read back from the transactions themselves${ranOn ? ` — the run of ${new Date(ranOn * 1_000).toLocaleDateString([], { day: "numeric", month: "short", year: "numeric" })}` : ""}. `}
           <b>
-            {`The longest wait was ${duration(slowest.gapSeconds as number)}${slowestTitle ? `, arriving at “${slowestTitle}”` : ""}; the scheduler's own wake accounted for ${duration(wakeGap)} of the whole run.`}
+            {/* Named as the longest INTERVAL READ, not the longest wait, unless
+                every step came back dated. A pruned transaction removes its own
+                interval from the set, and stating the remaining maximum flatly
+                would contradict the "(partial)" note this same header renders. */}
+            {`The longest ${timeline?.complete ? "wait" : "interval that came back dated"} was ${duration(slowest.gapSeconds as number)}${slowestTitle ? `, arriving at “${slowestTitle}”` : ""}; the scheduler's own wake accounted for ${duration(wakeGap)} of the whole run.`}
           </b>
           {` Cross-chain finality dominates the wall clock here, and neither plane computes the fee —
           the transport carries authenticated evidence, the scheduler decides when eligible work runs.`}

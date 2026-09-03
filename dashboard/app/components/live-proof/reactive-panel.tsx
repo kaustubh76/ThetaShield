@@ -32,7 +32,8 @@ function elapsed(seconds: number): string {
     const hours = Math.round(seconds / 3_600);
     return `${hours} hour${hours === 1 ? "" : "s"}`;
   }
-  return `${Math.max(1, Math.round(seconds / 60))} minutes`;
+  const minutes = Math.max(1, Math.round(seconds / 60));
+  return `${minutes} minute${minutes === 1 ? "" : "s"}`;
 }
 
 function countdown(seconds: number): string {
@@ -183,12 +184,21 @@ export default function ReactivePanel({
               closed end to end. Nothing here waits on a single scheduler to be healthy.`}
             </p>
           </div>
-        ) : (
+        ) : pendingCount === 0 ? (
           <p className="reactive-rest">
             {`Idle is the resting state, not a fault: the scheduler is subscribed and wakes on swap
             traffic, and there is nothing outstanding`}
             {lastRunAt !== null ? ` since the last run ${elapsed(now - lastRunAt)} ago` : ""}
             {`. The run below is dated from its own transactions.`}
+          </p>
+        ) : (
+          // Phase 0 with a non-empty queue is not the resting state. Saying
+          // "there is nothing outstanding" here contradicted the plane-agreement
+          // line this same component renders below it.
+          <p className="reactive-rest degraded">
+            {`The scheduler reads as idle while the processor still holds ${pendingCount} queued
+            observation(s), so the two planes are not in step on this read. The agreement line below
+            names which one is behind.`}
           </p>
         )
       ) : null}

@@ -104,6 +104,10 @@ export default function EventsTicker({
           windowBlocks={events.window.origin}
           windowSeconds={blockSeconds.origin === null ? null : blockSeconds.origin * events.window.origin}
         />
+        {/* wholeDeployment comes from the ledger, which already computes
+            whether the scan floor reached the deploy block. Hardcoding it
+            claimed a coverage the page cannot promise once the deployment
+            outgrows the scan's page cap. */}
         <EventLane
           events={events.processor}
           explorerBase={processor.explorerBase}
@@ -111,7 +115,7 @@ export default function EventsTicker({
           label={`${processor.name.toUpperCase()} · EPOCHS + AUTOMATION`}
           hideWhenEmpty={false}
           scanned={events.scanned.processor}
-          wholeDeployment
+          wholeDeployment={events.ledger?.complete ?? false}
           windowBlocks={events.window.processor}
           windowSeconds={blockSeconds.processor === null ? null : blockSeconds.processor * events.window.processor}
         />
