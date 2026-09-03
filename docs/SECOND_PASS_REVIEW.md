@@ -1,5 +1,21 @@
 # ThetaShield — Second-Pass Review
 
+> [!NOTE]
+> **Status: partly superseded. Read this as dated working history, not as current state.**
+>
+> The measurements below were taken on 2026-08-29 and the headings that call the
+> processor plane "stalled" and the automation plane "out of funds" describe that
+> morning. As of 2026-09-03 the deployment reads: **3 observations queued, 2 scored,
+> 1 expired, 0 pending, 7 automation cycles**, with the run console armed on the
+> live dashboard so the loop can be driven from the page rather than by hand.
+>
+> Two findings here were acted on rather than merely noted: the relay is no longer
+> manual, and an idle machine no longer reads as a dead one. The open decisions in
+> "Open decisions" at the end remain open.
+>
+> Current state is always the live read at <https://thetashield.vercel.app/#execution-log>,
+> which lists every observation and cycle from the contracts' own events.
+
 > Scope: functionality and live-system state. Reviewed at `4b3aff6`.
 > Every claim about the deployed system below was verified by direct read-only RPC
 > calls to Unichain Sepolia, Ethereum Sepolia, and Reactive Lasna — not read from

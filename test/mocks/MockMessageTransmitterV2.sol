@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
 import {IMessageHandlerV2} from "../../src/interfaces/IMessageHandlerV2.sol";

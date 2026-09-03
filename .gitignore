@@ -32,6 +32,9 @@ dist/
 .vscode/
 *.swp
 
+# Scaffolding written by unrelated tooling
+.openai/
+
 # Local reports and temporary files
 tmp/
 *.log

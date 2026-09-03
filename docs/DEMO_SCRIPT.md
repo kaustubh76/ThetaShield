@@ -1,5 +1,13 @@
 # ThetaShield Demo Script
 
+> [!NOTE]
+> **Superseded.** This script predates the Reactive automation plane and still
+> describes a permissionless keeper relaying the message by hand. Use
+> [`WINNING_PITCH_SCRIPT.md`](WINNING_PITCH_SCRIPT.md) for the four-minute
+> narrative or [`VIDEO_SCRIPT_5MIN.md`](VIDEO_SCRIPT_5MIN.md) for the recorded
+> demo. Retained for auditability.
+
+
 Target: 3–4 minutes. Dashboard scenario cards are simulated, not live telemetry.
 
 ## Problem and mechanism

@@ -22,7 +22,7 @@
   ·
   <a href="docs/THETASHIELD_ARCHITECTURE.png">Architecture</a>
   ·
-  <a href="the live deployment manifest">Acceptance trace</a>
+  <a href="deployments/unichain-sepolia-ethereum-sepolia-reactive-legacy-kaustubh76-live.json">Acceptance trace</a>
   ·
   <a href="docs/WINNING_PITCH_SCRIPT.md">Four-minute pitch</a>
 </p>
@@ -270,16 +270,18 @@ The interactive signal-lab cards are explicitly simulated. The separate **Live T
 | [Threat model](docs/THREAT_MODEL.md) | Trust boundaries, attack surfaces, controls, and residual risks |
 | [Verification guide](docs/VERIFICATION.md) | Whole-repository and focused verification gates |
 | [Deployment runbook](docs/DEPLOYMENT_RUNBOOK.md) | Current G10 Circle + Reactive Legacy deployment and acceptance procedure |
-| [G10 live acceptance](deployments/unichain-sepolia-ethereum-sepolia-reactive-legacy-kaustubh76-live.json) | Deployed addresses, Circle/Reactive receipts, fee proof, spend, and operating boundary |
-| [G10 deployment readiness](deployments/unichain-sepolia-ethereum-sepolia-reactive-legacy-kaustubh76-live.json) | Historical pre-broadcast simulations, predicted addresses, and approved ceilings |
+| [G10 live acceptance manifest](deployments/unichain-sepolia-ethereum-sepolia-reactive-legacy-kaustubh76-live.json) | The single deployment record: addresses, Circle/Reactive receipts, fee proof, spend, and operating boundary. Mirrored byte-identically into the dashboard and gate-checked |
 | [Reactive Legacy migration](docs/REACTIVE_LEGACY_MIGRATION.md) | Pinned Legacy topology, infrastructure, authentication, funding, and proof gates |
 | [Circle migration](docs/CIRCLE_MIGRATION.md) | Rationale and record of the active transport migration |
-| [Phase 8D handoff](deployments/unichain-sepolia-ethereum-sepolia-reactive-legacy-kaustubh76-live.json) | Live deployment, receipts, spend, and acceptance evidence |
+| [Changelog](CHANGELOG.md) | Release narrative, what is proven, and the known boundaries |
 | [Final research report](docs/FINAL_REPORT.md) | Delivered implementation, findings, and release boundary |
 | [Four-minute pitch](docs/WINNING_PITCH_SCRIPT.md) | Judge-oriented project narrative |
+| [Pitch deck](docs/PITCH_DECK.md) | 21 slides, with an appendix of live counters and an explicit "what not to say" |
+| [Five-minute video script](docs/VIDEO_SCRIPT_5MIN.md) | Shot list and tab order for the recorded demo |
+| [End-to-end flow diagram](docs/THETASHIELD_FLOW.excalidraw) | Generated from the deployment manifest, so it cannot drift from what is deployed |
 | [Teammate handover video](docs/TEAMMATE_HANDOVER_VIDEO.md) | Rough recording script, repository tour, access boundary, and first-day checklist |
 
-Historical Phase 3/4/7/8 Omni/Lasna documents are retained for auditability. They are not current deployment instructions.
+The full map, separating reviewer-facing documents from working history, is in [`docs/README.md`](docs/README.md). Historical Phase 3/4/7/8 Omni/Lasna documents are retained for auditability; they are not current deployment instructions.
 
 ## Production boundary
 
@@ -300,4 +302,4 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) before proposing changes. Report vulnera
 
 ## License
 
-This private research repository is currently **all rights reserved**. See [LICENSE](LICENSE).
+Released under the [MIT License](LICENSE). Circle's `IMessageHandlerV2` and `IMessageTransmitterV2` interfaces remain Apache-2.0, and the `lib/` submodules keep their own licences.
